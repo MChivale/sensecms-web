@@ -32,7 +32,7 @@ try {
     if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 16384) $reply(['message' => 'Request too large.'], 413);
     $installed = $runtime->read('installed');
     // Public presentation is optional and does not instantiate administration or a database connection.
-    if ($installed && !preg_match('#^/(?:install|login|logout|dashboard|settings|license)(?:/|$)#D', $path)) {
+    if ($installed && !preg_match('#^/(?:install|login|logout|dashboard|settings|license|account)(?:/|$)#D', $path)) {
         $themeRoot = (new App\Core\Packages\ThemeManager($runtime))->activePath();
         if ($themeRoot !== null) {
             try { $runtime->license()->enforce($baseUrl); }
@@ -95,7 +95,7 @@ try {
             if ($post && $path === '/logout') { $_SESSION = []; session_regenerate_id(true); $reply(['redirect' => '/login']); }
             if (!$user['owner']) $reply(['message' => 'Owner access is required.'], 403);
             if ($path === '/') $reply(['redirect' => '/dashboard']);
-            if (!in_array($path, ['/dashboard', '/settings', '/license'], true)) $reply(['message' => 'Page not found.'], 404);
+            if (!in_array($path, ['/dashboard', '/settings', '/license', '/account'], true)) $reply(['message' => 'Page not found.'], 404);
             $screen = substr($path, 1); $license = null;
             if ($path !== '/license') {
                 try { $license = $runtime->license()->enforce($baseUrl); }
@@ -106,6 +106,12 @@ try {
                 if ($name === '' || mb_strlen($name) > 120) $reply(['message' => 'Enter a site name up to 120 characters.'], 422);
                 $db->prepare("UPDATE settings SET value=? WHERE `key`='site_name'")->execute([$name]); $auth->audit((int) $user['id'], 'settings.updated');
                 $reply(['message' => 'Site settings saved.']);
+            }
+            if ($post && $path === '/account') {
+                if (($_SESSION['password_attempt_at'] ?? 0) > time() - 3) $reply(['message' => 'Wait a few seconds before trying again.'], 429);
+                $_SESSION['password_attempt_at'] = time();
+                if (!$auth->changePassword((int) $user['id'], (string) ($_POST['current_password'] ?? ''), (string) ($_POST['new_password'] ?? ''), (string) ($_POST['confirm_password'] ?? ''))) $reply(['message' => 'The current password could not be verified.'], 422);
+                $reply(['message' => 'Password changed. Other sessions have been signed out.']);
             }
             if ($post && $path === '/license') {
                 $runtime->license()->install(trim((string) ($_POST['license_key'] ?? '')), $baseUrl); $auth->audit((int) $user['id'], 'license.updated'); $reply(['redirect' => '/dashboard']);

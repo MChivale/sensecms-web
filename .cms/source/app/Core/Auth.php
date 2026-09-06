@@ -51,6 +51,23 @@ final class Auth
         $this->db->prepare('INSERT INTO activity_log (user_id,event,created_at) VALUES (?,?,UTC_TIMESTAMP())')->execute([$id, $event]);
     }
 
+    public function changePassword(int $id, #[\SensitiveParameter] string $current, #[\SensitiveParameter] string $password, #[\SensitiveParameter] string $confirmation): bool
+    {
+        if (strlen($current) > 200 || strlen($password) < 14 || strlen($password) > 200 || str_contains($password, "\0") || $password !== $confirmation) throw new \RuntimeException('Use matching new passwords of 14–200 characters.');
+        $hash = password_hash($password, PASSWORD_ARGON2ID);
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare('SELECT password,session_version FROM users WHERE id=? AND active=1 FOR UPDATE');
+            $stmt->execute([$id]); $user = $stmt->fetch();
+            if (!$user || (int) $user['session_version'] !== ($_SESSION['version'] ?? 0) || !password_verify($current, $user['password'])) { $this->db->rollBack(); return false; }
+            $this->db->prepare('UPDATE users SET password=?,session_version=session_version+1 WHERE id=?')->execute([$hash, $id]);
+            $this->audit($id, 'auth.password_changed');
+            $this->db->commit();
+            session_regenerate_id(true); $_SESSION['version'] = (int) $user['session_version'] + 1;
+            return true;
+        } finally { if ($this->db->inTransaction()) $this->db->rollBack(); }
+    }
+
     public static function csrf(): string { return $_SESSION['csrf'] ??= bin2hex(random_bytes(32)); }
     public static function verifyCsrf(mixed $value): bool { return is_string($value) && $value !== '' && hash_equals(self::csrf(), $value); }
 }

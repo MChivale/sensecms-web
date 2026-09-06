@@ -17,8 +17,10 @@ and rollback; Core serves the selected theme independently of administration.
 
 This is **not yet a finished CMS release**: the general extension lifecycle,
 content/media editing, the package-management UI and release distribution are not
-integrated. No unfinished application or public installer is deployed. Existing
-production HTTPS is separate. SenseCMS.com takes priority; Cambo Jumbo is deferred.
+integrated. The verified development product website and initial licensed Core are
+now deployed at https://www.sensecms.com; no public installer or stable download is
+exposed. SenseCMS.com takes priority; Cambo Jumbo is deferred. See the
+[production deployment record](.wrk/2026-09-06-production.md).
 
 ## Repository boundaries
 
