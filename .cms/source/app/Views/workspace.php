@@ -1,0 +1,42 @@
+<?php
+declare(strict_types=1);
+$e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+$titles = ['install' => 'Install Sense CMS', 'login' => 'Sign in', 'dashboard' => 'Workspace', 'settings' => 'Site settings', 'license' => 'License'];
+$title = $titles[$screen];
+$field = static function (string $label, string $name, string $type = 'text', string $value = '', string $autocomplete = 'off') use ($e): void {
+    echo '<label><span>' . $e($label) . '</span><input name="' . $e($name) . '" type="' . $e($type) . '" value="' . $e($value) . '" autocomplete="' . $e($autocomplete) . '" required></label>';
+};
+$token = static function () use ($e, $csrf): void { echo '<input type="hidden" name="csrf" value="' . $e($csrf) . '">'; };
+?>
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title><?= $e($title) ?> · Sense CMS</title><link rel="icon" href="/assets/logo.svg"><link rel="stylesheet" href="/assets/workspace.css"><script src="/assets/workspace.js" defer></script></head>
+<body><a class="skip" href="#main">Skip to content</a>
+<?php if (in_array($screen, ['install', 'login'], true)): ?>
+<div class="onboarding"><aside class="brand-panel"><a class="brand" href="<?= $screen === 'install' ? '/install' : '/login' ?>"><img src="/assets/logo.svg" alt=""><span>Sense CMS</span></a><div><span class="eyebrow">YOUR WORKSPACE, YOUR WAY</span><h1>A clear starting point.<br>A system of your own.</h1><p>One secure foundation for your website, content and independently installed extensions.</p></div><small>Sense CMS · Secure administration</small></aside>
+<main id="main" class="onboarding-panel">
+<?php if ($screen === 'install'): ?>
+<div class="form-shell <?= $stage === 2 ? 'wide' : '' ?>"><p class="eyebrow">INSTALLATION · <?= $stage + 1 ?> / 3</p><h2><?= ['Activate your license', 'Check your server', 'Create your workspace'][$stage] ?></h2>
+<?php if ($stage === 0): ?>
+<p class="muted">Enter the installation key assigned to <strong><?= $e(parse_url($baseUrl, PHP_URL_HOST)) ?></strong>. Chivale will verify the license before you continue.</p>
+<form method="post" action="/install/license" data-async><?php $token(); $field('License key', 'license_key', 'password'); ?><p class="hint">32 letters or digits. Your key is never included in URLs or displayed again.</p><button class="primary" type="submit">Check license <span aria-hidden="true">→</span></button><p class="status" role="status" aria-live="polite"></p></form>
+<?php elseif ($stage === 1): ?>
+<p class="muted">License verified. All required checks must pass before creating the database tables.</p><ul class="checks"><?php foreach ($checks as $label => $ok): ?><li><span><?= $e($label) ?></span><strong class="<?= $ok ? 'success' : 'error' ?>"><?= $ok ? 'Passed' : 'Required' ?></strong></li><?php endforeach; ?></ul>
+<form method="post" action="/install/requirements" data-async><?php $token(); ?><button class="primary" type="submit">Continue <span aria-hidden="true">→</span></button><p class="status" role="status"></p></form>
+<?php else: ?>
+<p class="muted">Use a new, empty database. Existing data will not be overwritten.</p><form method="post" action="/install/complete" data-async><?php $token(); ?><fieldset><legend>Database</legend><div class="fields"><?php $field('Database host', 'db_host', 'text', '127.0.0.1'); $field('Port', 'db_port', 'number', '3306'); $field('Database name', 'db_name'); $field('Database user', 'db_user'); $field('Database password', 'db_password', 'password'); ?></div></fieldset><fieldset><legend>Owner account</legend><div class="fields"><?php $field('Site name', 'site_name'); $field('Your name', 'admin_name', 'text', '', 'name'); $field('Email address', 'admin_email', 'email', '', 'email'); $field('Password · 14–200 characters', 'admin_password', 'password', '', 'new-password'); $field('Confirm password', 'admin_confirm', 'password', '', 'new-password'); ?></div></fieldset><button class="primary" type="submit">Install Sense CMS <span aria-hidden="true">→</span></button><p class="status" role="status"></p></form>
+<?php endif; ?><footer>Sense CMS System · Licensed version 1.0</footer></div>
+<?php else: ?>
+<div class="form-shell"><p class="eyebrow">SENSE CMS WORKSPACE</p><h2>Welcome back</h2><p class="muted">Sign in to manage your website.</p><form method="post" action="/login" data-async><?php $token(); $field('Email address', 'email', 'email', '', 'username'); $field('Password', 'password', 'password', '', 'current-password'); ?><button class="primary" type="submit">Sign in <span aria-hidden="true">→</span></button><p class="status" role="status"></p></form><footer>Secure, private administration</footer></div>
+<?php endif; ?></main></div>
+<?php else: ?>
+<aside class="sidebar" id="sidebar"><a class="brand" href="/dashboard"><img src="/assets/logo.svg" alt=""><span>Sense CMS</span></a><p class="nav-label">WORKSPACE</p><nav aria-label="Administration"><?php foreach (['dashboard' => 'Overview', 'settings' => 'Site settings', 'license' => 'License'] as $route => $label): ?><a href="/<?= $route ?>" <?= $screen === $route ? 'aria-current="page"' : '' ?>><?= $e($label) ?></a><?php endforeach; ?></nav><div class="sidebar-foot"><span class="success">●</span> Sense CMS Core <span>0.1.0</span></div></aside>
+<div class="workspace"><header class="topbar"><div><button class="menu-button" type="button" aria-label="Toggle navigation" aria-controls="sidebar" aria-expanded="false">☰</button><span class="muted"><?= $e($siteName) ?></span></div><div class="account"><span><?= $e($user['name']) ?></span><form method="post" action="/logout" data-async><?php $token(); ?><button type="submit" class="secondary">Sign out</button><p class="status" role="status"></p></form></div></header>
+<main id="main" class="content"><p class="eyebrow">ADMINISTRATION</p><h1><?= $e($title) ?></h1>
+<?php if ($screen === 'dashboard'): ?>
+<p class="muted">Your installation, account and recent activity.</p><div class="cards"><section class="card"><p class="muted">Installation</p><h2>Ready</h2><p><?= $e(parse_url($baseUrl, PHP_URL_HOST)) ?></p><small>Installed <?= $e(substr($installed['installed_at'], 0, 10)) ?></small></section><section class="card"><p class="muted">Your access</p><h2>Owner</h2><p><?= $e($user['email']) ?></p><small>Full administrative access</small></section><section class="card"><p class="muted">License</p><h2 class="success">Valid</h2><p>Sense CMS System</p><small>Licensed version 1.0</small></section></div><section class="card activity"><h2>Recent activity</h2><div class="table-scroll"><table><thead><tr><th>Event</th><th>Time (UTC)</th></tr></thead><tbody><?php foreach ($activity as $item): ?><tr><td><?= $e($item['event']) ?></td><td><?= $e($item['created_at']) ?></td></tr><?php endforeach; ?></tbody></table></div></section>
+<?php elseif ($screen === 'settings'): ?>
+<p class="muted">Settings shared by the installation, independent of its public theme.</p><section class="card settings-card"><form action="/settings" method="post" data-async><?php $token(); $field('Site name', 'site_name', 'text', $siteName); ?><label><span>Canonical URL</span><input value="<?= $e($baseUrl) ?>" readonly></label><p class="hint">Changing the domain requires a verified license and server configuration.</p><button class="primary" type="submit">Save settings</button><p class="status" role="status"></p></form></section>
+<?php else: ?>
+<p class="muted">Only the installation owner can replace the license.</p><section class="card settings-card"><h2 class="<?= $license ? 'success' : 'error' ?>"><?= $license ? 'License valid' : 'License verification required' ?></h2><p>Sense CMS · Sense CMS System · 1.0</p><form action="/license" method="post" data-async><?php $token(); $field('New license key', 'license_key', 'password'); ?><button class="primary" type="submit">Verify and save license</button><p class="status" role="status"></p></form></section>
+<?php endif; ?></main><footer class="workspace-footer">Sense CMS · Administration is independent of public themes</footer></div>
+<?php endif; ?></body></html>

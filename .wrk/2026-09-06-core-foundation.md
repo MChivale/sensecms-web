@@ -88,4 +88,49 @@ round-trip/replacement passed on both machines for the supplied Sense CMS identi
 Remote tests ran outside the webroot; their temporary credential copy, source files
 and transport archive were removed. No database, public application or live license
 installation was altered. Licensing is ready for integration into the web installer;
-this milestone does not claim that the complete installer or administration is ready.
+this licensing milestone did not yet include the installer or administration.
+
+## License-first installer and initial Workspace
+
+Implemented the next development milestone without changing the live website:
+
+- First browser screen: license key and verification only. Real Chivale acceptance
+  for the canonical domain is required before server checks or DB/owner setup.
+- Canonical hostname is provisioned with `scripts/prepare.php`, not inferred from
+  an untrusted Host header. HTTPS and exact host matching are required; the local
+  HTTP exception requires an explicit environment flag and loopback host/client.
+- CSRF, private sessions, 30-minute setup authorization, license-attempt limits,
+  encrypted license persistence and installed-state closure protect installation.
+- Seven generic InnoDB tables; schema-scoped DB account, empty-database guard,
+  exclusive file/database locks, schema/fingerprint-bound recovery and transactional
+  owner seeds. Recovery cannot silently change the original owner/password.
+- Owner authentication uses Argon2id, rotating session IDs, idle/absolute expiry,
+  session version checks, owner role checks and database-backed login rate limits.
+- Initial Workspace follows Eduvixo geometry/controls and remains theme-independent.
+  Its available routes are real: overview/activity, site name settings and license
+  recovery. This is not yet the full Eduvixo feature set or user-management UI.
+- AJAX/JSON forms; light responsive layout and supplied Sense CMS SVG logo.
+  A browser check corrected excess mobile brand-panel spacing.
+- Private configuration stores DB credentials outside `public`; owner passwords
+  remain hashed in DB and license keys remain encrypted. Nginx must use `public`;
+  Apache rewrite files are included but have not been tested on a running Apache.
+
+Verification: 55 package checks, 41 licensing checks, all 19 PHP files linted and
+JavaScript syntax checked locally. The clean 21-file development ZIP was extracted
+outside the server webroot and passed 29 HTTP integration checks against a newly
+created disposable MariaDB database. Tests include first-screen order, bypass/CSRF
+rejection, real license validation, existing-data preservation, interrupted seed
+recovery, mismatched-owner rejection, installer closure, login, settings, logout
+and rate limiting. Desktop and 390px mobile first-screen browser inspection passed;
+the mobile document has no horizontal overflow. Other admin screens were tested
+through HTTP, not visually inspected in this milestone.
+
+Archive: `.cms/releases/sensecms-install-0.1.0-dev.zip` (development only), SHA-256
+`5329b8105abbca18a99745aaf7ad6a32d751e601ce54d5f21fcd5c8141e8e69d`.
+The builder excludes storage, customer data and test credentials and refuses an
+existing output. No stable download or application deployment was performed.
+No production database was migrated and no framework/dependency was added.
+Both isolated server test directories (including temporary credential copies),
+their disposable databases/users and the local test transport archive were removed.
+Remote PHP lint and archive checksum matched; the test log contained no PHP
+warnings/fatal errors and Nginx, PHP-FPM and MariaDB remained active.

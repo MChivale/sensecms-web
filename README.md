@@ -5,14 +5,15 @@ This repository also owns the Sense CMS product website and package distribution
 
 ## Current implementation
 
-The first development milestone implements the signed package format, immutable
-archive builder, verifier and dependency planner. It is **not yet a runnable CMS
-or an installation release**. No download advertised as a finished CMS is published.
-The existing production HTTPS infrastructure is separate from this source work.
+The development Core implements signed extension archives and planning, Chivale
+licensing, a license-first web installer and an initial owner Workspace (login,
+activity, site settings and license recovery). The first browser screen contains
+only the license field and verification action; requirements and database/owner
+setup remain inaccessible until the license is accepted for the canonical domain.
 
-Sense CMS licensing is now integrated with Chivale and verified using the registered
-product identity. The web installer, owner account setup and administrative UI are
-still under development; no unfinished application is deployed publicly.
+This is **not yet a finished CMS release**: extension activation, content/media,
+public themes and the distribution website are not integrated. No unfinished
+application or public installer is deployed. Existing production HTTPS is separate.
 
 ## Repository boundaries
 
@@ -40,6 +41,7 @@ third-party dependency has been introduced.
 ```text
 php tests/packages.php
 php tests/licensing.php
+php scripts/build-installer.php
 php scripts/package.php build .modules/<slug> <release.zip> module
 php scripts/package.php verify <release.zip> <trust-store.json> 0.1.0
 ```
@@ -55,3 +57,17 @@ Licensing diagnostics use ignored `.cfg/License.txt`:
 real license and exercises encrypted storage only in a temporary private directory.
 
 See [the package contract](docs/packages.md) and [implementation decisions](.wrk/2026-09-06-core-foundation.md).
+
+## Installer development build
+
+`scripts/build-installer.php` builds `.cms/releases/sensecms-install-0.1.0-dev.zip`
+from allowed Core source folders only. Private storage, keys, configuration
+credentials, test fixtures and installed state are excluded. Existing ZIPs are
+never overwritten. Follow the [portable installation guide](.cms/source/README.md)
+for canonical hostname preparation, HTTPS, permissions and browser setup.
+
+`tests/installer-http.py` exercises real licensing and database-backed HTTP flows
+only inside an isolated Linux `sensecms-install-test.XXXXXXXX` directory. It needs
+a private `.cfg/License.txt`, PHP, Python and local MariaDB administrative access.
+It creates and removes only a uniquely named disposable database/user; never run
+it against a production installation. The tested ZIP contains no test credentials.
