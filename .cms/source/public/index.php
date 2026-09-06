@@ -30,13 +30,25 @@ try {
     if (!$local && strtolower($_SERVER['HTTP_HOST'] ?? '') !== parse_url($baseUrl, PHP_URL_HOST)) $reply(['message' => 'Unexpected installation host.'], 421);
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'POST', 'HEAD'], true)) { header('Allow: GET, HEAD, POST'); $reply(['message' => 'Method not allowed.'], 405); }
     if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 16384) $reply(['message' => 'Request too large.'], 413);
+    $installed = $runtime->read('installed');
+    // Public presentation is optional and does not instantiate administration or a database connection.
+    if ($installed && !preg_match('#^/(?:install|login|logout|dashboard|settings|license)(?:/|$)#D', $path)) {
+        $themeRoot = (new App\Core\Packages\ThemeManager($runtime))->activePath();
+        if ($themeRoot !== null) {
+            try { $runtime->license()->enforce($baseUrl); }
+            catch (LicenseException) { $reply(['message' => 'Website temporarily unavailable.'], 503); }
+            [$status, $headers, $body] = (new App\Core\PublicTheme($themeRoot, $baseUrl))->response($path, $_SERVER['REQUEST_METHOD'] ?? 'GET');
+            http_response_code($status);
+            foreach ($headers as $name => $value) header($name . ': ' . $value);
+            echo $body; exit;
+        }
+    }
     ini_set('session.use_strict_mode', '1'); ini_set('session.use_only_cookies', '1');
     if (!is_dir($root . '/storage/sessions') && !mkdir($root . '/storage/sessions', 0700)) throw new RuntimeException('Cannot create private sessions.');
     session_save_path($root . '/storage/sessions'); session_name('sensecms_session');
     session_set_cookie_params(['httponly' => true, 'secure' => !$local, 'samesite' => 'Strict', 'path' => '/']); session_start();
     $csrf = Auth::csrf(); $post = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
     if ($post && !Auth::verifyCsrf($_POST['csrf'] ?? null)) $reply(['message' => 'Your session expired. Refresh the page and try again.'], 419);
-    $installed = $runtime->read('installed');
     if (!$installed) {
         if (!in_array($path, ['/install', '/install/license', '/install/requirements', '/install/complete'], true)) $reply(['redirect' => '/install']);
         $installer = new Installer($runtime);

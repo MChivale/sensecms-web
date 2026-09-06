@@ -55,6 +55,30 @@ the prospective complete dependency graph, including existing dependants, detect
 cycles and returns dependency-first identities. Reinstalling the same version and
 downgrading are rejected; explicit rollback is a separate future lifecycle action.
 
-The archive verification and planning layers are implemented. Installation locks,
-staging/activation, database migration ownership, rollback, uninstall and the admin
-UI are subsequent layers and are not claimed complete by this contract.
+The archive verification and planning layers are implemented. Theme-only staging,
+activation and rollback are also implemented below. General module/plugin lifecycle,
+database migration ownership, uninstall and the admin package-management UI remain
+subsequent layers and are not claimed complete by this contract.
+
+## Theme lifecycle
+
+Themes implement `pages.php` (public route metadata) and `layout.php` (trusted PHP
+template). The current asset contract exposes only `assets/site.css`, `assets/site.js`
+and `assets/logo.svg` through `/theme-assets/`; source PHP is never downloaded.
+Themes must not claim Core administration routes. Public requests use the licensed
+canonical hostname and do not start an administration session or database connection.
+
+The operator CLI requires a completed, licensed Core and independently provisioned
+publisher keys. ThemeManager copies the ZIP into unique private staging, verifies
+the signature/inventory and compatibility, writes only rehashed payload files, then
+publishes a versioned directory and atomically changes `storage/theme.json`.
+All operations share a nonblocking installation-level lock. Existing versions remain
+untouched; the previous active reference is retained for explicit rollback.
+
+Rollback reverifies the saved archive with current publisher trust, checks Core/PHP
+compatibility and every payload hash, then swaps references. No theme operation runs
+SQL, changes users or claims module support. Source and storage must have appropriate
+ownership: run the CLI as the PHP runtime user. Themes are trusted executable PHP,
+not sandboxed code; syntax/HTTP validation belongs in staging before production.
+If publication succeeds but the pointer write fails, the orphan release is retained
+for operator inspection rather than deleted. Do not remove active or previous releases.

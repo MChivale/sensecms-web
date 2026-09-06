@@ -129,6 +129,25 @@ try:
     stored = (source / 'storage/installed.json').read_text()
     check(key not in stored and owner_password not in stored, 'configuration excludes license and owner passwords')
     check(sql(f"SELECT COUNT(*) FROM `{name}`.user_roles ur JOIN `{name}`.roles r ON r.id=ur.role_id WHERE r.slug='owner'") == '1', 'exactly one owner role assigned')
+    if (root / '.themes/sensecms').is_dir():
+        build_theme = r'''
+        require $argv[1] . '/.cms/source/bootstrap.php';
+        $secret = sodium_crypto_sign_secretkey(sodium_crypto_sign_keypair());
+        App\Core\Packages\Archive::build($argv[1] . '/.themes/sensecms', $argv[1] . '/theme.zip', $secret);
+        file_put_contents($argv[1] . '/trust.json', json_encode(['sensecms-release' => base64_encode(sodium_crypto_sign_publickey_from_secretkey($secret))]));
+        sodium_memzero($secret);
+        '''
+        subprocess.run(['php', '-r', build_theme, str(root)], check=True, capture_output=True)
+        subprocess.run(['php', str(source / 'scripts/theme.php'), 'install', str(root / 'theme.zip'), str(root / 'trust.json')], check=True, capture_output=True)
+        status, page, headers = request('/')
+        check(status == 200 and 'Make room' in page, 'installed Core serves activated product theme')
+        check(headers.get('Set-Cookie') is None, 'public theme does not open admin sessions')
+        check(request('/docs/installation')[0] == 200, 'installed Core serves public documentation')
+        check(request('/theme-assets/site.css')[0] == 200, 'installed theme assets served through Core')
+        check(request('/theme-assets/../pages.php')[0] == 404, 'theme PHP cannot be downloaded')
+        check(request('/unknown-public-page')[0] == 404, 'public unknown route returns 404 instead of login')
+        check('Welcome back' in request('/dashboard')[1], 'theme does not bypass admin authentication')
+        check(request('/install')[0] == 404, 'theme activation does not reopen installer')
     for number in range(11):
         _, page, _ = request('/login')
         post('/login', {'csrf': csrf(page), 'email': details['admin_email'], 'password': 'wrong'})

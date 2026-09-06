@@ -134,3 +134,47 @@ Both isolated server test directories (including temporary credential copies),
 their disposable databases/users and the local test transport archive were removed.
 Remote PHP lint and archive checksum matched; the test log contained no PHP
 warnings/fatal errors and Nginx, PHP-FPM and MariaDB remained active.
+
+## SenseCMS.com first — product theme and runtime integration
+
+The user changed priority: complete SenseCMS.com first, Cambo Jumbo last. No work
+was performed in Cambo Jumbo. Resumed from installer commit `a46aef3`.
+
+- Added `.themes/sensecms`: ten English public pages (home, platform, extensions,
+  documentation index, four guides, release status and contact), supplied SVG logo,
+  shared light/navy/blue tokens, mobile menu, canonical metadata, sitemap and 404.
+- No fabricated download, price, testimonial or stable-release claim. Contact uses
+  the supplied public mail address through mailto; no unconnected contact form.
+- Added Core PublicTheme renderer and theme-only signed package lifecycle. Public
+  requests enforce licensing before rendering, do not open admin sessions/DB and
+  cannot replace reserved authentication/installer routes. Theme PHP stays private.
+- CLI staging/activation uses independently trusted Ed25519 keys, rehashed payloads,
+  versioned private directories and atomic active/previous references. Rollback
+  reverifies trust, compatibility and payload hashes. No database changes involved.
+- Signing keys used in tests were ephemeral only. Production publisher trust and
+  signing key provisioning remain a release-operations prerequisite.
+- Preview `http://127.0.0.1:8872/` is served by the explicit loopback-only developer
+  script; it is not a production entry point or license bypass in the Core installer.
+- Preserved user `.src` originals and root favicon files. Added no dependency.
+
+Verification: 175 website/theme checks passed on Windows PHP 8.5.5 and Linux PHP
+8.5.10; 55 package and 41 licensing checks remained passing locally. Expanded HTTP
+suite passed 37 checks in an isolated server directory with a disposable MariaDB
+database and real Chivale validation, then installed a test-signed theme through the
+actual licensed CLI. Verified public homepage/docs/assets, no admin Set-Cookie,
+private PHP denial, public 404, admin authentication and closed installer.
+Computer Use checked 1440px desktop and 390px mobile, mobile menu opening/Escape,
+documentation navigation and article readability. Public content has no database
+editing interface yet. The current installer ZIP remains the previous milestone,
+not an updated distribution containing this new runtime.
+
+Next: module-owned page/content storage and owner editing UI, release catalog and
+verified download publishing, then full SenseCMS.com deployment rehearsal. Do not
+mark the complete product website/CMS delivered merely because the public theme
+renders. General extension UI, migrations, content/media and production deployment
+remain outstanding. The existing live website and infrastructure were not changed.
+Removed the isolated server test directory (including temporary credential and
+test-signing artifacts) and local transport archive. Disposable DB/user cleanup
+completed; no PHP warnings/fatal errors appeared in the test log. Nginx, PHP-FPM
+and MariaDB remained active. Browser console showed no warnings/errors on the
+checked public pages, and the checked mobile pages had no horizontal overflow.

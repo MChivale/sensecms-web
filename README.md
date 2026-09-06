@@ -11,9 +11,14 @@ activity, site settings and license recovery). The first browser screen contains
 only the license field and verification action; requirements and database/owner
 setup remain inaccessible until the license is accepted for the canonical domain.
 
-This is **not yet a finished CMS release**: extension activation, content/media,
-public themes and the distribution website are not integrated. No unfinished
-application or public installer is deployed. Existing production HTTPS is separate.
+The Sense CMS product theme now contains ten public pages including technical
+documentation. Signed themes support operator-CLI installation, versioned storage
+and rollback; Core serves the selected theme independently of administration.
+
+This is **not yet a finished CMS release**: the general extension lifecycle,
+content/media editing, the package-management UI and release distribution are not
+integrated. No unfinished application or public installer is deployed. Existing
+production HTTPS is separate. SenseCMS.com takes priority; Cambo Jumbo is deferred.
 
 ## Repository boundaries
 
@@ -41,6 +46,7 @@ third-party dependency has been introduced.
 ```text
 php tests/packages.php
 php tests/licensing.php
+php tests/themes.php
 php scripts/build-installer.php
 php scripts/package.php build .modules/<slug> <release.zip> module
 php scripts/package.php verify <release.zip> <trust-store.json> 0.1.0
@@ -71,3 +77,26 @@ only inside an isolated Linux `sensecms-install-test.XXXXXXXX` directory. It nee
 a private `.cfg/License.txt`, PHP, Python and local MariaDB administrative access.
 It creates and removes only a uniquely named disposable database/user; never run
 it against a production installation. The tested ZIP contains no test credentials.
+
+## Product website and themes
+
+`.themes/sensecms` owns the product website, not Core. Local presentation preview:
+
+```text
+php -S 127.0.0.1:8872 -t web/public scripts/preview-site.php
+```
+
+This loopback-only preview does not install or bypass production licensing.
+For an installed Core, build a signed theme with the existing package CLI, then
+run as the PHP runtime user from the Core installation directory:
+
+```text
+php scripts/theme.php install /private/theme.zip /private/trust.json
+php scripts/theme.php rollback /private/trust.json
+```
+
+Provision publisher trust separately. The declared `sensecms-release` identifier
+does not itself establish trust; no production signing key is shipped or generated
+automatically. Only theme packages without unresolved dependencies are supported
+by this lifecycle. Older release directories are retained for recovery. This is
+not yet a general module/plugin installer or an admin package-management screen.
