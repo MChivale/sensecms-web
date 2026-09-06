@@ -1,0 +1,7 @@
+/.cfg/
+/.backups/
+/.local/
+/.cms/releases/
+/web/.env
+/web/storage/
+*.log
