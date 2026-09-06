@@ -10,6 +10,10 @@ archive builder, verifier and dependency planner. It is **not yet a runnable CMS
 or an installation release**. No download advertised as a finished CMS is published.
 The existing production HTTPS infrastructure is separate from this source work.
 
+Sense CMS licensing is now integrated with Chivale and verified using the registered
+product identity. The web installer, owner account setup and administrative UI are
+still under development; no unfinished application is deployed publicly.
+
 ## Repository boundaries
 
 | Path | Responsibility |
@@ -35,6 +39,7 @@ third-party dependency has been introduced.
 
 ```text
 php tests/packages.php
+php tests/licensing.php
 php scripts/package.php build .modules/<slug> <release.zip> module
 php scripts/package.php verify <release.zip> <trust-store.json> 0.1.0
 ```
@@ -44,5 +49,9 @@ Base64 Ed25519 secret key supplied by the release operator. It never creates or
 trusts a signing key automatically. The verifier reads an independently provisioned
 JSON map of key IDs to Base64 public keys. The development Core compatibility
 version `0.1.0` is not a licensed product version.
+
+Licensing diagnostics use ignored `.cfg/License.txt`:
+`php scripts/license.php https://www.sensecms.com --test-storage`. This validates the
+real license and exercises encrypted storage only in a temporary private directory.
 
 See [the package contract](docs/packages.md) and [implementation decisions](.wrk/2026-09-06-core-foundation.md).

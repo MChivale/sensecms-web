@@ -2,6 +2,8 @@
 /.backups/
 /.local/
 /.cms/releases/
+/.cms/source/.env
+/.cms/source/storage/
 /web/.env
 /web/storage/
 *.log
