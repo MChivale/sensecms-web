@@ -1,0 +1,27 @@
+{
+  "contract_version": 1,
+  "slug": "sensecms",
+  "name": "Sense CMS product website",
+    "version": "0.3.8",
+  "release_channel": "development",
+  "description": "Sense CMS website with facility-scoped, multilingual managed pages.",
+  "page_templates": [{"key": "default", "label": "Standard page", "description": "Text and safe HTML sections in the product website layout."}, {"key": "home", "label": "Product homepage", "description": "Homepage hero from theme settings, followed by editable content sections."}, {"key": "product", "label": "Platform presentation", "description": "Full-width hero, workspace preview and editable capability sections."}],
+  "supported_blocks": ["text", "custom-html", "contact-form"],
+  "configuration": [
+    {"key":"home_title","type":"text","label":"Homepage · heading first line","max_length":60,"default":"Bring it all together."},
+    {"key":"home_accent","type":"text","label":"Homepage · highlighted heading","max_length":60,"default":"Make it your own."},
+    {"key":"home_intro","type":"text","label":"Homepage · introduction first line","max_length":160,"default":"Your content, your teams and every location."},
+    {"key":"home_intro_end","type":"text","label":"Homepage · introduction second line","max_length":160,"default":"One connected workspace. A website that feels like you."},
+    {"key":"home_detail","type":"text","label":"Homepage · supporting description","max_length":500,"default":"From the first draft to the next location. Manage your digital presence in Sense CMS, with the freedom to choose how it looks and where it runs."},
+    {"key":"features_title","type":"text","label":"Features · heading","max_length":120,"default":"A clearer way to run your digital world."},
+    {"key":"features_intro","type":"text","label":"Features · introductory description","max_length":500,"default":"Keep the foundation focused. Give each part of your website a clear place to belong."},
+    {"key":"ecosystem_title","type":"text","label":"Ecosystem · heading","max_length":120,"default":"Start with a foundation. Make room for possibility."},
+    {"key":"ecosystem_text","type":"text","label":"Ecosystem · description","max_length":500,"default":"A website should be able to evolve with your organisation. Sense CMS separates the core workspace from themes, modules, plugins and addons — so each part has a clear role."},
+    {"key":"ownership_title","type":"text","label":"Ownership · heading","max_length":120,"default":"Your next chapter shouldn’t mean starting over."},
+    {"key":"ownership_text","type":"text","label":"Ownership · description","max_length":500,"default":"Build a distinctive website without tying your content to its design. Your team keeps a familiar workspace while your public experience evolves."},
+    {"key":"closing_title","type":"text","label":"Closing section · heading","max_length":120,"default":"Your next website starts with a conversation."},
+    {"key":"closing_text","type":"text","label":"Closing section · description","max_length":500,"default":"Sense CMS is in active development. Explore the implemented foundation, read the technical documentation and check release availability."},
+    {"key":"home_seo_title","type":"text","label":"Homepage · SEO title","max_length":160,"default":"A clear foundation for your next website"},
+    {"key":"home_seo_description","type":"text","label":"Homepage · SEO description","max_length":320,"default":"Sense CMS is a modular PHP content management system. Explore its independent themes, licensing-first setup and development documentation."}
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "name": "Google Calendar",
+  "slug": "google-calendar",
+  "version": "0.1.0",
+  "author": "QUANT Software House Limited",
+  "type": "plugin",
+  "description": "Outbound delivery of facility and public events from Sense CMS Calendar. Requires an active Calendar addon and an authorised writable Google calendar. Private events are not exported.",
+  "compatible_engine_version": "^0.1",
+  "dependencies": [{"type": "addon", "slug": "calendar", "version": "^0.1"}],
+  "permissions": [],
+  "icon": "calendar-sync",
+  "group": "Calendar integrations",
+  "release_channel": "development",
+  "license": {"model": "commercial-subscription", "billing_period": "year", "price": 12, "currency": "USD"},
+  "config_url": "/calendar",
+  "calendar_integration": {
+    "kind": "calendar",
+    "handler": "src/provider.php",
+    "fields": [
+      {"name": "client_id", "label": "OAuth client ID", "type": "text", "required": true},
+      {"name": "client_secret", "label": "OAuth client secret", "type": "password", "secret": true, "required": true},
+      {"name": "refresh_token", "label": "OAuth refresh token", "type": "password", "secret": true, "required": true},
+      {"name": "calendar_id", "label": "Google calendar ID", "type": "text", "required": true}
+    ]
+  }
+}

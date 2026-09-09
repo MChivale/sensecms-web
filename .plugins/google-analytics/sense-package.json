@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "type": "plugin",
+  "slug": "google-analytics",
+  "name": "Google Analytics",
+  "version": "0.1.1",
+  "requires": {"php": {"min": "8.5.0", "max_exclusive": "9.0.0"}, "core": {"min": "0.1.0", "max_exclusive": "1.0.0"}},
+  "publisher": {"key_id": "sensecms-release", "name": "QUANT Software House Limited"}
+}

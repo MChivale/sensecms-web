@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-return [
+return (static function (): array {
+$pages = [
     '/' => ['title' => 'A clear foundation for your next website', 'description' => 'Sense CMS is a modular PHP content management system. Explore its independent themes, licensing-first setup and development documentation.', 'kind' => 'home'],
     '/platform' => ['title' => 'One foundation. Room to grow.', 'description' => 'Understand the Sense CMS Core, independent administration and separately packaged extensions.', 'kind' => 'platform'],
     '/extensions' => ['title' => 'Add what your project needs.', 'description' => 'Modules, plugins, addons and themes: four clear roles in the Sense CMS package architecture.', 'kind' => 'extensions'],
@@ -41,3 +42,64 @@ return [
     '/download' => ['title' => 'Start with a verified release.', 'description' => 'Sense CMS release availability and the checks required before a public stable distribution.', 'kind' => 'download'],
     '/contact' => ['title' => 'Let’s talk about your project.', 'description' => 'Contact Sense CMS about the platform, licensing or a technical question.', 'kind' => 'contact'],
 ];
+
+// Starter copy belongs to this theme, never to the clean Core distribution.
+$content = [
+    '/' => [
+        ['An independent workspace', 'Manage pages, posts, media, navigation and SEO from one administrative environment. Your public theme can change without replacing your workspace.', null, 'Explore the platform →', '/platform'],
+        ['Many facilities. One foundation.', 'Organise locations, teams and their content with scoped access. Keep local responsibilities clear while managing your organisation centrally.', null, 'Discover the platform →', '/platform'],
+        ['A theme of your own', 'Choose a compatible theme or create one for your project. Page content and its public address belong to Core; the theme decides how they look.', null, 'Build a theme →', '/docs/themes'],
+        ['Good foundations start before the homepage.', 'Installation begins with a verified license, followed by server checks, database setup and your owner account. Keep private application files outside the public document root.', null, 'Read the installation guide →', '/docs/installation'],
+    ],
+    '/platform' => [
+        ['Your organisation, connected', 'Sense CMS is a general-purpose system for websites, organisations and multi-facility projects. The administrative workspace is independent of the public theme.'],
+        ['Content and publishing', 'Create multilingual pages and posts, organise categories, build pages from supported sections and manage media, navigation and SEO. Draft, publication and review controls keep editorial work structured.'],
+        ['Teams and facilities', 'Assign responsibility through roles and facility-scoped permissions. Manage each location’s profile and content in a shared workspace.'],
+        ['Presentation without lock-in', 'Pages, public paths and editorial records remain in Core when you change the public theme. Compatible themes declare their settings, page templates and supported blocks.', null, 'Read the theme contract →', '/docs/themes'],
+        ['A development platform', 'The Workspace is running on this product website. Public stable distribution and the complete extension lifecycle still require release verification. Demo access will be published separately.', null, 'Check release status →', '/download'],
+    ],
+    '/extensions' => [
+        ['Modules', 'Application capabilities with their own routes, data and lifecycle.', null, 'About modules →', '/extensions/modules'],
+        ['Plugins', 'Connections to external services and application events.', null, 'About plugins →', '/extensions/plugins'],
+        ['Addons', 'Optional tools that extend administrative and operational workflows.', null, 'About addons →', '/extensions/addons'],
+        ['Themes', 'The public appearance of your website, separate from the administration panel.', null, 'About themes →', '/extensions/themes'],
+        ['Release availability', 'Package architecture is not an open marketplace. There are no public stable extension downloads yet. Signing and verification must be followed by installation, update and recovery checks.'],
+    ],
+    '/docs' => [
+        ['Installation', 'Prepare your server and complete the license-first setup.', null, 'Installation guide →', '/docs/installation'],
+        ['Licensing', 'Understand domain binding and encrypted local storage.', null, 'Licensing guide →', '/docs/licensing'],
+        ['Package contract', 'Package identity, compatibility and independently trusted publishers.', null, 'Package documentation →', '/docs/packages'],
+        ['Theme development', 'Build a portable public presentation for an independent Core.', null, 'Theme contract →', '/docs/themes'],
+        ['Server configuration', 'Configure public document roots, HTTPS, Nginx or Apache.', null, 'Server guide →', '/docs/server'],
+    ],
+    '/download' => [
+        ['Development, not a stable release', 'The current Core and Workspace are being verified in isolated environments. Public installation downloads will appear here only after the release passes installation, update and recovery checks.'],
+        ['What is implemented', 'License-first installation; owner authentication; multilingual pages, posts and media; navigation and SEO; facility-scoped access; theme settings with draft and publication; signed theme installation, activation and rollback.'],
+        ['What remains under verification', 'The complete extension lifecycle, public package distribution and deployment acceptance for new installations. The separate public demonstration site is not open yet.'],
+        ['Prepare your environment', 'Read the requirements and installation flow before choosing a production release. No payment or release date is being offered on this page.', null, 'Read the installation guide →', '/docs/installation'],
+    ],
+    '/contact' => [
+        ['Talk to Sense CMS', 'For platform questions, licensing enquiries or your next project, contact info@SenseCMS.com.', null, 'Open your email application →', 'mailto:info@SenseCMS.com'],
+        ['Technical questions', 'Include your PHP version, Core version and a short description of the problem. Never send passwords, license keys, private encryption keys or database credentials.'],
+    ],
+];
+foreach (['modules'=>'Application capabilities', 'plugins'=>'Connections and integrations', 'addons'=>'Optional workspace tools', 'themes'=>'Your public identity'] as $slug => $title) {
+    $pages['/extensions/' . $slug] = ['title'=>ucfirst($slug) . ': ' . $title, 'description'=>'Understand the role of ' . $slug . ' in Sense CMS.', 'kind'=>'managed'];
+    $content['/extensions/' . $slug] = [
+        [$title, $content['/extensions'][array_search($slug, ['modules','plugins','addons','themes'], true)][1]],
+        ['Compatible, independently packaged', 'Each package declares its identity, PHP and Core requirements and publisher. Only trusted packages should execute on your server. A signature establishes origin and integrity, not a sandbox.', null, 'Read the package contract →', '/docs/packages'],
+        ['Current availability', 'Public stable distribution is not open yet. Check release status before planning a production installation.', null, 'Release status →', '/download'],
+    ];
+}
+$pages['/docs/themes'] = ['title'=>'Build an independent theme', 'description'=>'A public theme contract for Sense CMS: presentation without ownership of your content.', 'kind'=>'article', 'sections'=>[
+    ['Package identity', 'Declare type theme, a unique slug, version, publisher and compatibility in sense-package.json. Keep the same slug and version in theme.json. Use a trusted publisher signature before installation.'],
+    ['Rendering contract', 'Include pages.php for optional starter routes, layout.php for their presentation and views/page.php for CMS-managed pages. A content-only theme may return an empty array from pages.php. Declare contract_version 1, page_templates, supported_blocks and configuration in theme.json.'],
+    ['Content stays in Core', 'Managed pages, translations, publication rules and public paths remain in the database when a theme changes. The managed view receives page with blocks, locale, navigation, themeSettings, appearance, baseUrl and SEO metadata. Do not import another installation’s database or credentials.'],
+    ['Templates and blocks', 'Declare only templates and blocks that your view actually implements. Always support a default page template as a fallback. Escape plain text and use App\\Core\\HtmlSanitizer for editor HTML. Render only trusted extension components.'],
+    ['Theme assets', 'Place CSS, JavaScript, images, fonts and video beneath assets. The active theme serves them at /theme-assets/ followed by their relative path. Nested asset directories are supported. Executable source, hidden paths and traversal are not served.'],
+    ['URLs belong to pages', 'Set a Public path in the page editor for the default language, such as /about or /docs/installation. Core resolves it before starter theme routes. Unpublished, private and archived pages remain unavailable, instead of falling back to starter copy. Other languages retain their localized URLs.'],
+    ['Independent administration', 'Do not style or replace the administration panel from a public theme. Keep configuration declarative so Core can provide draft, preview and publication controls. Test a second theme, preserved content, routing, keyboard access, mobile layout and rollback before release.'],
+]];
+foreach ($content as $path => $sections) $pages[$path]['sections'] = $sections;
+return $pages;
+})();

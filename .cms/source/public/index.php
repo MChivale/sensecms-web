@@ -10,7 +10,7 @@ use App\Installer\Installer;
 require dirname(__DIR__) . '/bootstrap.php';
 $root = dirname(__DIR__);
 $path = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH);
-if (PHP_SAPI === 'cli-server' && is_string($path) && preg_match('#^/assets/[a-z0-9-]+\.(css|js|svg)$#D', $path) && is_file(__DIR__ . $path)) return false;
+if (PHP_SAPI === 'cli-server' && is_string($path) && !str_contains($path, '..') && preg_match('#^/(?:assets|theme|sensecms|media)/[A-Za-z0-9_./-]+\.(?:css|js|svg|png|jpg|jpeg|webp|gif|woff2?|ttf|mp3|mp4|ico)$#D', $path) && is_file(__DIR__ . $path)) return false;
 $json = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
 $reply = static function (array $data, int $status = 200) use ($json): never {
     http_response_code($status);
@@ -29,15 +29,36 @@ try {
     if (!$local && (empty($_SERVER['HTTPS']) || $_SERVER['HTTPS'] === 'off')) $reply(['message' => 'HTTPS is required.'], 400);
     if (!$local && strtolower($_SERVER['HTTP_HOST'] ?? '') !== parse_url($baseUrl, PHP_URL_HOST)) $reply(['message' => 'Unexpected installation host.'], 421);
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'POST', 'HEAD'], true)) { header('Allow: GET, HEAD, POST'); $reply(['message' => 'Method not allowed.'], 405); }
-    if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > 16384) $reply(['message' => 'Request too large.'], 413);
     $installed = $runtime->read('installed');
-    // Public presentation is optional and does not instantiate administration or a database connection.
-    if ($installed && !preg_match('#^/(?:install|login|logout|dashboard|settings|license|account)(?:/|$)#D', $path)) {
+    $workspaceEnabled = $installed && ($runtime->read('workspace')['enabled'] ?? false) === true;
+    $bodyLimit = $workspaceEnabled && preg_match('#^/(?:content|profile|settings|appearance|system|api)(?:/|$)#D', $path) ? 67108864 : 16384;
+    if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $bodyLimit) $reply(['message' => 'Request too large.'], 413);
+    if ($installed && $path === '/packages/download') App\Http\DistributionController::run($runtime,(bool)$local);
+    $adminPath = preg_match('#^/(?:install|login|logout|dashboard|settings|license|account)(?:/|$)#D', $path)
+        || $workspaceEnabled && preg_match('#^/(?:profile|content|appearance|marketplace|system|api|calendar|surveys|forms|seo|ai|conversations|forgot-password|reset-password|set-password|captcha|extension-assets)(?:/|$)#D', $path);
+    $managedPage = false;
+    $publicPage = null;
+    // Public presentation avoids administration; Workspace data is read without an admin session.
+    if ($installed && !$adminPath) {
         $themeRoot = (new App\Core\Packages\ThemeManager($runtime))->activePath();
-        if ($themeRoot !== null) {
+        $managedPage = $workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && preg_match('#^/[a-z]{2}(?:-[a-z]{2})?(?:/|$)#D', $path);
+        $discovery = $workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && in_array($path, ['/robots.txt', '/sitemap.xml'], true);
+        $publicCms = null;
+        if ($workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && !str_starts_with($path, '/theme-assets/')) {
+            $publicCms = new App\Core\CmsRepository(Runtime::connect($installed['database']), new App\Core\EventBus(), $runtime);
+            $publicPage = $publicCms->pageAtPath($path);
+            if ($publicPage !== null) $managedPage = true;
+        }
+        if ($themeRoot !== null && !$managedPage && !$discovery) {
             try { $runtime->license()->enforce($baseUrl); }
             catch (LicenseException) { $reply(['message' => 'Website temporarily unavailable.'], 503); }
-            [$status, $headers, $body] = (new App\Core\PublicTheme($themeRoot, $baseUrl))->response($path, $_SERVER['REQUEST_METHOD'] ?? 'GET');
+            $context = [];
+            if ($workspaceEnabled && is_file($themeRoot . '/theme.json') && !str_starts_with($path, '/theme-assets/') && !in_array($path, ['/robots.txt', '/sitemap.xml'], true)) {
+                $locale = $publicCms->defaultLocale('en');
+                $context['navigation'] = $publicCms->publicNavigation($locale, $locale);
+                $context['theme_settings'] = $publicCms->setting('theme_settings', []);
+            }
+            [$status, $headers, $body] = (new App\Core\PublicTheme($themeRoot, $baseUrl))->response($path, $_SERVER['REQUEST_METHOD'] ?? 'GET', $context);
             http_response_code($status);
             foreach ($headers as $name => $value) header($name . ': ' . $value);
             echo $body; exit;
@@ -48,7 +69,7 @@ try {
     session_save_path($root . '/storage/sessions'); session_name('sensecms_session');
     session_set_cookie_params(['httponly' => true, 'secure' => !$local, 'samesite' => 'Strict', 'path' => '/']); session_start();
     $csrf = Auth::csrf(); $post = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
-    if ($post && !Auth::verifyCsrf($_POST['csrf'] ?? null)) $reply(['message' => 'Your session expired. Refresh the page and try again.'], 419);
+    if ($post && !$workspaceEnabled && !Auth::verifyCsrf($_POST['csrf'] ?? null)) $reply(['message' => 'Your session expired. Refresh the page and try again.'], 419);
     if (!$installed) {
         if (!in_array($path, ['/install', '/install/license', '/install/requirements', '/install/complete'], true)) $reply(['redirect' => '/install']);
         $installer = new Installer($runtime);
@@ -83,6 +104,14 @@ try {
     } else {
         if (str_starts_with((string) $path, '/install')) $reply(['message' => 'Installation is closed.'], 404);
         $db = Runtime::connect($installed['database']); $auth = new Auth($db); $user = $auth->user();
+        if ($workspaceEnabled) {
+            if ($path === '/account') $reply(['redirect' => '/settings']);
+            if (preg_match('#^/extension-assets/(addon|plugin)/([a-z0-9-]+)/(.+)$#D', $path, $asset) && in_array($_SERVER['REQUEST_METHOD'], ['GET','HEAD'], true)) App\Http\ExtensionAssetController::serve($root, $asset[1], $asset[2], $asset[3]);
+            $_SERVER['SENSE_CSP_NONCE'] = base64_encode(random_bytes(24));
+            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . $_SERVER['SENSE_CSP_NONCE'] . "'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors " . ($managedPage ? "'self'" : "'none'"));
+            require $root . '/app/workspace.php';
+            exit;
+        }
         if ($path === '/login') {
             if ($post) {
                 if (!$auth->attempt((string) ($_POST['email'] ?? ''), (string) ($_POST['password'] ?? ''), $_SERVER['REMOTE_ADDR'] ?? '')) $reply(['message' => 'Sign-in failed or temporarily limited. Check your details and try again later.'], 401);

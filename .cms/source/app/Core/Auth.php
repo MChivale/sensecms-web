@@ -6,15 +6,15 @@ namespace App\Core;
 
 use PDO;
 
-/** Eduvixo's session/role model, without optional application dependencies. */
+/** Sense CMS session/role model, without optional application dependencies. */
 final class Auth
 {
     private const DUMMY = '$argon2id$v=19$m=65536,t=4,p=1$LzcyNDdVUEE3RS9OMGpaZQ$Mlwh+rmoNRaLP7DKy8IwFLoDxrosl4CKKmBnTETEJ+A';
     public function __construct(private readonly PDO $db) {}
 
-    public function attempt(string $email, #[\SensitiveParameter] string $password, string $ip): bool
+    public function attempt(string $email, #[\SensitiveParameter] string $password, string $ip = ''): bool
     {
-        $email = strtolower(trim($email));
+        $email = strtolower(trim($email)); $ip = $ip !== '' ? $ip : ($_SERVER['REMOTE_ADDR'] ?? '');
         if (strlen($email) > 190 || strlen($password) > 200) return false;
         $allowed = true;
         foreach (['email:' . $email => 10, 'ip:' . $ip => 60] as $subject => $limit) {
@@ -39,11 +39,36 @@ final class Auth
     public function user(): array
     {
         if (empty($_SESSION['user_id']) || time() - ($_SESSION['seen'] ?? 0) > 1800 || time() - ($_SESSION['created'] ?? 0) > 28800) return [];
-        $stmt = $this->db->prepare("SELECT u.id,u.name,u.email,u.session_version,EXISTS(SELECT 1 FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.slug='owner') owner FROM users u WHERE u.id=? AND u.active=1");
+        $stmt = $this->db->prepare("SELECT u.*,EXISTS(SELECT 1 FROM user_roles ur JOIN roles r ON r.id=ur.role_id WHERE ur.user_id=u.id AND r.slug='owner') owner FROM users u WHERE u.id=? AND u.active=1");
         $stmt->execute([$_SESSION['user_id']]); $user = $stmt->fetch();
         if (!$user || (int) $user['session_version'] !== ($_SESSION['version'] ?? 0)) return [];
         $_SESSION['seen'] = time();
+        unset($user['password']);
         return $user;
+    }
+
+    public function check(): bool { return $this->user() !== []; }
+    public function id(): ?int { return ($user = $this->user()) ? (int) $user['id'] : null; }
+    public function logout(): void { $_SESSION = []; session_regenerate_id(true); }
+
+    public function updateProfile(string $name, ?string $avatarUrl = null): void
+    {
+        $id = $this->id();
+        if (!$id) throw new \RuntimeException('Your session has expired.');
+        if (mb_strlen($name) < 2 || mb_strlen($name) > 120) throw new \RuntimeException('Enter a name of 2–120 characters.');
+        $sql = 'UPDATE users SET name=?,updated_at=UTC_TIMESTAMP()'; $values = [$name];
+        if ($avatarUrl !== null) { $sql .= ',avatar_url=?'; $values[] = $avatarUrl; }
+        $values[] = $id; $this->db->prepare($sql . ' WHERE id=?')->execute($values);
+        $this->audit($id, 'auth.profile_updated');
+    }
+
+    public function updateSettings(string $firstName, string $lastName, string $address): void
+    {
+        $id = $this->id();
+        if (!$id) throw new \RuntimeException('Your session has expired.');
+        if (mb_strlen($firstName) > 80 || mb_strlen($lastName) > 80 || mb_strlen($address) > 500) throw new \RuntimeException('Personal settings are too long.');
+        $this->db->prepare('UPDATE users SET first_name=?,last_name=?,address=?,updated_at=UTC_TIMESTAMP() WHERE id=?')->execute([$firstName,$lastName,$address,$id]);
+        $this->audit($id, 'auth.settings_updated');
     }
 
     public function audit(int $id, string $event): void

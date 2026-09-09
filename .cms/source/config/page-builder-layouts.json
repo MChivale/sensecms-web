@@ -1,0 +1,765 @@
+{
+    "story": {
+        "label": "Editorial story",
+        "description": "Split narrative section with visual statement and call to action.",
+        "icon": "book-open-text",
+        "group": "Hero & story",
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Text",
+                "max": 1600,
+                "wide": true
+            },
+            {
+                "key": "cta_label",
+                "type": "text",
+                "label": "Action label",
+                "max": 100
+            },
+            {
+                "key": "cta_url",
+                "type": "url",
+                "label": "Action URL"
+            },
+            {
+                "key": "statement",
+                "type": "text",
+                "label": "Visual statement",
+                "max": 180,
+                "wide": true
+            },
+            {
+                "key": "stamp_title",
+                "type": "text",
+                "label": "Stamp title",
+                "max": 80
+            },
+            {
+                "key": "stamp_text",
+                "type": "textarea",
+                "label": "Stamp text",
+                "max": 180
+            }
+        ],
+        "defaults": {
+            "eyebrow": "A shared ambition",
+            "title": "Every learner belongs in the story.",
+            "text": "We bring together languages, cultures and thoughtful teaching so every child can grow with confidence.",
+            "cta_label": "Discover our approach",
+            "cta_url": "#programs",
+            "statement": "Every learner. Every possibility.",
+            "stamp_title": "our school",
+            "stamp_text": "A place to grow boldly"
+        }
+    },
+    "values": {
+        "label": "Values",
+        "description": "Three-value editorial feature with supporting facility image.",
+        "icon": "sparkles",
+        "group": "Learning",
+        "singleton": true,
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Introduction",
+                "max": 900,
+                "wide": true
+            },
+            {
+                "key": "cta_label",
+                "type": "text",
+                "label": "Action label",
+                "max": 100
+            },
+            {
+                "key": "cta_url",
+                "type": "url",
+                "label": "Action URL"
+            },
+            {
+                "key": "image",
+                "type": "image",
+                "label": "Image",
+                "wide": true
+            },
+            {
+                "key": "image_alt",
+                "type": "text",
+                "label": "Image alternative text",
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "focus_x",
+                "type": "select",
+                "label": "Horizontal focal point",
+                "options": {"center": "Center", "left": "Left", "right": "Right"}
+            },
+            {
+                "key": "focus_y",
+                "type": "select",
+                "label": "Vertical focal point",
+                "options": {"center": "Center", "top": "Top", "bottom": "Bottom"}
+            },
+            {
+                "key": "items",
+                "type": "repeater",
+                "label": "Values",
+                "item_label": "Value",
+                "min": 1,
+                "max": 4,
+                "fields": [
+                    {
+                        "key": "title",
+                        "type": "text",
+                        "label": "Title",
+                        "required": true,
+                        "max": 100
+                    },
+                    {
+                        "key": "text",
+                        "type": "textarea",
+                        "label": "Description",
+                        "max": 500,
+                        "wide": true
+                    }
+                ]
+            }
+        ],
+        "defaults": {
+            "eyebrow": "What makes our school different",
+            "title": "A school day with purpose in every detail.",
+            "text": "Children are supported to learn deeply, connect generously and take their next step with confidence.",
+            "cta_label": "Arrange a visit",
+            "cta_url": "#contact",
+            "image": "/theme-assets/sensecms/images/sensecms-facility.webp",
+            "image_alt": "Students together at our school",
+            "focus_x": "center",
+            "focus_y": "center",
+            "items": [
+                {
+                    "title": "Curiosity",
+                    "text": "Questions are the beginning of meaningful learning."
+                },
+                {
+                    "title": "Care",
+                    "text": "Belonging, wellbeing and respectful relationships matter."
+                },
+                {
+                    "title": "Confidence",
+                    "text": "Every learner is seen, challenged and encouraged."
+                }
+            ]
+        }
+    },
+    "programs": {
+        "label": "Learning pathways",
+        "description": "Programme cards with an optional supporting editorial note.",
+        "icon": "graduation-cap",
+        "group": "Learning",
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Introduction",
+                "max": 900,
+                "wide": true
+            },
+            {
+                "key": "items",
+                "type": "repeater",
+                "label": "Programmes",
+                "item_label": "Programme",
+                "min": 1,
+                "max": 6,
+                "fields": [
+                    {
+                        "key": "title",
+                        "type": "text",
+                        "label": "Title",
+                        "required": true,
+                        "max": 120
+                    },
+                    {
+                        "key": "text",
+                        "type": "textarea",
+                        "label": "Description",
+                        "max": 700,
+                        "wide": true
+                    },
+                    {
+                        "key": "label",
+                        "type": "text",
+                        "label": "Action label",
+                        "max": 80
+                    },
+                    {
+                        "key": "url",
+                        "type": "url",
+                        "label": "Action URL"
+                    }
+                ]
+            },
+            {
+                "key": "note_image",
+                "type": "image",
+                "label": "Supporting image",
+                "wide": true
+            },
+            {
+                "key": "note_focus_x",
+                "type": "select",
+                "label": "Supporting image horizontal focal point",
+                "options": {"center": "Center", "left": "Left", "right": "Right"}
+            },
+            {
+                "key": "note_focus_y",
+                "type": "select",
+                "label": "Supporting image vertical focal point",
+                "options": {"center": "Center", "top": "Top", "bottom": "Bottom"}
+            },
+            {
+                "key": "note_eyebrow",
+                "type": "text",
+                "label": "Supporting eyebrow",
+                "max": 160
+            },
+            {
+                "key": "note_title",
+                "type": "text",
+                "label": "Supporting headline",
+                "max": 220,
+                "wide": true
+            },
+            {
+                "key": "note_text",
+                "type": "textarea",
+                "label": "Supporting text",
+                "max": 800,
+                "wide": true
+            },
+            {
+                "key": "note_label",
+                "type": "text",
+                "label": "Supporting action label",
+                "max": 100
+            },
+            {
+                "key": "note_url",
+                "type": "url",
+                "label": "Supporting action URL"
+            }
+        ],
+        "defaults": {
+            "eyebrow": "Learning at our school",
+            "title": "Three languages. One shared ambition.",
+            "text": "Thoughtfully connected experiences help each learner find a way forward.",
+            "items": [
+                {
+                    "title": "Early Years",
+                    "text": "Playful foundations for confident learning.",
+                    "label": "Explore",
+                    "url": "#contact"
+                },
+                {
+                    "title": "Primary",
+                    "text": "Connected knowledge, character and curiosity.",
+                    "label": "Explore",
+                    "url": "#contact"
+                },
+                {
+                    "title": "Languages",
+                    "text": "English, Chinese and Khmer in daily learning.",
+                    "label": "Explore",
+                    "url": "#contact"
+                }
+            ],
+            "note_image": "/theme-assets/sensecms/images/sensecms-hero.webp",
+            "note_focus_x": "center",
+            "note_focus_y": "center",
+            "note_eyebrow": "A connected community",
+            "note_title": "Learning is more than a lesson.",
+            "note_text": "Our children are encouraged to ask, collaborate and discover who they can become.",
+            "note_label": "Meet our school",
+            "note_url": "#contact"
+        }
+    },
+    "statistics": {
+        "label": "Highlights",
+        "description": "Image-led school highlights with concise value statements.",
+        "icon": "chart-no-axes-combined",
+        "group": "Learning",
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Introduction",
+                "max": 900,
+                "wide": true
+            },
+            {
+                "key": "image",
+                "type": "image",
+                "label": "Background image",
+                "wide": true
+            },
+            {
+                "key": "image_alt",
+                "type": "text",
+                "label": "Image alternative text",
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "focus_x",
+                "type": "select",
+                "label": "Horizontal focal point",
+                "options": {"center": "Center", "left": "Left", "right": "Right"}
+            },
+            {
+                "key": "focus_y",
+                "type": "select",
+                "label": "Vertical focal point",
+                "options": {"center": "Center", "top": "Top", "bottom": "Bottom"}
+            },
+            {
+                "key": "stage_eyebrow",
+                "type": "text",
+                "label": "Panel eyebrow",
+                "max": 160
+            },
+            {
+                "key": "stage_title",
+                "type": "text",
+                "label": "Panel headline",
+                "max": 220,
+                "wide": true
+            },
+            {
+                "key": "items",
+                "type": "repeater",
+                "label": "Statistics",
+                "item_label": "Statistic",
+                "min": 1,
+                "max": 6,
+                "fields": [
+                    {
+                        "key": "value",
+                        "type": "text",
+                        "label": "Value",
+                        "required": true,
+                        "max": 40
+                    },
+                    {
+                        "key": "label",
+                        "type": "text",
+                        "label": "Label",
+                        "required": true,
+                        "max": 160
+                    }
+                ]
+            }
+        ],
+        "defaults": {
+            "eyebrow": "Reasons to grow with our school",
+            "title": "Built around every learner.",
+            "text": "Our school community gives children space to explore, a sense of belonging and the confidence to move forward.",
+            "image": "/theme-assets/sensecms/images/sensecms-facility.webp",
+            "image_alt": "Students taking part in a school activity",
+            "focus_x": "center",
+            "focus_y": "center",
+            "stage_eyebrow": "A learning community",
+            "stage_title": "Every day opens a new possibility.",
+            "items": [
+                {
+                    "value": "3",
+                    "label": "languages woven through every school day"
+                },
+                {
+                    "value": "Every",
+                    "label": "learner known, supported and challenged"
+                },
+                {
+                    "value": "Together",
+                    "label": "one connected learning community"
+                }
+            ]
+        }
+    },
+    "motion": {
+        "label": "Facility in motion",
+        "description": "Video-led editorial section with playback control.",
+        "icon": "circle-play",
+        "group": "Media",
+        "singleton": true,
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Text",
+                "max": 1000,
+                "wide": true
+            },
+            {
+                "key": "video",
+                "type": "video",
+                "label": "Facility video",
+                "wide": true
+            },
+            {
+                "key": "poster",
+                "type": "image",
+                "label": "Video poster",
+                "wide": true
+            },
+            {
+                "key": "poster_focus_x",
+                "type": "select",
+                "label": "Poster horizontal focal point",
+                "options": {"center": "Center", "left": "Left", "right": "Right"}
+            },
+            {
+                "key": "poster_focus_y",
+                "type": "select",
+                "label": "Poster vertical focal point",
+                "options": {"center": "Center", "top": "Top", "bottom": "Bottom"}
+            },
+            {
+                "key": "cta_label",
+                "type": "text",
+                "label": "Action label",
+                "max": 100
+            },
+            {
+                "key": "cta_url",
+                "type": "url",
+                "label": "Action URL"
+            }
+        ],
+        "defaults": {
+            "eyebrow": "Facility in motion",
+            "title": "See a day at our school unfold.",
+            "text": "A short glimpse of the energy, connection and purposeful learning that shape our facility every day.",
+            "video": "",
+            "poster": "/theme-assets/sensecms/images/sensecms-facility.webp",
+            "poster_focus_x": "center",
+            "poster_focus_y": "center",
+            "cta_label": "Explore school life",
+            "cta_url": "#moments"
+        }
+    },
+    "news": {
+        "label": "Latest stories",
+        "description": "Dynamic cards populated from published posts.",
+        "icon": "newspaper",
+        "group": "Dynamic content",
+        "singleton": true,
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Introduction",
+                "max": 900,
+                "wide": true
+            }
+        ],
+        "defaults": {
+            "eyebrow": "What’s new",
+            "title": "Stories from our community.",
+            "text": "Read the latest news, learning moments and community updates from our school."
+        }
+    },
+    "cta": {
+        "label": "Final call to action",
+        "description": "High-impact closing section with contact panel.",
+        "icon": "mouse-pointer-click",
+        "group": "Conversion",
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Text",
+                "max": 1000,
+                "wide": true
+            },
+            {
+                "key": "cta_label",
+                "type": "text",
+                "label": "Action label",
+                "max": 100
+            },
+            {
+                "key": "cta_url",
+                "type": "url",
+                "label": "Action URL"
+            },
+            {
+                "key": "panel_eyebrow",
+                "type": "text",
+                "label": "Panel eyebrow",
+                "max": 160
+            },
+            {
+                "key": "panel_title",
+                "type": "text",
+                "label": "Panel headline",
+                "max": 220,
+                "wide": true
+            },
+            {
+                "key": "panel_text",
+                "type": "textarea",
+                "label": "Panel text",
+                "max": 800,
+                "wide": true
+            },
+            {
+                "key": "panel_label",
+                "type": "text",
+                "label": "Panel action label",
+                "max": 100
+            },
+            {
+                "key": "panel_url",
+                "type": "url",
+                "label": "Panel action URL"
+            }
+        ],
+        "defaults": {
+            "eyebrow": "Our learning community",
+            "title": "Begin your family’s school journey.",
+            "text": "Meet our team and experience the school in person.",
+            "cta_label": "Talk to admissions",
+            "cta_url": "#contact",
+            "panel_eyebrow": "Your next step",
+            "panel_title": "Come and see our school in action.",
+            "panel_text": "Meet the people and places that make our school community feel like home.",
+            "panel_label": "Email admissions",
+            "panel_url": "#contact"
+        }
+    },
+    "text": {
+        "label": "Rich text",
+        "description": "Flexible editorial heading and text for any page.",
+        "icon": "text",
+        "group": "Flexible content",
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Content",
+                "max": 6000,
+                "wide": true
+            },
+            {
+                "key": "cta_label",
+                "type": "text",
+                "label": "Action label",
+                "max": 100
+            },
+            {
+                "key": "cta_url",
+                "type": "url",
+                "label": "Action URL"
+            }
+        ],
+        "defaults": {
+            "eyebrow": "",
+            "title": "Add your headline.",
+            "text": "Add clear, useful content for this page.",
+            "cta_label": "",
+            "cta_url": ""
+        }
+    },
+    "image-text": {
+        "label": "Image and text",
+        "description": "Balanced content section with an image and action.",
+        "icon": "panel-left",
+        "group": "Flexible content",
+        "fields": [
+            {
+                "key": "eyebrow",
+                "type": "text",
+                "label": "Eyebrow",
+                "max": 180
+            },
+            {
+                "key": "title",
+                "type": "text",
+                "label": "Headline",
+                "required": true,
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "text",
+                "type": "textarea",
+                "label": "Content",
+                "max": 3000,
+                "wide": true
+            },
+            {
+                "key": "image",
+                "type": "image",
+                "label": "Image",
+                "wide": true
+            },
+            {
+                "key": "image_alt",
+                "type": "text",
+                "label": "Image alternative text",
+                "max": 240,
+                "wide": true
+            },
+            {
+                "key": "focus_x",
+                "type": "select",
+                "label": "Horizontal focal point",
+                "options": {"center": "Center", "left": "Left", "right": "Right"}
+            },
+            {
+                "key": "focus_y",
+                "type": "select",
+                "label": "Vertical focal point",
+                "options": {"center": "Center", "top": "Top", "bottom": "Bottom"}
+            },
+            {
+                "key": "cta_label",
+                "type": "text",
+                "label": "Action label",
+                "max": 100
+            },
+            {
+                "key": "cta_url",
+                "type": "url",
+                "label": "Action URL"
+            }
+        ],
+        "defaults": {
+            "eyebrow": "Discover our school",
+            "title": "A place for every learner.",
+            "text": "Use this section to pair an important story with a strong visual.",
+            "image": "/theme-assets/sensecms/images/sensecms-facility.webp",
+            "image_alt": "Our school community",
+            "focus_x": "center",
+            "focus_y": "center",
+            "cta_label": "Learn more",
+            "cta_url": "#contact"
+        }
+    }
+}

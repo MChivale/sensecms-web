@@ -55,12 +55,18 @@ final class Installer
             $fingerprint = hash('sha256', json_encode([$dbConfig['host'], $dbConfig['port'], $dbConfig['name'], $dbConfig['user'], $admin['email'], $baseUrl], JSON_THROW_ON_ERROR));
             $progress = $this->runtime->read('installing');
             if ($progress && ($progress['fingerprint'] ?? '') !== $fingerprint) throw new RuntimeException('An unfinished installation belongs to different connection or owner details.');
+            // Preserve resumability of the earlier initial-Core installer; new installations include Workspace.
+            $fullWorkspace = !$progress || isset($progress['workspace_schema']);
+            $migration = new WorkspaceMigration($db, $this->runtime->root);
+            $plan = $fullWorkspace ? $migration->plan() : ['files'=>[], 'tables'=>[]];
+            if ($fullWorkspace && !str_contains(strtolower($version), 'mariadb')) throw new RuntimeException('This Workspace candidate requires MariaDB 10.11+. MySQL migration support is not yet verified.');
+            if ($progress && $fullWorkspace && $progress['workspace_schema'] !== $plan['files']) throw new RuntimeException('Workspace schema changed during an unfinished installation. Restore the original migration files.');
             $tables = $db->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
             if (!$progress && $tables) throw new RuntimeException('Use a new empty database. Existing data will not be overwritten.');
-            if (array_diff($tables, ['migrations','users','roles','user_roles','settings','activity_log','login_attempts'])) throw new RuntimeException('Unexpected tables in the installation database.');
+            if (array_diff($tables, array_merge(['migrations','users','roles','user_roles','settings','activity_log','login_attempts'], $plan['tables']))) throw new RuntimeException('Unexpected tables in the installation database.');
             $schema = (string) file_get_contents($this->runtime->root . '/database/001_core.sql'); $checksum = hash('sha256', $schema);
             if ($progress && ($progress['schema'] ?? '') !== $checksum) throw new RuntimeException('Schema changed during an unfinished installation.');
-            if (!$progress) $this->runtime->write('installing', ['fingerprint' => $fingerprint, 'schema' => $checksum]);
+            if (!$progress) $this->runtime->write('installing', ['fingerprint' => $fingerprint, 'schema' => $checksum, 'workspace_schema'=>$plan['files']]);
             // DDL is not transactional in MySQL; each statement is idempotent and
             // resumption is restricted to the same owned, initially empty database.
             foreach (explode(';', $schema) as $statement) if (trim($statement) !== '') $db->exec($statement);
@@ -74,6 +80,13 @@ final class Installer
             $stmt = $db->prepare("INSERT IGNORE INTO migrations (name,checksum,applied_at) VALUES ('001_core',?,UTC_TIMESTAMP())"); $stmt->execute([$checksum]);
             if (!(int) $db->query("SELECT COUNT(*) FROM activity_log WHERE event='core.installed'")->fetchColumn()) $db->prepare("INSERT INTO activity_log (user_id,event,created_at) VALUES (?,'core.installed',UTC_TIMESTAMP())")->execute([$owner['id']]);
             $db->commit();
+            if ($fullWorkspace) {
+                $migration->apply();
+                $workspace = $this->runtime->read('workspace');
+                if ($workspace && (!is_string($workspace['secret'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $workspace['secret']))) throw new RuntimeException('Invalid Workspace encryption identity. Do not overwrite its private configuration.');
+                // Public routing also requires installed.json, written only after all migrations succeed.
+                $this->runtime->write('workspace', array_replace($workspace, ['enabled'=>true, 'secret'=>$workspace['secret'] ?? bin2hex(random_bytes(32))]));
+            }
             $this->runtime->write('installed', ['base_url' => $baseUrl, 'database' => $dbConfig, 'installed_at' => gmdate(DATE_ATOM), 'core_version' => '0.1.0']);
             unlink($this->runtime->root . '/storage/installing.json');
         } finally {

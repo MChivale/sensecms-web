@@ -1,0 +1,1 @@
+17 * * * * sensecms /usr/bin/php8.5 /home/sensecms.com/web/website/telegram-maintenance.php >> /home/sensecms.com/web/storage/telegram-maintenance.log 2>&1

@@ -1,0 +1,257 @@
+.sensecms-content-toolbar {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    min-height: 66px;
+    margin-bottom: 16px;
+    padding: 10px 12px;
+    border: 1px solid #dfe7f1;
+    border-radius: 12px;
+    background: #f8fafc;
+    box-shadow: inset 3px 0 #2f7df6;
+}
+
+.sensecms-content-document {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.sensecms-content-icon {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    place-items: center;
+    border: 1px solid #d6e5fa;
+    border-radius: 9px;
+    background: #eaf2ff;
+    color: #2465ca;
+}
+
+.sensecms-content-icon svg {
+    width: 17px;
+    height: 17px;
+}
+
+.sensecms-content-document label {
+    display: grid;
+    min-width: 210px;
+    max-width: 390px;
+}
+
+.sensecms-content-document label small {
+    color: #8491a6;
+    font-size: 8px;
+    font-weight: 750;
+    line-height: 1.2;
+    letter-spacing: .11em;
+    text-transform: uppercase;
+}
+
+.sensecms-content-document select {
+    max-width: 100%;
+    padding: 2px 28px 2px 0;
+    border: 0;
+    background-color: transparent;
+    color: #172033;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.55;
+    outline: 0;
+    cursor: pointer;
+    text-overflow: ellipsis;
+}
+
+.sensecms-content-document strong {
+    display: block;
+    overflow: hidden;
+    max-width: 390px;
+    color: #172033;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.55;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sensecms-content-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.sensecms-content-state-stack {
+    display: flex;
+    align-items: center;
+    flex: 0 0 auto;
+    gap: 10px;
+    margin-left: 4px;
+    padding-left: 14px;
+    border-left: 1px solid #dfe7f1;
+}
+
+.sensecms-content-status svg {
+    width: 13px;
+    height: 13px;
+}
+
+.sensecms-content-status.is-saved {
+    background: #eafaf1;
+    color: #16814d;
+}
+
+.sensecms-content-status.is-dirty {
+    background: #fff7e6;
+    color: #a96908;
+}
+
+.sensecms-content-status.is-saving {
+    background: #eaf2ff;
+    color: #2465ca;
+}
+
+.sensecms-content-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.sensecms-content-actions .btn {
+    height: 36px;
+    gap: 7px;
+    white-space: nowrap;
+}
+
+.sensecms-content-actions .btn svg {
+    width: 16px;
+}
+
+.sensecms-content-save-state {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #768399;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.sensecms-content-save-state i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #21a565;
+    box-shadow: 0 0 0 4px #21a5651a;
+}
+
+.sensecms-content-save-state.is-dirty i {
+    background: #e6a417;
+    box-shadow: 0 0 0 4px #e6a4171f;
+}
+
+.sensecms-content-save-state.is-saving i {
+    background: #2f7df6;
+    box-shadow: 0 0 0 4px #2f7df61f;
+    animation: sensecms-content-pulse 1s infinite;
+}
+
+.sensecms-content-save-state b {
+    font-weight: 650;
+}
+
+.sensecms-form-actions-note {
+    justify-content: flex-start;
+    padding: 16px 20px 20px;
+}
+
+@keyframes sensecms-content-pulse {
+    50% { opacity: .35; }
+}
+
+[data-theme="dark"] .sensecms-content-toolbar,
+.dark .sensecms-content-toolbar {
+    border-color: #2c3a51;
+    background: #111a2b;
+    box-shadow: inset 3px 0 #4c91f7;
+}
+
+[data-theme="dark"] .sensecms-content-icon,
+.dark .sensecms-content-icon { border-color: #304f79; background: #172d4c; color: #75aaf8; }
+
+[data-theme="dark"] .sensecms-content-state-stack,
+.dark .sensecms-content-state-stack { border-color: #304056; }
+
+[data-theme="dark"] .sensecms-content-document select,
+.dark .sensecms-content-document select {
+    color: #e7edf6;
+}
+
+[data-theme="dark"] .sensecms-content-document strong,
+.dark .sensecms-content-document strong { color: #e7edf6; }
+
+[data-theme="dark"] .sensecms-content-status.is-saved,
+.dark .sensecms-content-status.is-saved {
+    background: #173a2c;
+    color: #63d79b;
+}
+
+[data-theme="dark"] .sensecms-content-status.is-dirty,
+.dark .sensecms-content-status.is-dirty {
+    background: #3a301a;
+    color: #f2c66d;
+}
+
+@media (max-width: 900px) {
+    .sensecms-content-toolbar {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .sensecms-content-document { flex: 1 1 520px; }
+    .sensecms-content-actions { margin-left: auto; }
+}
+
+@media (max-width: 620px) {
+    .sensecms-content-toolbar { padding: 14px 12px; }
+
+    .sensecms-content-document {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .sensecms-content-document label {
+        min-width: 0;
+        flex: 1;
+    }
+
+    .sensecms-content-state-stack { margin-left: 0; padding-left: 0; border-left: 0; }
+
+    .sensecms-content-actions {
+        width: 100%;
+        gap: 8px;
+    }
+
+    .sensecms-content-actions .btn {
+        flex: 1;
+        padding-inline: 10px;
+    }
+
+    .sensecms-content-actions .bg-default-150 {
+        flex: 0 0 42px;
+        font-size: 0;
+    }
+
+    .sensecms-content-actions .bg-default-150 svg { margin: 0; }
+    .sensecms-form-actions-note { align-items: flex-start; }
+}

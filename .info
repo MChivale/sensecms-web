@@ -1,1 +1,18 @@
-Sense Web CMS
+Sense CMS
+
+Canonical project directory: F:/Git/MChivale/sensecms-web.
+Standalone repository: develop/build/test Sense CMS here, without other projects.
+Read AGENTS.md and README.md before continuing. Private operator configuration is
+under .cfg, excluded from Git and distributions. License.txt holds Core identity/key;
+Package-licenses.txt holds product-key mappings; Telegram.txt holds bot configuration.
+Never print secret values. The old importer is archived under .wrk; never rerun it.
+Historical provenance/work records are retained, not runtime dependencies.
+
+Product: Sense CMS, a general-purpose PHP CMS.
+www.sensecms.com is the official product website and package distribution site.
+demo.sensecms.com will be a separate installation on the same server as www, to be built later.
+User reports demo.sensecms.com DNS was added. Empty server directories are prepared:
+/home/demo.sensecms.com/web/public (future document root) and ../storage (private).
+Demo application, database, dedicated PHP identity/pool and virtual host remain deferred.
+Current priority: Sense CMS backend and the product website; do not turn www into a demo.
+Private loopback QA fixtures are testing environments, not public demonstration sites.

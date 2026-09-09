@@ -1,0 +1,11 @@
+DELETE rp FROM role_permissions rp INNER JOIN permissions p ON p.id = rp.permission_id WHERE p.slug LIKE 'calendar.%';
+DELETE FROM permissions WHERE slug LIKE 'calendar.%';
+DROP TABLE IF EXISTS calendar_external_events;
+DROP TABLE IF EXISTS calendar_sync_jobs;
+DROP TABLE IF EXISTS calendar_integration_settings;
+DROP TABLE IF EXISTS calendar_notifications;
+DROP TABLE IF EXISTS calendar_reminders;
+DROP TABLE IF EXISTS calendar_event_resources;
+DROP TABLE IF EXISTS calendar_resources;
+DROP TABLE IF EXISTS calendar_event_participants;
+DROP TABLE IF EXISTS calendar_events;

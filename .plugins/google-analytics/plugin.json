@@ -1,0 +1,18 @@
+{
+  "name": "Google Analytics",
+  "slug": "google-analytics",
+  "version": "0.1.1",
+  "author": "QUANT Software House Limited",
+  "type": "plugin",
+  "description": "Opt-in GA4 analytics for published CMS pages, with visitor consent and configuration inside the Sense CMS panel.",
+  "compatible_engine_version": "^0.1",
+  "dependencies": [],
+  "permissions": [],
+  "icon": "chart-line",
+  "group": "Analytics integrations",
+  "release_channel": "development",
+  "runtime": "runtime.php",
+  "config_url": "/system/extensions/google-analytics",
+  "license": {"model": "free", "price": 0, "currency": "USD"},
+  "changelog": [{"version": "0.1.1", "summary": "Isolate settings submission from the panel form handler; prevent duplicate saves and locked controls."}, {"version": "0.1.0", "summary": "Sense CMS panel integration, explicit visitor consent and withdrawal."}]
+}

@@ -45,26 +45,26 @@ final class LicenseClient
         if ($status < 200 || $status >= 300 || strlen($body) > 65536) throw new LicenseException('The license service did not accept this request.');
         try { $reply = json_decode($body, true, 16, JSON_THROW_ON_ERROR); }
         catch (\JsonException) { throw new LicenseException('The license service returned an invalid response.'); }
-        $data = $reply['data'] ?? null;
-        if (!is_array($reply) || ($reply['error'] ?? null) !== false || !is_array($data)) throw new LicenseException('The license is invalid, expired, revoked or not assigned to this installation.');
+        if (!is_array($reply) || ($reply['error'] ?? null) !== false || !is_array($reply['data'] ?? null)) throw new LicenseException('The license is invalid, expired, revoked or not assigned to this installation.');
+        $data = $reply['data'];
         $product = $data['product'] ?? null;
         if (!is_array($product) || ($product['name'] ?? null) !== $this->config['product_name']
-            || ($product['model'] ?? null) !== $this->config['product_model']
-            || ($product['version'] ?? null) !== $this->config['product_version']) throw new LicenseException('The license product does not match Sense CMS.');
+            || ($product['model'] ?? null) !== $this->config['product_model']) throw new LicenseException('The license does not authorize the requested product.');
         if (!array_key_exists('valid_from', $data) || !array_key_exists('valid_to', $data)) throw new LicenseException('License validity dates are missing.');
         $from = self::date($data['valid_from']); $until = self::date($data['valid_to']);
         if ($from !== null && $until !== null && $until <= $from) throw new LicenseException('Invalid license validity period.');
         self::assertPeriod($from, $until, time());
         // Persist only what Core needs, never the provider's client data or URLs.
-        return ['product' => ['name' => $product['name'], 'model' => $product['model'], 'version' => $product['version']], 'valid_from' => $from, 'valid_until' => $until];
+        // The provider protocol still requires ProductVersion (fixed at 1.0),
+        // but release/response versions are not an entitlement boundary.
+        return ['product' => ['name' => $product['name'], 'model' => $product['model'], 'version' => $this->config['product_version']], 'valid_from' => $from, 'valid_until' => $until];
     }
 
     public function assertCached(array $data, int $now): void
     {
         $product = $data['product'] ?? null;
         if (!is_array($product) || ($product['name'] ?? null) !== $this->config['product_name']
-            || ($product['model'] ?? null) !== $this->config['product_model']
-            || ($product['version'] ?? null) !== $this->config['product_version']) throw new LicenseException('Cached license product does not match Sense CMS.');
+            || ($product['model'] ?? null) !== $this->config['product_model']) throw new LicenseException('Cached license does not authorize the requested product.');
         foreach (['valid_from', 'valid_until'] as $field) {
             if (!array_key_exists($field, $data) || $data[$field] !== null && !is_int($data[$field])) throw new LicenseException('Invalid cached license date.');
         }

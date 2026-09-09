@@ -1,0 +1,63 @@
+{
+  "name": "Sense CMS Calendar",
+  "slug": "calendar",
+  "version": "0.1.0",
+  "author": "QUANT Software House",
+  "type": "addon",
+  "description": "Professional scheduling with conflict prevention, resources, recurring series, time zones, all-day events and multi-channel reminders.",
+  "compatible_engine_version": "^0.1",
+  "dependencies": [],
+  "permissions": [
+    "calendar.view",
+    "calendar.manage",
+    "calendar.override-conflicts",
+    "calendar.resources.manage",
+    "calendar.settings.manage"
+  ],
+  "runtime": "runtime.php",
+  "navigation": {
+    "label": "Calendar",
+    "url": "/calendar",
+    "icon": "calendar-days",
+    "permission": "calendar.view"
+  },
+  "config_url": "/calendar?panel=settings",
+  "icon": "calendar-days",
+  "group": "Scheduling & operations",
+  "release_channel": "development",
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "summary": "Sense CMS adaptation with facilities and user-managed event categories."
+    }
+  ],
+  "routes": [
+    "/calendar",
+    "/api/calendar/events",
+    "/api/calendar/resources",
+    "/api/calendar/notifications",
+    "/api/calendar/categories"
+  ],
+  "migrations": [
+    {
+      "id": "calendar-1.0.0",
+      "up": "migrations/up.sql",
+      "down": "migrations/down.sql"
+    },
+    {
+      "id": "calendar-deliveries-1.0.1",
+      "up": "migrations/deliveries-up.sql",
+      "down": "migrations/deliveries-down.sql"
+    },
+    {
+      "id": "system-notifications-required-1.0.2",
+      "up": "migrations/notifications-up.sql",
+      "down": "migrations/notifications-down.sql"
+    },
+    {
+      "id": "sense-calendar-categories-0.1.0",
+      "up": "migrations/categories-up.sql",
+      "down": "migrations/categories-down.sql"
+    }
+  ]
+}

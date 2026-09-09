@@ -1,0 +1,2 @@
+# Sense CMS: encrypted notification queues, no browser session required.
+* * * * * sensecms /usr/bin/php8.5 /home/sensecms.com/web/scripts/notifications.php >> /home/sensecms.com/web/storage/notifications-worker.log 2>&1

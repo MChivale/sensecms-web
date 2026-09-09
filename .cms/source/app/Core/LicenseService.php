@@ -9,6 +9,7 @@ final class LicenseService
 {
     private const HEADER = "SENSECMS-LIC-1\n";
     private const TTL = 604800;
+    private ?array $status = null;
 
     public function __construct(private readonly string $directory, private readonly LicenseClient $client) {}
 
@@ -28,6 +29,22 @@ final class LicenseService
     }
 
     public function enforce(string $domain): array
+    {
+        $record=$this->validated($domain);
+        try { return $this->status=$record['data']; }
+        finally { sodium_memzero($record['key']); }
+    }
+
+    /** Export only to the fixed official broker, never a configurable third party. */
+    public function telegramHeaders(string $domain, string $broker): array
+    {
+        if ($broker!=='https://www.sensecms.com/api/telegram/v1') throw new LicenseException('Unexpected Telegram service.');
+        $record=$this->validated($domain);
+        try { return ['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: '.$record['domain']]; }
+        finally { sodium_memzero($record['key']); }
+    }
+
+    private function validated(string $domain): array
     {
         $domain = LicenseClient::domain($domain);
         $this->directory();
@@ -55,11 +72,18 @@ final class LicenseService
                 $data = $this->client->validate($record['key'], $domain);
                 $this->save($record['key'], $domain, $data, $secret);
             }
-            return $data;
+            $record['data']=$data;
+            return $record;
         } finally {
             if (isset($secret)) sodium_memzero($secret);
             flock($lock, LOCK_UN); fclose($lock);
         }
+    }
+
+    public function expiringNotice(): ?string
+    {
+        $until = $this->status['valid_until'] ?? null;
+        return is_int($until) && $until < time() + 30 * 86400 ? 'License expires on ' . gmdate('Y-m-d', $until) . '.' : null;
     }
 
     private function save(#[\SensitiveParameter] string $key, string $domain, array $data, #[\SensitiveParameter] string $secret): void

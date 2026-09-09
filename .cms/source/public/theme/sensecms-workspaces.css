@@ -1,0 +1,399 @@
+.sensecms-unified-workspace {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.sensecms-content-editor-workspace {
+    display: grid;
+    gap: 18px;
+}
+
+.sensecms-section-hero {
+    position: relative;
+    display: flex;
+    min-height: 132px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding: 1.5rem 1.75rem;
+    overflow: hidden;
+    border: 1px solid #d8e2ee;
+    border-top: 3px solid #2f7df6;
+    border-radius: 12px;
+    background: linear-gradient(115deg, #fff 0%, #fbfdff 66%, #f1f7ff 100%);
+    box-shadow: 0 10px 30px rgba(15, 43, 76, .045);
+}
+
+.sensecms-section-hero::after {
+    position: absolute;
+    right: -76px;
+    bottom: -116px;
+    width: 260px;
+    height: 260px;
+    border: 1px solid rgba(47, 125, 246, .12);
+    border-radius: 50%;
+    box-shadow: 0 0 0 34px rgba(47, 125, 246, .035), 0 0 0 72px rgba(47, 125, 246, .025);
+    content: "";
+    pointer-events: none;
+}
+
+.sensecms-section-hero-main {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 1.15rem;
+}
+
+.sensecms-section-hero-icon {
+    display: grid;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    place-items: center;
+    border-radius: 14px;
+    background: linear-gradient(145deg, #0d3568, #174d8d);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(10, 48, 95, .22);
+}
+
+.sensecms-section-hero-icon svg {
+    width: 23px;
+    height: 23px;
+}
+
+.sensecms-section-overline {
+    display: block;
+    margin-bottom: .28rem;
+    color: #2f7df6;
+    font-size: .64rem;
+    font-weight: 800;
+    letter-spacing: .16em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.sensecms-section-hero h2 {
+    margin: 0;
+    color: #0b2342;
+    font-size: clamp(1.28rem, 1.8vw, 1.72rem);
+    font-weight: 750;
+    letter-spacing: -.035em;
+    line-height: 1.15;
+}
+
+.sensecms-section-hero p {
+    max-width: 760px;
+    margin: .45rem 0 0;
+    color: #63758b;
+    font-size: .84rem;
+    line-height: 1.55;
+}
+
+.sensecms-section-hero-state {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    min-width: 190px;
+    align-items: center;
+    gap: .7rem;
+    padding: .72rem .9rem;
+    border: 1px solid #ccebdc;
+    border-radius: 11px;
+    background: #f0fbf6;
+    color: #128052;
+}
+
+.sensecms-section-hero-state > svg {
+    width: 19px;
+    height: 19px;
+    flex: 0 0 19px;
+}
+
+.sensecms-section-hero-state span {
+    display: grid;
+    gap: .12rem;
+}
+
+.sensecms-section-hero-state strong {
+    font-size: .74rem;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.sensecms-section-hero-state small {
+    color: #5f7f70;
+    font-size: .68rem;
+}
+
+.sensecms-unified-workspace > .grid,
+.sensecms-unified-workspace > .card,
+.sensecms-unified-workspace > form,
+.sensecms-unified-workspace > .sensecms-chat-nav {
+    margin: 0;
+}
+
+.sensecms-unified-workspace > [class*="grid-cols"],
+.sensecms-unified-workspace > form[class*="grid-cols"] {
+    grid-template-columns: minmax(0, 1fr);
+}
+
+.sensecms-unified-workspace .card {
+    border-color: #dce5ef;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(15, 43, 76, .035);
+}
+
+.sensecms-unified-workspace .card-header {
+    min-height: 68px;
+    padding: 1.1rem 1.25rem;
+    border-bottom-color: #e6edf4;
+}
+
+.sensecms-unified-workspace .card-title {
+    color: #183554;
+    font-size: .98rem;
+}
+
+.sensecms-unified-workspace .card-body {
+    padding: 1.25rem;
+}
+
+.sensecms-unified-workspace .form-input,
+.sensecms-unified-workspace .form-select {
+    border-color: #cedae7;
+    border-radius: 9px;
+    background: #fff;
+}
+
+.sensecms-unified-workspace .form-input:focus,
+.sensecms-unified-workspace .form-select:focus {
+    border-color: #2f7df6;
+    box-shadow: 0 0 0 3px rgba(47, 125, 246, .1);
+}
+
+.sensecms-system-status-list {
+    display: grid;
+    gap: .65rem;
+}
+
+.sensecms-system-status-list > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .78rem .85rem;
+    border: 1px solid #e4ebf2;
+    border-radius: 9px;
+    background: #fbfdff;
+}
+
+.sensecms-system-status-list span {
+    color: #63758b;
+    font-size: .78rem;
+}
+
+.sensecms-system-status-list strong {
+    font-size: .75rem;
+}
+
+.sensecms-license-key textarea {
+    min-height: 112px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .72rem;
+    line-height: 1.55;
+    resize: none;
+}
+
+.sensecms-license-trust {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: .8rem;
+}
+
+.sensecms-license-trust article {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    padding: .9rem;
+    border: 1px solid #e1e9f1;
+    border-radius: 10px;
+    background: #fbfdff;
+}
+
+.sensecms-license-trust svg {
+    width: 19px;
+    height: 19px;
+    color: #2f7df6;
+}
+
+.sensecms-license-trust span {
+    display: grid;
+}
+
+.sensecms-license-trust strong {
+    color: #183554;
+    font-size: .77rem;
+}
+
+.sensecms-license-trust small {
+    color: #718196;
+    font-size: .67rem;
+}
+
+.sensecms-ai-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.sensecms-ai-summary article {
+    padding: 1.15rem;
+    border: 1px solid #dce5ef;
+    border-radius: 11px;
+    background: #fff;
+}
+
+.sensecms-ai-summary span {
+    color: #718196;
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.sensecms-ai-summary strong {
+    display: block;
+    margin-top: .3rem;
+    color: #173451;
+    font-size: 1.55rem;
+}
+
+.dark .sensecms-section-hero {
+    border-color: #29445f;
+    background: linear-gradient(115deg, #12283d, #142f49 70%, #173a5b);
+}
+
+.dark .sensecms-section-hero h2 {
+    color: #f2f7fb;
+}
+
+.dark .sensecms-section-hero p {
+    color: #9fb2c5;
+}
+
+.dark .sensecms-section-hero-state {
+    border-color: #276146;
+    background: #173c31;
+}
+
+.dark .sensecms-section-hero-state small {
+    color: #9bc8b4;
+}
+
+.dark .sensecms-unified-workspace .card,
+.dark .sensecms-ai-summary article {
+    border-color: #29445f;
+    background: #12283d;
+}
+
+.dark .sensecms-unified-workspace .form-input,
+.dark .sensecms-unified-workspace .form-select,
+.dark .sensecms-system-status-list > div,
+.dark .sensecms-license-trust article {
+    border-color: #35506b;
+    background: #102437;
+}
+
+.dark .sensecms-license-trust strong {
+    color: #e8f1f8;
+}
+
+@media (min-width: 768px) {
+    .sensecms-unified-workspace .grid[class*="md:grid-cols-2"] {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sensecms-unified-workspace [class*="md:col-span-2"] {
+        grid-column: span 2 / span 2;
+    }
+}
+
+@media (min-width: 1200px) {
+    .sensecms-unified-workspace > .grid[class*="xl:grid-cols-3"],
+    .sensecms-unified-workspace > form[class*="xl:grid-cols-3"] {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .sensecms-unified-workspace > [class*="xl:grid-cols-3"] > [class*="xl:col-span-2"] {
+        grid-column: span 2 / span 2;
+    }
+}
+
+@media (max-width: 760px) {
+    .sensecms-section-hero {
+        min-height: 0;
+        align-items: flex-start;
+        padding: 1.2rem;
+    }
+
+    .sensecms-section-hero-main {
+        align-items: flex-start;
+    }
+
+    .sensecms-section-hero-icon {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+        border-radius: 12px;
+    }
+
+    .sensecms-section-hero h2 {
+        font-size: 1.28rem;
+    }
+
+    .sensecms-section-hero p {
+        font-size: .78rem;
+    }
+
+    .sensecms-section-hero-state {
+        min-width: 0;
+        flex: 0 0 auto;
+        padding: .62rem;
+    }
+
+    .sensecms-section-hero-state small {
+        display: none;
+    }
+
+    .sensecms-license-trust,
+    .sensecms-ai-summary {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 520px) {
+    .sensecms-section-hero {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .sensecms-section-hero-state {
+        justify-self: start;
+    }
+
+    .sensecms-section-hero-icon {
+        display: none;
+    }
+
+    .sensecms-unified-workspace {
+        gap: 1rem;
+    }
+
+    .sensecms-unified-workspace .card-header,
+    .sensecms-unified-workspace .card-body {
+        padding: 1rem;
+    }
+}

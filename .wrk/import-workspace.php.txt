@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+// Historical source-import record, retained for provenance only. Never rerun.
+exit("Archived import. Develop the self-contained Sense CMS source instead.\n");
+$project = dirname(__DIR__);
+$reference = 'F:/Git/ChivaleGroup/eduvixo-cms';
+$source = $reference . '/.cms/source';
+$target = $project . '/.cms/source';
+$replace = static fn(string $text): string => strtr($text, [
+    'Campuses' => 'Facilities', 'campuses' => 'facilities', 'CAMPUSES' => 'FACILITIES',
+    'Campus' => 'Facility', 'campus' => 'facility', 'CAMPUS' => 'FACILITY',
+    'Eduvixo' => 'SenseCMS', 'eduvixo' => 'sensecms', 'EDUVIXO' => 'SENSECMS',
+    'Kampusy' => 'Placówki', 'kampusy' => 'placówki', 'Kampus' => 'Placówka',
+    'kampusu' => 'placówki', 'kampusów' => 'placówek', 'kampusie' => 'placówce', 'kampus' => 'placówka',
+    'admissions-support' => 'customer-support', 'Admissions & Support' => 'Customer Support',
+]);
+$files = [];
+$collect = static function (string $from, string $to, callable $allow) use (&$files, $replace): void {
+    foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($from, FilesystemIterator::SKIP_DOTS)) as $file) {
+        if (!$file->isFile() || $file->isLink()) throw new RuntimeException('Unexpected source entry.');
+        $relative = str_replace('\\', '/', substr($file->getPathname(), strlen($from) + 1));
+        if (!$allow($relative)) continue;
+        $destination = $to . '/' . $replace($relative);
+        if (is_file($destination) || isset($files[$destination])) throw new RuntimeException('Refusing to overwrite: ' . $destination);
+        $files[$destination] = $file->getPathname();
+    }
+};
+$collect($source . '/app', $target . '/app', static fn(string $p): bool =>
+    !str_starts_with($p, 'Installer/') && !in_array($p, ['Core/Auth.php', 'Core/LicenseService.php', 'Core/LicenseException.php', 'release.json'], true));
+$collect($source . '/config', $target . '/config', static fn(string $p): bool => $p !== 'app.php');
+$collect($source . '/lang', $target . '/lang', static fn(string $p): bool => true);
+$collect($source . '/public/theme', $target . '/public/theme', static fn(string $p): bool => true);
+$collect($source . '/public/eduvixo', $target . '/public/sensecms', static fn(string $p): bool => true);
+$collect($source . '/database/migrations', $target . '/database/workspace', static fn(string $p): bool => str_ends_with($p, '.sql'));
+$collect($reference . '/.plugins/EduvixoCalendar/source', $project . '/.addons/calendar', static fn(string $p): bool => true);
+$inventory = [];
+foreach ($files as $destination => $from) {
+    $content = file_get_contents($from);
+    if (!is_string($content)) throw new RuntimeException('Cannot read source.');
+    $original = hash('sha256', $content);
+    if (in_array(strtolower(pathinfo($from, PATHINFO_EXTENSION)), ['php','json','sql','css','js','svg','html','txt'], true)) $content = $replace($content);
+    if (!is_dir(dirname($destination)) && !mkdir(dirname($destination), 0755, true)) throw new RuntimeException('Cannot prepare target.');
+    if (file_put_contents($destination, $content) !== strlen($content)) throw new RuntimeException('Cannot write target.');
+    $inventory[str_replace('\\', '/', substr($destination, strlen($project) + 1))] = [
+        'source' => str_replace('\\', '/', substr($from, strlen($reference) + 1)), 'source_sha256' => $original,
+    ];
+}
+ksort($inventory);
+$report = $project . '/.wrk/workspace-source.json';
+if (file_exists($report)) throw new RuntimeException('Import inventory already exists.');
+file_put_contents($report, json_encode($inventory, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR) . "\n");
+echo 'Imported ' . count($files) . " source files; runtime activation and database migration are separate.\n";

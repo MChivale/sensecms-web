@@ -1,0 +1,27 @@
+{
+  "name": "Microsoft 365 Calendar",
+  "slug": "microsoft-365-calendar",
+  "version": "0.1.0",
+  "author": "QUANT Software House Limited",
+  "type": "plugin",
+  "description": "Outbound event delivery from Sense CMS Calendar through Microsoft Graph. Requires an active Calendar addon and an authorised writable Microsoft 365 mailbox calendar. Private events are not exported.",
+  "compatible_engine_version": "^0.1",
+  "dependencies": [{"type": "addon", "slug": "calendar", "version": "^0.1"}],
+  "permissions": [],
+  "icon": "calendar-days",
+  "group": "Calendar integrations",
+  "release_channel": "development",
+  "license": {"model": "commercial-subscription", "billing_period": "year", "price": 12, "currency": "USD"},
+  "config_url": "/calendar",
+  "calendar_integration": {
+    "kind": "calendar",
+    "handler": "src/provider.php",
+    "fields": [
+      {"name": "tenant_id", "label": "Microsoft tenant ID (GUID)", "type": "text", "required": true},
+      {"name": "client_id", "label": "Application client ID (GUID)", "type": "text", "required": true},
+      {"name": "client_secret", "label": "Application client secret", "type": "password", "secret": true, "required": true},
+      {"name": "user_id", "label": "Microsoft 365 user ID or email", "type": "text", "required": true},
+      {"name": "calendar_id", "label": "Calendar ID (empty for default calendar)", "type": "text", "required": false}
+    ]
+  }
+}

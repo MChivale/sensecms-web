@@ -1,0 +1,1514 @@
+{
+    ".addons/calendar/addon.json": {
+        "source": ".plugins/EduvixoCalendar/source/addon.json",
+        "source_sha256": "4b46083fdb46d8f58f102cb84a52229141fe71ae847afce865c6f6c3cd97950b"
+    },
+    ".addons/calendar/assets/calendar.css": {
+        "source": ".plugins/EduvixoCalendar/source/assets/calendar.css",
+        "source_sha256": "9e70d0a48f2567f2cdba7f90f0714bafd37a9c12c9be0de3ff89408550140cd9"
+    },
+    ".addons/calendar/assets/calendar.js": {
+        "source": ".plugins/EduvixoCalendar/source/assets/calendar.js",
+        "source_sha256": "26f375325c2476e978e2562ed25d1fca0e14b3e08a817da5cedc25c93bbe0106"
+    },
+    ".addons/calendar/lang/de.json": {
+        "source": ".plugins/EduvixoCalendar/source/lang/de.json",
+        "source_sha256": "4da06368a81b457f30de4c87ee2de9146897b3d23aaadbc5e1104736b4c041fb"
+    },
+    ".addons/calendar/lang/en.json": {
+        "source": ".plugins/EduvixoCalendar/source/lang/en.json",
+        "source_sha256": "2b59d5241893215148e2123839f05f96ae168e627014e6430fce28749e0e32ef"
+    },
+    ".addons/calendar/lang/lo.json": {
+        "source": ".plugins/EduvixoCalendar/source/lang/lo.json",
+        "source_sha256": "eef36414540dbb345837764e5db0cec3fd4210d397a232833110c67a8e79c44b"
+    },
+    ".addons/calendar/lang/pl.json": {
+        "source": ".plugins/EduvixoCalendar/source/lang/pl.json",
+        "source_sha256": "20bcb6f4f4a4b40dc44c6393bed91f161166b48972c5f3abd913abd7b194c629"
+    },
+    ".addons/calendar/lang/th.json": {
+        "source": ".plugins/EduvixoCalendar/source/lang/th.json",
+        "source_sha256": "e232876dff9c381a2afd78cdb61bc369f227aa7c2fcf71447ba2e7b34b0ee62e"
+    },
+    ".addons/calendar/lang/vi.json": {
+        "source": ".plugins/EduvixoCalendar/source/lang/vi.json",
+        "source_sha256": "8098cdad60260b3546ea891bcc74630cb060db9efa5efed443532a139165a230"
+    },
+    ".addons/calendar/lang/zh.json": {
+        "source": ".plugins/EduvixoCalendar/source/lang/zh.json",
+        "source_sha256": "fdc4a0ce35c2f41491c1f141effe9441c47d6f44c7ad0c55734a556c82120c74"
+    },
+    ".addons/calendar/migrations/deliveries-down.sql": {
+        "source": ".plugins/EduvixoCalendar/source/migrations/deliveries-down.sql",
+        "source_sha256": "5ed5f4ff0a1011f4c6f8f03ecba71f355ca86c9d89dc5727cfeb10c5f2e5fd14"
+    },
+    ".addons/calendar/migrations/deliveries-up.sql": {
+        "source": ".plugins/EduvixoCalendar/source/migrations/deliveries-up.sql",
+        "source_sha256": "29fd79df8f38a2db81723c741ff77329771c4ab0bde3e9103decf994ab249e75"
+    },
+    ".addons/calendar/migrations/down.sql": {
+        "source": ".plugins/EduvixoCalendar/source/migrations/down.sql",
+        "source_sha256": "3a5faf7e72ba0486432eca8073dab392dae5f6f26041e9f7fed0869651e8c83d"
+    },
+    ".addons/calendar/migrations/notifications-down.sql": {
+        "source": ".plugins/EduvixoCalendar/source/migrations/notifications-down.sql",
+        "source_sha256": "f78041ec0c25be41f913869eac9be350ddafc21cad7806a716422e4859c35f48"
+    },
+    ".addons/calendar/migrations/notifications-up.sql": {
+        "source": ".plugins/EduvixoCalendar/source/migrations/notifications-up.sql",
+        "source_sha256": "0c9635e5a576e45161485fa05accee51f6607b4ead192ad6a66da219bbaa0640"
+    },
+    ".addons/calendar/migrations/up.sql": {
+        "source": ".plugins/EduvixoCalendar/source/migrations/up.sql",
+        "source_sha256": "9ef471a8bb42e7ea60b9b956cbedcd636b5e8eb5ed9626198c3f39bf5b891c6e"
+    },
+    ".addons/calendar/runtime.php": {
+        "source": ".plugins/EduvixoCalendar/source/runtime.php",
+        "source_sha256": "0b6de04388732aec3e73a7ce008728f66fa98e3186ac38b79a68c4b961d2a643"
+    },
+    ".addons/calendar/scripts/calendar-worker.php": {
+        "source": ".plugins/EduvixoCalendar/source/scripts/calendar-worker.php",
+        "source_sha256": "30ea663ceea62dec515425758a2979e57556aa4b72f6c33a211af818ce7d67dd"
+    },
+    ".addons/calendar/src/CalendarConflictException.php": {
+        "source": ".plugins/EduvixoCalendar/source/src/CalendarConflictException.php",
+        "source_sha256": "9c3224419d3f6abb612cff9e832d94858c666835d53d77d66fabdfb1d2ded0f2"
+    },
+    ".addons/calendar/src/CalendarController.php": {
+        "source": ".plugins/EduvixoCalendar/source/src/CalendarController.php",
+        "source_sha256": "8027cec53ea79e546f3243647b53ae75ac5a22b7edf9fc42635ff16468bfbe0a"
+    },
+    ".addons/calendar/src/CalendarDispatcher.php": {
+        "source": ".plugins/EduvixoCalendar/source/src/CalendarDispatcher.php",
+        "source_sha256": "83c0f361e6bacd1991b539a79c06d50cc0949c203ddbd048c1541fed2f73f722"
+    },
+    ".addons/calendar/src/CalendarI18n.php": {
+        "source": ".plugins/EduvixoCalendar/source/src/CalendarI18n.php",
+        "source_sha256": "5c5f52b4ac4bedfb3344f9760d4ee641a2ed45f4477bc9822fa35e208772c227"
+    },
+    ".addons/calendar/src/CalendarIntegrationManager.php": {
+        "source": ".plugins/EduvixoCalendar/source/src/CalendarIntegrationManager.php",
+        "source_sha256": "b54e8c6d5316c9520018146c8ab05f0f540e669ab34f2328ba531dc1bc7ada7f"
+    },
+    ".addons/calendar/src/CalendarRepository.php": {
+        "source": ".plugins/EduvixoCalendar/source/src/CalendarRepository.php",
+        "source_sha256": "4a9113b47517e9cd0dcce2ccf17d9d52476660ac344aa868da81658c06ff8378"
+    },
+    ".addons/calendar/views/calendar.php": {
+        "source": ".plugins/EduvixoCalendar/source/views/calendar.php",
+        "source_sha256": "b113464f89aa347ef54273df7d96ffd31dedb70325edf6d5721686297a3fcf73"
+    },
+    ".cms/source/app/Core/AccessControl.php": {
+        "source": ".cms/source/app/Core/AccessControl.php",
+        "source_sha256": "13291152e481027adde35517d4041edefbd1545f6b489b8036911d02f3070813"
+    },
+    ".cms/source/app/Core/AiChatService.php": {
+        "source": ".cms/source/app/Core/AiChatService.php",
+        "source_sha256": "3a211abb0c201fdc38eb5f15bb0a693d0687aa9afe78fd8dfcadda380421b479"
+    },
+    ".cms/source/app/Core/AiLicenseService.php": {
+        "source": ".cms/source/app/Core/AiLicenseService.php",
+        "source_sha256": "9c2d845f2776541eb5ab15e947d20ce419f4dd65020b20ea6df479e6f859e573"
+    },
+    ".cms/source/app/Core/AiRepository.php": {
+        "source": ".cms/source/app/Core/AiRepository.php",
+        "source_sha256": "eef4ee2177696d4c385e339098665430605e5ce2992c5e925cab3dd6acfa5df0"
+    },
+    ".cms/source/app/Core/CacheService.php": {
+        "source": ".cms/source/app/Core/CacheService.php",
+        "source_sha256": "e7e8c4d63e7b46168188dad9d01b21fb833e108d83251e15ee3b48e061a7d46d"
+    },
+    ".cms/source/app/Core/CaptchaService.php": {
+        "source": ".cms/source/app/Core/CaptchaService.php",
+        "source_sha256": "b8c0b0f30f9ab4096e02b1c52523af3be3b9f3e9796bff54381094507b2c0367"
+    },
+    ".cms/source/app/Core/CmsRepository.php": {
+        "source": ".cms/source/app/Core/CmsRepository.php",
+        "source_sha256": "6814041f95ea2d12a7fe5f394d68b27c20ce33a4e42bb28bb586aca1148483b8"
+    },
+    ".cms/source/app/Core/ConsoleSearchIndex.php": {
+        "source": ".cms/source/app/Core/ConsoleSearchIndex.php",
+        "source_sha256": "05f4736c7c0db152623090872f12391985c1abc09bc989157b6b6b1ad1727a8a"
+    },
+    ".cms/source/app/Core/Database.php": {
+        "source": ".cms/source/app/Core/Database.php",
+        "source_sha256": "94ef6044085eaef8c8f5f3c207f6b4304184b038674c2d764bb8a815eda8716b"
+    },
+    ".cms/source/app/Core/EmailSystem.php": {
+        "source": ".cms/source/app/Core/EmailSystem.php",
+        "source_sha256": "dee3ca1de9eae5aa2e0038f69fa13b16e141f362f9fba3d2acc8f796fe8ee4b8"
+    },
+    ".cms/source/app/Core/EventBus.php": {
+        "source": ".cms/source/app/Core/EventBus.php",
+        "source_sha256": "4c62732bb8a10a82d112343dff93f68dc71dc115f0328535ed888b07633971a5"
+    },
+    ".cms/source/app/Core/ExtensionCatalog.php": {
+        "source": ".cms/source/app/Core/ExtensionCatalog.php",
+        "source_sha256": "2820d8b2f1f5a14298d1b91ccbc2c05e863821b0b244927c9775fe4be29b0be9"
+    },
+    ".cms/source/app/Core/ExtensionContext.php": {
+        "source": ".cms/source/app/Core/ExtensionContext.php",
+        "source_sha256": "2247d4a572176efc474f954f3f0846c38c0233f1c507266977769ea6471f12a6"
+    },
+    ".cms/source/app/Core/ExtensionRuntime.php": {
+        "source": ".cms/source/app/Core/ExtensionRuntime.php",
+        "source_sha256": "a8835cae8b078aee369229b3a3ef66fb41fd9a69243eaa63e9a5016b440a1712"
+    },
+    ".cms/source/app/Core/FacilityRepository.php": {
+        "source": ".cms/source/app/Core/CampusRepository.php",
+        "source_sha256": "ea352c2d8e3477816336f7f7dde6749dcb193de82bc9e6f14dfb3ae39a35c428"
+    },
+    ".cms/source/app/Core/HtmlSanitizer.php": {
+        "source": ".cms/source/app/Core/HtmlSanitizer.php",
+        "source_sha256": "0fd80f1a44da308ae79f4d170a69a4a59fb9c94b6c1d0f2d9669212af8380e8b"
+    },
+    ".cms/source/app/Core/LiveChatSettings.php": {
+        "source": ".cms/source/app/Core/LiveChatSettings.php",
+        "source_sha256": "995c33c2531dc69790b794ee259eb692a5634316b09da699714f4e2258b4bd00"
+    },
+    ".cms/source/app/Core/MailService.php": {
+        "source": ".cms/source/app/Core/MailService.php",
+        "source_sha256": "5562447859fba3bcd211b94c12ce15958bd97eccdd353c8bbf07d41b062c94b8"
+    },
+    ".cms/source/app/Core/ManifestRegistry.php": {
+        "source": ".cms/source/app/Core/ManifestRegistry.php",
+        "source_sha256": "a3ed9d805f070019239076701f29355e45e42c2cadb34ccfb2477fecafda6443"
+    },
+    ".cms/source/app/Core/MarketplaceCatalog.php": {
+        "source": ".cms/source/app/Core/MarketplaceCatalog.php",
+        "source_sha256": "a83dd26dc638412ccfadd40fef798d6dc85acac364f7a96adb0b5de573bb48e2"
+    },
+    ".cms/source/app/Core/MarketplaceGovernance.php": {
+        "source": ".cms/source/app/Core/MarketplaceGovernance.php",
+        "source_sha256": "e71cac9fb72bdfc422d7590a01352a1983575e98427cebfbd5e5a57ea2bf1617"
+    },
+    ".cms/source/app/Core/MediaLibrary.php": {
+        "source": ".cms/source/app/Core/MediaLibrary.php",
+        "source_sha256": "1959a44c1d794481a6cddefca005a7fd71fcad5fa6df4ba5dcfb16966d71ca31"
+    },
+    ".cms/source/app/Core/MigrationRunner.php": {
+        "source": ".cms/source/app/Core/MigrationRunner.php",
+        "source_sha256": "2818f77f63bbeebad9dcfa3eb657abaabc3318ff517be5fae3e96f2176bc9f73"
+    },
+    ".cms/source/app/Core/NotificationAudience.php": {
+        "source": ".cms/source/app/Core/NotificationAudience.php",
+        "source_sha256": "05b00520952b0fe61bdc40cb86c4d342ac76598a2ce685812e096aefe1870aca"
+    },
+    ".cms/source/app/Core/NotificationChannels.php": {
+        "source": ".cms/source/app/Core/NotificationChannels.php",
+        "source_sha256": "6920f5c199608a9ab379a02cfac9e6601abe341729bcf2a71ca8bd44387e847b"
+    },
+    ".cms/source/app/Core/NotificationDispatcher.php": {
+        "source": ".cms/source/app/Core/NotificationDispatcher.php",
+        "source_sha256": "37ba512e1fe67f2539399218bdddb2bce36a91f08204dadfa23290bd3030e311"
+    },
+    ".cms/source/app/Core/OfficialCatalog.php": {
+        "source": ".cms/source/app/Core/OfficialCatalog.php",
+        "source_sha256": "8989d1bab702917adc21e205548af5ef07623eb8004545c816f0e0cedba60a53"
+    },
+    ".cms/source/app/Core/PackageManager.php": {
+        "source": ".cms/source/app/Core/PackageManager.php",
+        "source_sha256": "0562b9bcda36278afdcd7ecd457c6c1357fe879f30272dff5957d564c652e84a"
+    },
+    ".cms/source/app/Core/PageBuilder.php": {
+        "source": ".cms/source/app/Core/PageBuilder.php",
+        "source_sha256": "06e2a2e5d2d2f0c308434bd46d25831376c28fd1dbe0c7c653ed05c2a7be2151"
+    },
+    ".cms/source/app/Core/PluginComponentRenderer.php": {
+        "source": ".cms/source/app/Core/PluginComponentRenderer.php",
+        "source_sha256": "d911eed014694116a38a912c5b5c9dbca8fa365ddaee6b531f59b5c015ae34f4"
+    },
+    ".cms/source/app/Core/Secrets.php": {
+        "source": ".cms/source/app/Core/Secrets.php",
+        "source_sha256": "588d01a22837eedcb603703e6921c15699c7645fbc91630c5c5b6b4cf9cf5db6"
+    },
+    ".cms/source/app/Core/SeoMeta.php": {
+        "source": ".cms/source/app/Core/SeoMeta.php",
+        "source_sha256": "72737c266dace9482fce1e210b77fb78c39db1113169b10ed4e4fa6a957feeb5"
+    },
+    ".cms/source/app/Core/SiteChrome.php": {
+        "source": ".cms/source/app/Core/SiteChrome.php",
+        "source_sha256": "a97d34b139def6f28c3ab7861d1752c705e6305aff71dc9dfd1bafddad71d8d1"
+    },
+    ".cms/source/app/Core/SoundSettings.php": {
+        "source": ".cms/source/app/Core/SoundSettings.php",
+        "source_sha256": "49122338daa3f33a564d8e516f4040940a67c0198828c9d70e976d37a7c29922"
+    },
+    ".cms/source/app/Core/SurveyExport.php": {
+        "source": ".cms/source/app/Core/SurveyExport.php",
+        "source_sha256": "529435edae6ce2362fea0b99775d90d9b96f8c81ef81de377aac24f87ee8eb1c"
+    },
+    ".cms/source/app/Core/SurveyRepository.php": {
+        "source": ".cms/source/app/Core/SurveyRepository.php",
+        "source_sha256": "06d68df45abfcf414b33495e9fc820524110ef62d9a207aa26703cfed5f5010e"
+    },
+    ".cms/source/app/Core/SystemNotifications.php": {
+        "source": ".cms/source/app/Core/SystemNotifications.php",
+        "source_sha256": "f812ec47aed5a9f04b3baf372f7a23ea9ca0ccdf2f2e707fa8bbf950db949003"
+    },
+    ".cms/source/app/Core/SystemUpdate.php": {
+        "source": ".cms/source/app/Core/SystemUpdate.php",
+        "source_sha256": "13d800edadbeccae64aef356ed5333da565181c7d1cae785cb317f9805a5e47b"
+    },
+    ".cms/source/app/Core/TelegramConnectionClient.php": {
+        "source": ".cms/source/app/Core/TelegramConnectionClient.php",
+        "source_sha256": "bb50dcaf755e9834ac06e90441a8f7fb17e73b7958df2739bf26c1e671d7594b"
+    },
+    ".cms/source/app/Core/ThemeContract.php": {
+        "source": ".cms/source/app/Core/ThemeContract.php",
+        "source_sha256": "a5febb72328d7122027488189299986356913a9f39001c859cdd7fe49a1e7701"
+    },
+    ".cms/source/app/Core/Translator.php": {
+        "source": ".cms/source/app/Core/Translator.php",
+        "source_sha256": "42f6b708c48d1113c2337f93a7dfea897ff428bfa67cb024de942f5cad919563"
+    },
+    ".cms/source/app/Core/WebPushCrypto.php": {
+        "source": ".cms/source/app/Core/WebPushCrypto.php",
+        "source_sha256": "8b0d3cd337220eb792e4820522298a59d4e71704d480c615c2436816dd459f8d"
+    },
+    ".cms/source/app/Core/WebPushKeyStore.php": {
+        "source": ".cms/source/app/Core/WebPushKeyStore.php",
+        "source_sha256": "876d493390fb60ed7942a765389b9f13fc3dcecd6d7c0a38bf13a65aa9321056"
+    },
+    ".cms/source/app/Core/WebPushSender.php": {
+        "source": ".cms/source/app/Core/WebPushSender.php",
+        "source_sha256": "05dc70fcb8a12335254b8c91d2e01b4ca762a289c765eb3b156f4d761cd6c126"
+    },
+    ".cms/source/app/Core/WebPushSubscriptions.php": {
+        "source": ".cms/source/app/Core/WebPushSubscriptions.php",
+        "source_sha256": "6c463943c25457ba6e1d202798c9055f7717719a5ec90300cb24e55983524057"
+    },
+    ".cms/source/app/Core/WhatsAppOnboardingClient.php": {
+        "source": ".cms/source/app/Core/WhatsAppOnboardingClient.php",
+        "source_sha256": "27948230b69d0a6f2ca0993963b25228a7ae4f7f0f077c2af00e242cf74c3481"
+    },
+    ".cms/source/app/Core/WorkflowRepository.php": {
+        "source": ".cms/source/app/Core/WorkflowRepository.php",
+        "source_sha256": "1cd12e510d09a553672e9350e86cbfc09c77a8d0fa9190f17ce355d7c3d31adc"
+    },
+    ".cms/source/app/Http/AiChatController.php": {
+        "source": ".cms/source/app/Http/AiChatController.php",
+        "source_sha256": "ad00f5c062832ec262044e9153fc0d1e1e6fcfb5a2cbe15552368e9f768ba9ac"
+    },
+    ".cms/source/app/Http/AuthController.php": {
+        "source": ".cms/source/app/Http/AuthController.php",
+        "source_sha256": "cded36f7fa57df2d74bb86c084bad44e75932a139ee47adc0370b8859e3625ba"
+    },
+    ".cms/source/app/Http/Controller.php": {
+        "source": ".cms/source/app/Http/Controller.php",
+        "source_sha256": "084bbc494948731d51447408e51b8e213c9afc4e618c23cc2c49c993b52c7353"
+    },
+    ".cms/source/app/Http/DashboardController.php": {
+        "source": ".cms/source/app/Http/DashboardController.php",
+        "source_sha256": "086971eb978b3bd82c47a8baf35964f2752f57278aa0e121c56f6f6367f3899c"
+    },
+    ".cms/source/app/Http/ExtensionAssetController.php": {
+        "source": ".cms/source/app/Http/ExtensionAssetController.php",
+        "source_sha256": "751fd0f7936cbd1d3e83589fa19eeb201560fe17cdd1741541d0f730102317f0"
+    },
+    ".cms/source/app/Http/FormController.php": {
+        "source": ".cms/source/app/Http/FormController.php",
+        "source_sha256": "9e5aefffc62f7c7fe0de155e89afa199f26f9f302ac2ae59f05c1d039df436f6"
+    },
+    ".cms/source/app/Http/LicenseController.php": {
+        "source": ".cms/source/app/Http/LicenseController.php",
+        "source_sha256": "c872299d8f7b814aac85a40ce83273dd9e1a53ad9a771296f22bf6485dabab9a"
+    },
+    ".cms/source/app/Http/LiveChatController.php": {
+        "source": ".cms/source/app/Http/LiveChatController.php",
+        "source_sha256": "f446b98072381733c4f85aa651ea1901c86d0fc53329feab84c5e4104048bf28"
+    },
+    ".cms/source/app/Http/NotificationController.php": {
+        "source": ".cms/source/app/Http/NotificationController.php",
+        "source_sha256": "7799714722f86b430eb0c2e162fd5c97e7394b63c0f0e11f3337fc712f04f153"
+    },
+    ".cms/source/app/Http/PublicController.php": {
+        "source": ".cms/source/app/Http/PublicController.php",
+        "source_sha256": "15c4e5ed1c45c7417e399ac2a8e9ed48168cb171a3fb02fe7e43e0bc85e68f69"
+    },
+    ".cms/source/app/Http/PublicFacilityController.php": {
+        "source": ".cms/source/app/Http/PublicCampusController.php",
+        "source_sha256": "8087fbb7a5a8133d489f24f55e10772be6ea57f0382f4dad65e8f51bd5756a72"
+    },
+    ".cms/source/app/Http/PublicSearchController.php": {
+        "source": ".cms/source/app/Http/PublicSearchController.php",
+        "source_sha256": "fbb85ee74cb3b959e80be8dc5677771bcae71edb4a820b963f4298761a2e3891"
+    },
+    ".cms/source/app/Http/SurveyController.php": {
+        "source": ".cms/source/app/Http/SurveyController.php",
+        "source_sha256": "7f6bd0b72a85d1b199cb5b9e8324042a4d08a228b9c0a5d09955a39e4ccd8889"
+    },
+    ".cms/source/app/Http/SystemUpdateController.php": {
+        "source": ".cms/source/app/Http/SystemUpdateController.php",
+        "source_sha256": "1ebd1ede2ad3e5cc3e5f62b8c4ea8a5dd774d90b81fb5ea408d7b4f0364ad5c6"
+    },
+    ".cms/source/app/Http/TelegramConnectionController.php": {
+        "source": ".cms/source/app/Http/TelegramConnectionController.php",
+        "source_sha256": "ff0180a8e2b0e3af242c2e0a30a0652c3641ae90c0e19c0323d8d76d20397092"
+    },
+    ".cms/source/app/Http/ThemeAssetController.php": {
+        "source": ".cms/source/app/Http/ThemeAssetController.php",
+        "source_sha256": "af4ba00a5c44a934599c8bc2e32c560b0ec28aebc3f2ffa5bc11c55e0f4413a0"
+    },
+    ".cms/source/app/Http/WebPushController.php": {
+        "source": ".cms/source/app/Http/WebPushController.php",
+        "source_sha256": "095507d3062d577248029dd7458534dc3bbfd57cf80f0a06d129ca464d471667"
+    },
+    ".cms/source/app/Views/account-recovery.php": {
+        "source": ".cms/source/app/Views/account-recovery.php",
+        "source_sha256": "861422d9204d417fc03cdad418837dae801303620ea90a99c1ed789ca2a57157"
+    },
+    ".cms/source/app/Views/console-access-control.php": {
+        "source": ".cms/source/app/Views/console-access-control.php",
+        "source_sha256": "f1c6d55ed6d9f79f0a9699b718a71baea4b723ff13a7659a41020ffbca5bb622"
+    },
+    ".cms/source/app/Views/console-content-categories.php": {
+        "source": ".cms/source/app/Views/console-content-categories.php",
+        "source_sha256": "a54e6728dc74e1963578e7f330b2d515c3ef0f04fa47fdba0d6b44d01f55f611"
+    },
+    ".cms/source/app/Views/console-content-navigation-editor.php": {
+        "source": ".cms/source/app/Views/console-content-navigation-editor.php",
+        "source_sha256": "f59b57cdacb5896f7210290f34edbc281811f683330ff0c381c877e5aa4e48f3"
+    },
+    ".cms/source/app/Views/console-content-navigation-item.php": {
+        "source": ".cms/source/app/Views/console-content-navigation-item.php",
+        "source_sha256": "27d44b7857df7f43ea3d8aa9ad1d7bf19bccf8348a0d7e803b88296f29b40327"
+    },
+    ".cms/source/app/Views/console-content-navigation.php": {
+        "source": ".cms/source/app/Views/console-content-navigation.php",
+        "source_sha256": "65d7b2e23cd022d4f4580a048ddb45454b43702312a405a6ae3e3a81989df672"
+    },
+    ".cms/source/app/Views/console-content-page-form.php": {
+        "source": ".cms/source/app/Views/console-content-page-form.php",
+        "source_sha256": "b79e1f13541807f99dc440f84304e1bdb3e47df26a3e51359427f21c91ad273e"
+    },
+    ".cms/source/app/Views/console-content-pages.php": {
+        "source": ".cms/source/app/Views/console-content-pages.php",
+        "source_sha256": "854ccf7c1828f9f0a425d3852d5ccc7200905efc8ab9d1adc6ba2595e65f82a6"
+    },
+    ".cms/source/app/Views/console-content-post-form.php": {
+        "source": ".cms/source/app/Views/console-content-post-form.php",
+        "source_sha256": "80374eb43e648a6c65839bfd30122273c8c13434e0470a904e0b61ec65bfc8f2"
+    },
+    ".cms/source/app/Views/console-content-posts.php": {
+        "source": ".cms/source/app/Views/console-content-posts.php",
+        "source_sha256": "89e947b399ddba11f4bdbcc2b3804bcfe25b52501105a2a5cd9cc8dc9fabda99"
+    },
+    ".cms/source/app/Views/console-content-workspace-header.php": {
+        "source": ".cms/source/app/Views/console-content-workspace-header.php",
+        "source_sha256": "e70de280ef3232b4a6aa30d99ff1c6d85b79b9fc75f26d438160f9e2ad65b03f"
+    },
+    ".cms/source/app/Views/console-dashboard.php": {
+        "source": ".cms/source/app/Views/console-dashboard.php",
+        "source_sha256": "0d797fb6b09be135bd9730f1566e2b3a8fc69a80fb3803efab385566833a1eda"
+    },
+    ".cms/source/app/Views/console-email.php": {
+        "source": ".cms/source/app/Views/console-email.php",
+        "source_sha256": "8ffb23e7c8283fe5ca6747c7f81e897af29fdbc7ee56b1c24d63f359ce671763"
+    },
+    ".cms/source/app/Views/console-extensions.php": {
+        "source": ".cms/source/app/Views/console-extensions.php",
+        "source_sha256": "4f7a3c73e020ba8f58012ded501b27d090d49638544901c77d50e56f4badaab5"
+    },
+    ".cms/source/app/Views/console-facilities.php": {
+        "source": ".cms/source/app/Views/console-campuses.php",
+        "source_sha256": "27a827f58645a752626d67d90f0cc8403043365aa682fed91aa97055d6144691"
+    },
+    ".cms/source/app/Views/console-form-inbox.php": {
+        "source": ".cms/source/app/Views/console-form-inbox.php",
+        "source_sha256": "a38764e360e5fd1472f20cf756ea5fcd5c511b7b9b8da570f3e1b53f1fc61e91"
+    },
+    ".cms/source/app/Views/console-home-popup.php": {
+        "source": ".cms/source/app/Views/console-home-popup.php",
+        "source_sha256": "74224786626cfb1ce17e0f8fe41c3fbcaa596d347c1999228fc71680af3e4309"
+    },
+    ".cms/source/app/Views/console-language-tabs.php": {
+        "source": ".cms/source/app/Views/console-language-tabs.php",
+        "source_sha256": "2b250a6098dc5c4ea84e6e033ee0ceae6f1bbb3757620c56f2b0b3173c11cbf4"
+    },
+    ".cms/source/app/Views/console-languages.php": {
+        "source": ".cms/source/app/Views/console-languages.php",
+        "source_sha256": "a20b04c57f92a31cba368956f9602dec06f67cef26b0df27b286f70a3799af91"
+    },
+    ".cms/source/app/Views/console-live-chat.php": {
+        "source": ".cms/source/app/Views/console-live-chat.php",
+        "source_sha256": "f0c4a779a6816c768354ddfaa4b36b522b236e8c59bc19a243ffc8ab43609dbd"
+    },
+    ".cms/source/app/Views/console-marketplace.php": {
+        "source": ".cms/source/app/Views/console-marketplace.php",
+        "source_sha256": "b280571c1d6d5901ba49078b7edaa6859eb0a10a7abcfc74dd313c78da7e670a"
+    },
+    ".cms/source/app/Views/console-media-library.php": {
+        "source": ".cms/source/app/Views/console-media-library.php",
+        "source_sha256": "c8cb264f4a03ae6d0b1543e5120b000cd126662a45b1f0c157b1b68d3b6ca746"
+    },
+    ".cms/source/app/Views/console-notification-settings.php": {
+        "source": ".cms/source/app/Views/console-notification-settings.php",
+        "source_sha256": "cfb3640641893994ed9495f30fe4e8015884c1b207d74d1ffce43b2e401d9e08"
+    },
+    ".cms/source/app/Views/console-official-marketplace.php": {
+        "source": ".cms/source/app/Views/console-official-marketplace.php",
+        "source_sha256": "11d450f02879298a5dfef7529d2806e12e558348c63f227160619a7c6a9fe160"
+    },
+    ".cms/source/app/Views/console-page-builder.php": {
+        "source": ".cms/source/app/Views/console-page-builder.php",
+        "source_sha256": "2d8f20634e06d7025c11a1742fc5a34cfb1cbaa3aa4bd1669bb04d5d2fc5debd"
+    },
+    ".cms/source/app/Views/console-search-index.php": {
+        "source": ".cms/source/app/Views/console-search-index.php",
+        "source_sha256": "bd383443458d35b50ca3b5ea3504f58ae8f39100ab8396949df665a973072d6a"
+    },
+    ".cms/source/app/Views/console-section-hero.php": {
+        "source": ".cms/source/app/Views/console-section-hero.php",
+        "source_sha256": "acce11e70ad930abca11f4ff7858d09e0747147b2c2e3ff6939d4c34cd3a7226"
+    },
+    ".cms/source/app/Views/console-seo.php": {
+        "source": ".cms/source/app/Views/console-seo.php",
+        "source_sha256": "e8c5d429969a222fb4253d374f2b22dd90b650524f28038217b3432edd665b12"
+    },
+    ".cms/source/app/Views/console-surveys.php": {
+        "source": ".cms/source/app/Views/console-surveys.php",
+        "source_sha256": "7fbe8748b612fc86a90b6fb143e153b001bc63e40850c4dae1f020267c853b71"
+    },
+    ".cms/source/app/Views/console-system-update.php": {
+        "source": ".cms/source/app/Views/console-system-update.php",
+        "source_sha256": "9f54451cbdf00bc4699c2ff5e2a460f7a86e5d53c4b0a80a5c7ab5514a7d6f41"
+    },
+    ".cms/source/app/Views/console-themes.php": {
+        "source": ".cms/source/app/Views/console-themes.php",
+        "source_sha256": "42e752d1a558f1047c8429f7727abaadb6bde6c46824758262eeefc40b25636a"
+    },
+    ".cms/source/app/Views/console-workflow.php": {
+        "source": ".cms/source/app/Views/console-workflow.php",
+        "source_sha256": "71ed5ab57d1a614be95132cfe55ffa82eaf02b09099d576d4cda73c4968cb1f3"
+    },
+    ".cms/source/app/Views/console.php": {
+        "source": ".cms/source/app/Views/console.php",
+        "source_sha256": "bdce0f60cf3e4078a20cbe602be7649f9ca998f65bd34c5a29a1da1607a75392"
+    },
+    ".cms/source/app/Views/install.php": {
+        "source": ".cms/source/app/Views/install.php",
+        "source_sha256": "0271fc3159f694082c8dc270a87ce573d1cb0744155f81eaf537c5768dc0d0cf"
+    },
+    ".cms/source/app/Views/license-required.php": {
+        "source": ".cms/source/app/Views/license-required.php",
+        "source_sha256": "bdb10b535af847d842aa71c8c561c364dcaad987339463d83fb7417a352198e6"
+    },
+    ".cms/source/app/Views/license.php": {
+        "source": ".cms/source/app/Views/license.php",
+        "source_sha256": "c17a74194846fde80b4967d6d446e298b7ce761ebc2f6575263b12eb4452ebe1"
+    },
+    ".cms/source/app/Views/login.php": {
+        "source": ".cms/source/app/Views/login.php",
+        "source_sha256": "d64d135123f01ca7c4149eb76521ca5a475d845d2893d988a4aa01fe91cddd49"
+    },
+    ".cms/source/config/page-builder-layouts.json": {
+        "source": ".cms/source/config/page-builder-layouts.json",
+        "source_sha256": "f276267f4f9ea3529b72d54f4d3d381950c70e0edb48be11d221dc75f5349ccb"
+    },
+    ".cms/source/config/page-builder-localized-defaults.php": {
+        "source": ".cms/source/config/page-builder-localized-defaults.php",
+        "source_sha256": "0dc3fb08d33069bf5c14b0045965f3c15915da5c9a4874199c031bdd36fd0d97"
+    },
+    ".cms/source/config/page-builder.php": {
+        "source": ".cms/source/config/page-builder.php",
+        "source_sha256": "1f410b24cba3d8bb178d3f08d4226743087b803f532f1cf87bfaec0b6df31ce3"
+    },
+    ".cms/source/database/workspace/001_core.sql": {
+        "source": ".cms/source/database/migrations/001_core.sql",
+        "source_sha256": "6c4c6df32e627b18c4039ab8b0c310d0a88f43deee25989fddaca8076b117290"
+    },
+    ".cms/source/database/workspace/002_ai_chat.sql": {
+        "source": ".cms/source/database/migrations/002_ai_chat.sql",
+        "source_sha256": "c7f5ee99777765d38f7208321ad6543cf8b96d0bde456c27ff329d1ecac36d66"
+    },
+    ".cms/source/database/workspace/003_user_profile.sql": {
+        "source": ".cms/source/database/migrations/003_user_profile.sql",
+        "source_sha256": "1fc573389410ab08e3ee7194643a561ef8a6fdc981e60a5203be19721ad33d73"
+    },
+    ".cms/source/database/workspace/004_content_workbench.sql": {
+        "source": ".cms/source/database/migrations/004_content_workbench.sql",
+        "source_sha256": "2cf645b117710e451f555180adc4b7bcad1481bf83afc63d2fb6049c441e783f"
+    },
+    ".cms/source/database/workspace/005_language_captcha.sql": {
+        "source": ".cms/source/database/migrations/005_language_captcha.sql",
+        "source_sha256": "e5e78aca5391b7c8ed6e13885df40cd9b6cde65201b1becb014015f43c4b1491"
+    },
+    ".cms/source/database/workspace/006_live_chat_operations.sql": {
+        "source": ".cms/source/database/migrations/006_live_chat_operations.sql",
+        "source_sha256": "2bdaa054b329ef15d5eca15bb30d1bf7c72e6b9cff83fc4d0d4854ab8331ff39"
+    },
+    ".cms/source/database/workspace/007_page_builder.sql": {
+        "source": ".cms/source/database/migrations/007_page_builder.sql",
+        "source_sha256": "808ae705276fcf29af6f08e2c704e3a4b0d784d75dd61068119c128f89cbfada"
+    },
+    ".cms/source/database/workspace/008_forms_and_core_modules.sql": {
+        "source": ".cms/source/database/migrations/008_forms_and_core_modules.sql",
+        "source_sha256": "52e0837a36483d129c9f814e2c79cd7dda778117dd0b299fec880ba18c7fa7d2"
+    },
+    ".cms/source/database/workspace/009_all_builder_modules_core.sql": {
+        "source": ".cms/source/database/migrations/009_all_builder_modules_core.sql",
+        "source_sha256": "51b11293f7dc2c58e7fce9e28b73c051d1da79a821957c1698a40067396f9aaf"
+    },
+    ".cms/source/database/workspace/010_extension_catalog.sql": {
+        "source": ".cms/source/database/migrations/010_extension_catalog.sql",
+        "source_sha256": "56776e2a76e06ec744aa34818a177cc58078b6125d4760121d619d1b2ef87158"
+    },
+    ".cms/source/database/workspace/011_content_management.sql": {
+        "source": ".cms/source/database/migrations/011_content_management.sql",
+        "source_sha256": "71da7bf37d093a186f19998630e787145e42757f56f3270cd1c4c70d956a7faa"
+    },
+    ".cms/source/database/workspace/012_page_builder_phase_two.sql": {
+        "source": ".cms/source/database/migrations/012_page_builder_phase_two.sql",
+        "source_sha256": "ef07a4e531ba3ad840a44d3f7630489bcb8c548f0d4ffb87160d4d2d877db926"
+    },
+    ".cms/source/database/workspace/013_signed_package_lifecycle.sql": {
+        "source": ".cms/source/database/migrations/013_signed_package_lifecycle.sql",
+        "source_sha256": "4e297ab786b904e2d74da3dcf976b18245a55f1334fbee8f57bea51880649719"
+    },
+    ".cms/source/database/workspace/014_multi_facility.sql": {
+        "source": ".cms/source/database/migrations/014_multi_campus.sql",
+        "source_sha256": "6d29f90376a0ba64c7ad93f4ebcf2b41b6cc63a92454cb541871cafa72465691"
+    },
+    ".cms/source/database/workspace/015_access_editorial_workflow.sql": {
+        "source": ".cms/source/database/migrations/015_access_editorial_workflow.sql",
+        "source_sha256": "dfe95d089cce8a53d5b652b628c35a1501a168cc22acd0858854a9dda1bbd669"
+    },
+    ".cms/source/database/workspace/016_media_library.sql": {
+        "source": ".cms/source/database/migrations/016_media_library.sql",
+        "source_sha256": "e4f95f165de11bdb7fcb5b246b5483493d071fbad5e5c91742ee1b7d273b5c67"
+    },
+    ".cms/source/database/workspace/017_professional_surveys.sql": {
+        "source": ".cms/source/database/migrations/017_professional_surveys.sql",
+        "source_sha256": "47f06b82225ef951de33ecaef5ee297f0f9505ad84e9c00e7954b8840051db99"
+    },
+    ".cms/source/database/workspace/018_marketplace_governance.sql": {
+        "source": ".cms/source/database/migrations/018_marketplace_governance.sql",
+        "source_sha256": "dc6d2da5a3f6c82d492ab84691da6b9f8ab07e6d0a164a8824d44fc3a5fb8556"
+    },
+    ".cms/source/database/workspace/019_installer_administrator.sql": {
+        "source": ".cms/source/database/migrations/019_installer_administrator.sql",
+        "source_sha256": "126c0cf669ce6cdabd1d59b6f5d8272e381c0f7a7f841e6ee75c6c4df0e17f87"
+    },
+    ".cms/source/database/workspace/020_language_and_site_frame_defaults.sql": {
+        "source": ".cms/source/database/migrations/020_language_and_site_frame_defaults.sql",
+        "source_sha256": "02e1cdbe5da9c659a5e4b2fcae261fdf8c73e6ddf8b9fb3cbece33f14736f378"
+    },
+    ".cms/source/database/workspace/021_footer_connect_navigation.sql": {
+        "source": ".cms/source/database/migrations/021_footer_connect_navigation.sql",
+        "source_sha256": "56bfc1e1d91cc76e5b77c4cbb032b232dc11a545af8ab792f7a4cbafddf385b1"
+    },
+    ".cms/source/database/workspace/022_comprehensive_seo.sql": {
+        "source": ".cms/source/database/migrations/022_comprehensive_seo.sql",
+        "source_sha256": "10566de3e017057d984cd554465a75abe5c71cda5e114f2e2aa5416ec484f698"
+    },
+    ".cms/source/database/workspace/023_demo_user_read_only.sql": {
+        "source": ".cms/source/database/migrations/023_demo_user_read_only.sql",
+        "source_sha256": "1f3bc980590092ad53ec4ac585d61f19252b0ecf49e1c48366b2f37a1309b2e1"
+    },
+    ".cms/source/database/workspace/024_system_notifications.sql": {
+        "source": ".cms/source/database/migrations/024_system_notifications.sql",
+        "source_sha256": "773fd00dd19e18dc729f99959ae15dbe846f6af1b5a8c0c21627b06f56ace06b"
+    },
+    ".cms/source/database/workspace/025_web_push.sql": {
+        "source": ".cms/source/database/migrations/025_web_push.sql",
+        "source_sha256": "207e2282cd710809ecd57d8dc831d76bdba4d06044b3cc2438adfee12d80ecad"
+    },
+    ".cms/source/database/workspace/026_email_system.sql": {
+        "source": ".cms/source/database/migrations/026_email_system.sql",
+        "source_sha256": "6cb5bdd0b6e06b9a4a260aeddb927ebf73222e0981344b963f1ab21ddb8228c3"
+    },
+    ".cms/source/lang/cms/en.json": {
+        "source": ".cms/source/lang/cms/en.json",
+        "source_sha256": "6d797de3c10f9e629a22056cab4dd266ae8a6620ac2b6a6c46c021bec54fed97"
+    },
+    ".cms/source/lang/cms/km.json": {
+        "source": ".cms/source/lang/cms/km.json",
+        "source_sha256": "a7dd80e13200b2d1935598e70ba1339ff61ebd82ad66579e183600d571980b6e"
+    },
+    ".cms/source/lang/cms/zh.json": {
+        "source": ".cms/source/lang/cms/zh.json",
+        "source_sha256": "be10271c0753ae84f8c7b9e7f6dcadbb453f78b872aac3d28842b9199c39880f"
+    },
+    ".cms/source/lang/en.json": {
+        "source": ".cms/source/lang/en.json",
+        "source_sha256": "aa10b0fcbc66a13cc530d58a0c6e47ea260a52a4394d917ad48152e8f017fbf2"
+    },
+    ".cms/source/lang/km.json": {
+        "source": ".cms/source/lang/km.json",
+        "source_sha256": "de2c0fe5a0b558c314fd0eb1eaae5f9674e6b456bc28eee34dbab567bc7e5c43"
+    },
+    ".cms/source/lang/zh.json": {
+        "source": ".cms/source/lang/zh.json",
+        "source_sha256": "fb0136974a208607afb7e9261c00fa105f570d67f73e020b9bb28f20af8913a1"
+    },
+    ".cms/source/public/sensecms/audio/confirmation.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/confirmation.mp3",
+        "source_sha256": "b5a7d1faaf8b65c98d12c9e3342320c3e56caadcafe15f9088877272d3b0aa9c"
+    },
+    ".cms/source/public/sensecms/audio/error.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/error.mp3",
+        "source_sha256": "f3622eb05e8a93e3d513c95108daf4bd4d90b84bcd94f6ef6263d483c20cd399"
+    },
+    ".cms/source/public/sensecms/audio/license.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/license.mp3",
+        "source_sha256": "3a6d856fdf1ab01f0d6784345ab1488efd3b287999df33b2feec1ada68924a19"
+    },
+    ".cms/source/public/sensecms/audio/login-sound.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/login-sound.mp3",
+        "source_sha256": "7135a8ae04fe1d4a92dc02f9597d02e130dcbe265af8dec13a1c7cd095f434b9"
+    },
+    ".cms/source/public/sensecms/audio/login-voice.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/login-voice.mp3",
+        "source_sha256": "1a60a550336efe9e1848d430439b604eb28cf01e5f26964f7720bac04266a480"
+    },
+    ".cms/source/public/sensecms/audio/notification-01.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/notification-01.mp3",
+        "source_sha256": "e7265533439abd3eeec3d1940ac867c2f08b0d0a5b03da05bc7f40972c9fd1ea"
+    },
+    ".cms/source/public/sensecms/audio/notification-02.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/notification-02.mp3",
+        "source_sha256": "7e6fa3bc1e9ff6bdf165fd16223668cc2bb25217f239973a0620651476c70ba7"
+    },
+    ".cms/source/public/sensecms/audio/notification-03.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/notification-03.mp3",
+        "source_sha256": "168bb757f394deaf346229bca26228b2278bb0390d87e44f90fcf1633e445569"
+    },
+    ".cms/source/public/sensecms/audio/notification-04.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/notification-04.mp3",
+        "source_sha256": "9a6929a6c7695605e74ea1bb4035ed4e6cf8dbdc141f8846e452dd9062d8b464"
+    },
+    ".cms/source/public/sensecms/audio/notification-05.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/notification-05.mp3",
+        "source_sha256": "d3327171e1b6fa488b7a352417078102a0a9ac791985d0135089f373ec6ec11b"
+    },
+    ".cms/source/public/sensecms/audio/ring.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/ring.mp3",
+        "source_sha256": "58f48722177dbe056655611223b67ae37a319da74c28a62347f6d0a3a35d6476"
+    },
+    ".cms/source/public/sensecms/audio/warning.mp3": {
+        "source": ".cms/source/public/eduvixo/audio/warning.mp3",
+        "source_sha256": "d066130d72e22f4a63c20e01f18a929e3b19e177577634d2e405ccbdf03e2438"
+    },
+    ".cms/source/public/sensecms/images/arrow.svg": {
+        "source": ".cms/source/public/eduvixo/images/arrow.svg",
+        "source_sha256": "cea95cc321529b0eb81568e6979b4aa0bc34676398340b25249703cbeba40675"
+    },
+    ".cms/source/public/sensecms/images/auth-bg-dark.jpg": {
+        "source": ".cms/source/public/eduvixo/images/auth-bg-dark.jpg",
+        "source_sha256": "8bacb06eab6c49abd4aa8f541f7c656bc3909f8fd734c120c4ef4e2471f4ff05"
+    },
+    ".cms/source/public/sensecms/images/auth-bg.jpg": {
+        "source": ".cms/source/public/eduvixo/images/auth-bg.jpg",
+        "source_sha256": "1b784574f8b565c8c1e9f02463951ad50e3df3f7aa7aca3515e1f1969e11b887"
+    },
+    ".cms/source/public/sensecms/images/auth-email.png": {
+        "source": ".cms/source/public/eduvixo/images/auth-email.png",
+        "source_sha256": "05486d5d4765d41cb452cf88f2fe0c79daacfdc542b0d4574d037adf609f9e84"
+    },
+    ".cms/source/public/sensecms/images/auth-modern.png": {
+        "source": ".cms/source/public/eduvixo/images/auth-modern.png",
+        "source_sha256": "6a4028a270cbb9b0df4ebdab6a06f1694fbfd952f6b2de57f679ad836e4f3eb8"
+    },
+    ".cms/source/public/sensecms/images/bg-overlay.svg": {
+        "source": ".cms/source/public/eduvixo/images/bg-overlay.svg",
+        "source_sha256": "9ea729d0798b96cabcb11bdbeeecdea9dd56a02647af6126e54a597282a09baf"
+    },
+    ".cms/source/public/sensecms/images/birthday.png": {
+        "source": ".cms/source/public/eduvixo/images/birthday.png",
+        "source_sha256": "20e9bc2af5f8a23072a3177dc3ded8d2d3a3b7193bea223d216fdf39f996f1f6"
+    },
+    ".cms/source/public/sensecms/images/boxed.png": {
+        "source": ".cms/source/public/eduvixo/images/boxed.png",
+        "source_sha256": "d211f3fc118df4da91c5f6acb8b4cc1da302938717b2de45b591ec02676c5ccb"
+    },
+    ".cms/source/public/sensecms/images/brand/adwords.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/adwords.png",
+        "source_sha256": "717d1bbcc47f4c5274651c3e46695212f1b62cd49df08f7d55377ce0110e2669"
+    },
+    ".cms/source/public/sensecms/images/brand/android.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/android.png",
+        "source_sha256": "b5b84eea5bc1e26b8259b1f8bcc80c454409ccb1306afe2c0d8bafb59caa1695"
+    },
+    ".cms/source/public/sensecms/images/brand/app-store.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/app-store.png",
+        "source_sha256": "ef81708a9b80906dee13bf4b638dfebfd2da139be738233bd88a7630d8e185f4"
+    },
+    ".cms/source/public/sensecms/images/brand/delivery-1.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/delivery-1.png",
+        "source_sha256": "46c7e80a1f12b8e693bef2ff434ddd05d570c771e1316ad8ab03ed3f7e1865f3"
+    },
+    ".cms/source/public/sensecms/images/brand/delivery-2.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/delivery-2.png",
+        "source_sha256": "cb73ebcf8ff7f5815c2de6e8dff635dfbf1902ae2a22847b771b8418a4a17341"
+    },
+    ".cms/source/public/sensecms/images/brand/delivery-3.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/delivery-3.png",
+        "source_sha256": "d3ce7e3c847938cc18804bc49d4cba814a9b81429153919de40fe21f63c8e6eb"
+    },
+    ".cms/source/public/sensecms/images/brand/figma.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/figma.png",
+        "source_sha256": "6f2a7b97f0c2cbde99af6cd34673223ee0dfc56bb686ffbbed570e133e6b17a6"
+    },
+    ".cms/source/public/sensecms/images/brand/gmail.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/gmail.png",
+        "source_sha256": "1619dde69aa63095b07dff3a1b568600fae0df30d059ead519dc64e745494f0c"
+    },
+    ".cms/source/public/sensecms/images/brand/meta.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/meta.png",
+        "source_sha256": "ce2416db30e2ee1baa7446fd1e8aadd73f196916db762e02ea42948466727697"
+    },
+    ".cms/source/public/sensecms/images/brand/search.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/search.png",
+        "source_sha256": "8dd10ecf7ce7f0bef23a8920937fc02905b88011b3babbd5b3a0c23525e12766"
+    },
+    ".cms/source/public/sensecms/images/brand/slack.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/slack.png",
+        "source_sha256": "894abe245fdbb6a9ffd07aff4e8d30a27a76a446cd2dfd136d509eadb3b3eb54"
+    },
+    ".cms/source/public/sensecms/images/brand/telegram.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/telegram.png",
+        "source_sha256": "2e61b27fc5b280ca2520b2da71cbb95dad72538a9932eb5c8775d760cc8eb0f5"
+    },
+    ".cms/source/public/sensecms/images/brand/twitter.png": {
+        "source": ".cms/source/public/eduvixo/images/brand/twitter.png",
+        "source_sha256": "72f86211d17c57473e869564914a2aa2ee4d3b0abe7d85e53b32d82ff1d2b74e"
+    },
+    ".cms/source/public/sensecms/images/cta-2.png": {
+        "source": ".cms/source/public/eduvixo/images/cta-2.png",
+        "source_sha256": "88d84a259a72b3bea45a8a18977a35f139d550c673f4f8aee429c59e3b368ef5"
+    },
+    ".cms/source/public/sensecms/images/dashboard.png": {
+        "source": ".cms/source/public/eduvixo/images/dashboard.png",
+        "source_sha256": "7fca0e0d70a23cf197eb45fe4a59537728836dfdd3bb14be2db82f9ebe258875"
+    },
+    ".cms/source/public/sensecms/images/delete.png": {
+        "source": ".cms/source/public/eduvixo/images/delete.png",
+        "source_sha256": "b6812bcbb9396f16b5eea53f0f3c788ac5a87e3c89f68e36f94f5c761688f503"
+    },
+    ".cms/source/public/sensecms/images/email-dashboard.png": {
+        "source": ".cms/source/public/eduvixo/images/email-dashboard.png",
+        "source_sha256": "6eefd2c1ca9514ed6b53c6ce17b353ddc1400fde4e9a0abe03db5f9ebce80876"
+    },
+    ".cms/source/public/sensecms/images/error-404.png": {
+        "source": ".cms/source/public/eduvixo/images/error-404.png",
+        "source_sha256": "46bd7b12b01164b2cc6d4e25a1a0c2882777af07d24b2da556943158a1743f2b"
+    },
+    ".cms/source/public/sensecms/images/faq.png": {
+        "source": ".cms/source/public/eduvixo/images/faq.png",
+        "source_sha256": "3514a011c11ccac01588870598c0271097eab7859000a5341eb1d0c2c678cbcc"
+    },
+    ".cms/source/public/sensecms/images/favicon.ico": {
+        "source": ".cms/source/public/eduvixo/images/favicon.ico",
+        "source_sha256": "6a9a7be7cfef98ee0a7d6ac01bef951dbbf5b436d2e7001f85089411519a43f9"
+    },
+    ".cms/source/public/sensecms/images/flags/arebian.svg": {
+        "source": ".cms/source/public/eduvixo/images/flags/arebian.svg",
+        "source_sha256": "534fefed901b97bfdbcd0c1abc26266fef508ca5e66b84e30a29db5f85ba14f6"
+    },
+    ".cms/source/public/sensecms/images/flags/cn.svg": {
+        "source": ".cms/source/public/eduvixo/images/flags/cn.svg",
+        "source_sha256": "bc4f1f2460382d87b0123d252b36b7a83072a4486ba148079ac010a67b2d1e82"
+    },
+    ".cms/source/public/sensecms/images/flags/de.svg": {
+        "source": ".cms/source/public/eduvixo/images/flags/de.svg",
+        "source_sha256": "9b8f0721cf82b134c0c99daed4c74236f59550e5cd0b52bfe787406bc1c68cf3"
+    },
+    ".cms/source/public/sensecms/images/flags/french.jpg": {
+        "source": ".cms/source/public/eduvixo/images/flags/french.jpg",
+        "source_sha256": "b7b16d0cc69ddf30c6d35ac1e36ab8938ad51d2b445d7448071816c73ef05fb1"
+    },
+    ".cms/source/public/sensecms/images/flags/gb.svg": {
+        "source": ".cms/source/public/eduvixo/images/flags/gb.svg",
+        "source_sha256": "89c9fff9382a87e4e950e1a913156c0d793bb2bf74411be25ef07be31a369fa5"
+    },
+    ".cms/source/public/sensecms/images/flags/germany.jpg": {
+        "source": ".cms/source/public/eduvixo/images/flags/germany.jpg",
+        "source_sha256": "3f26e6599a865129efa54e074ab1d14098f0767d54d6f66eb7b394a1076162a6"
+    },
+    ".cms/source/public/sensecms/images/flags/italy.jpg": {
+        "source": ".cms/source/public/eduvixo/images/flags/italy.jpg",
+        "source_sha256": "78187be37a68f0701f584b89fcacf6f9b2c29091d93d514180ba5ec36774be78"
+    },
+    ".cms/source/public/sensecms/images/flags/japanese.svg": {
+        "source": ".cms/source/public/eduvixo/images/flags/japanese.svg",
+        "source_sha256": "93e4958a91e94e5249bdce1b34fee588c32ea1cfe7bfcb0e065935c69e171950"
+    },
+    ".cms/source/public/sensecms/images/flags/kh.svg": {
+        "source": ".cms/source/public/eduvixo/images/flags/kh.svg",
+        "source_sha256": "bd4d1f9e63e8a2fcf580032c9e645d171368bc4fa3865efc98c790e18e725303"
+    },
+    ".cms/source/public/sensecms/images/flags/pl.svg": {
+        "source": ".cms/source/public/eduvixo/images/flags/pl.svg",
+        "source_sha256": "4d07cc194dc89667a869b852646a9db399fa436782267c121eaaadd1bd97ea52"
+    },
+    ".cms/source/public/sensecms/images/flags/russia.jpg": {
+        "source": ".cms/source/public/eduvixo/images/flags/russia.jpg",
+        "source_sha256": "b3bb3e46a275976cc9f7408cdf4b80cfbf7138212578608e700964326e919b81"
+    },
+    ".cms/source/public/sensecms/images/flags/spain.jpg": {
+        "source": ".cms/source/public/eduvixo/images/flags/spain.jpg",
+        "source_sha256": "ce816ba477f12d9ae05a69029b2230396b6a66a0384a7932a19084986708408c"
+    },
+    ".cms/source/public/sensecms/images/flags/us.jpg": {
+        "source": ".cms/source/public/eduvixo/images/flags/us.jpg",
+        "source_sha256": "5c5daa2434b731f290c12152326c96577325ac3b130c288a374e40f3aad844a4"
+    },
+    ".cms/source/public/sensecms/images/hand.svg": {
+        "source": ".cms/source/public/eduvixo/images/hand.svg",
+        "source_sha256": "3c605435cf38a1203dbe0d6df863d52ff200c0befe3858d1cdbef25e20ad1212"
+    },
+    ".cms/source/public/sensecms/images/hr-dashboard.png": {
+        "source": ".cms/source/public/eduvixo/images/hr-dashboard.png",
+        "source_sha256": "1e42d4b0f9073199d0be32e32e04039379bcb8127b655b0cd362699d4e944960"
+    },
+    ".cms/source/public/sensecms/images/landing/about.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/about.jpg",
+        "source_sha256": "c24527bb387814278decfd064aa70933a63504275e9c25d5f4f44cd44eb6aba0"
+    },
+    ".cms/source/public/sensecms/images/landing/chat.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/chat.jpg",
+        "source_sha256": "f2c2d62bfd42f7e01718a5c4c1629d422e457d3c327cd5341ed24cf24ce30a2d"
+    },
+    ".cms/source/public/sensecms/images/landing/cta-2.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/cta-2.png",
+        "source_sha256": "88d84a259a72b3bea45a8a18977a35f139d550c673f4f8aee429c59e3b368ef5"
+    },
+    ".cms/source/public/sensecms/images/landing/cta.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/cta.png",
+        "source_sha256": "1fb314648b6fb98e7dd16318ec8b0b8a829ac2c93244a880141d383ae49a2204"
+    },
+    ".cms/source/public/sensecms/images/landing/email.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/email.jpg",
+        "source_sha256": "5418e40ca623420ed487a6fc1100a986dffdbd88de601c81235a5582554cd0d4"
+    },
+    ".cms/source/public/sensecms/images/landing/home.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/home.jpg",
+        "source_sha256": "0b4b1bd72edd9b0fd73292ba541446f3c978e615c5654b158abb1e46491d5e57"
+    },
+    ".cms/source/public/sensecms/images/landing/img-16.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/img-16.png",
+        "source_sha256": "77f4d597eaf03ff2bf0cb021e62b7fcc27bed49663d3f3d4b74d1e6696968d6e"
+    },
+    ".cms/source/public/sensecms/images/landing/img-17.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/img-17.png",
+        "source_sha256": "31e9097b2d8f3a1ea0a56812433329b650f0c89eeeacd169615d73bc3bde6599"
+    },
+    ".cms/source/public/sensecms/images/landing/img-18.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/img-18.png",
+        "source_sha256": "c49dbfba67560aec2206951fa099b74993ec0a11521e5e7023cc7a606e3d9e7b"
+    },
+    ".cms/source/public/sensecms/images/landing/img-19.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/img-19.png",
+        "source_sha256": "4b2e66a0451193a053a79bc6b0145a1961dc1a3f6850b38205ed32d250bf7cde"
+    },
+    ".cms/source/public/sensecms/images/landing/offer.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/offer.png",
+        "source_sha256": "b428c08e9e835eec516d638d7ca01b531bcc9156d4b654200838827d35d65886"
+    },
+    ".cms/source/public/sensecms/images/landing/order-overview.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/order-overview.jpg",
+        "source_sha256": "b66d1cfaa430bc424c96d4beb0a776412f571f529943b45c4cdc4faa047d2416"
+    },
+    ".cms/source/public/sensecms/images/landing/product-home.png": {
+        "source": ".cms/source/public/eduvixo/images/landing/product-home.png",
+        "source_sha256": "f585330b63f8fc8f96222d0edc41d0f8b0beeffbe2115ed36ddffc801356207d"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-2.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-2.jpg",
+        "source_sha256": "a66e776d272c3966f9c6f320e7d1720f474b89914caf382212b83bb5f8cf1bd9"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-3.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-3.jpg",
+        "source_sha256": "9a3e5707c50765e189bfa515d0bc05294424ac25fc847d21995a4a03c8bc4435"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-4.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-4.jpg",
+        "source_sha256": "efa294f41e2797cc99e390f26ae777a6613870645feec524b981c8de49e13e6b"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-5.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-5.jpg",
+        "source_sha256": "9a9afd59895ecea0c12d7ee5a483b503d84b2d54149eb9eb155774e8b0eb969b"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-6.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-6.jpg",
+        "source_sha256": "2dacdc198b02bae1745e1fa41afcd261dbf217ac3286df0dd8b4ab9c16610a52"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-7.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-7.jpg",
+        "source_sha256": "cfa88c63bba04c198609dd59d248ad11b6b6860d97e7fa862fc9c2e119b0e026"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-8.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-8.jpg",
+        "source_sha256": "a66e776d272c3966f9c6f320e7d1720f474b89914caf382212b83bb5f8cf1bd9"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets-9.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets-9.jpg",
+        "source_sha256": "fbefb62132ba0ed814ff307c315977da2cda12b974441740574f4e422ea7fb52"
+    },
+    ".cms/source/public/sensecms/images/landing/widgets.jpg": {
+        "source": ".cms/source/public/eduvixo/images/landing/widgets.jpg",
+        "source_sha256": "fbefb62132ba0ed814ff307c315977da2cda12b974441740574f4e422ea7fb52"
+    },
+    ".cms/source/public/sensecms/images/leaflet/leaf-green.png": {
+        "source": ".cms/source/public/eduvixo/images/leaflet/leaf-green.png",
+        "source_sha256": "3c9d238fb925766cc060018484afc1906f249137cd84a063ece8a88e816f077f"
+    },
+    ".cms/source/public/sensecms/images/leaflet/leaf-orange.png": {
+        "source": ".cms/source/public/eduvixo/images/leaflet/leaf-orange.png",
+        "source_sha256": "df53477367047e7fe248cb6a2c02fd7a3487ca0a698ec5162fc5382808259091"
+    },
+    ".cms/source/public/sensecms/images/leaflet/leaf-red.png": {
+        "source": ".cms/source/public/eduvixo/images/leaflet/leaf-red.png",
+        "source_sha256": "f1cc062fcd5b785d937861e3939eec236b49fc0f727b2ee3cbc8ef1ece469d0d"
+    },
+    ".cms/source/public/sensecms/images/leaflet/leaf-shadow.png": {
+        "source": ".cms/source/public/eduvixo/images/leaflet/leaf-shadow.png",
+        "source_sha256": "b78359249a175d01fab5aaa214109ea82663971d6ebef65e68a82f9a1b845e48"
+    },
+    ".cms/source/public/sensecms/images/logo-dark.png": {
+        "source": ".cms/source/public/eduvixo/images/logo-dark.png",
+        "source_sha256": "0cd9e8d7a5c087e650c642c71cb571a03689ed69732d29b08bcda89d64179b3c"
+    },
+    ".cms/source/public/sensecms/images/logo-light.png": {
+        "source": ".cms/source/public/eduvixo/images/logo-light.png",
+        "source_sha256": "489c5d1827659201389bf9656672565bf0dc5c9fa917850687c526b7181f89df"
+    },
+    ".cms/source/public/sensecms/images/logo-sm.png": {
+        "source": ".cms/source/public/eduvixo/images/logo-sm.png",
+        "source_sha256": "151b5fc1a3ce2dc76b36580ec632b495e6f47652261366c45aa268fb8fd34324"
+    },
+    ".cms/source/public/sensecms/images/maintenance.png": {
+        "source": ".cms/source/public/eduvixo/images/maintenance.png",
+        "source_sha256": "724a537e8c869588eb9c9bfddc4e84a4186b0c99ea5a9345c312c1a028690305"
+    },
+    ".cms/source/public/sensecms/images/medal.png": {
+        "source": ".cms/source/public/eduvixo/images/medal.png",
+        "source_sha256": "60d767bafd87b478850299795e63677ddcba48c0423c82a2d40c4dcaca9dcb14"
+    },
+    ".cms/source/public/sensecms/images/modern.svg": {
+        "source": ".cms/source/public/eduvixo/images/modern.svg",
+        "source_sha256": "09b79f097cdf9eb076b4f406fa14f5ffae3f325a66d8c33ced8e0ee46e29b5b9"
+    },
+    ".cms/source/public/sensecms/images/offline.png": {
+        "source": ".cms/source/public/eduvixo/images/offline.png",
+        "source_sha256": "71fa6e38e8df2eed71a359fa1e7fd16be01cc9a66c02046a4fac8e86b788f899"
+    },
+    ".cms/source/public/sensecms/images/payment/img-01.png": {
+        "source": ".cms/source/public/eduvixo/images/payment/img-01.png",
+        "source_sha256": "6e684e2c89a8277b6ebe81cd8fe8f3f159439871927fb95b58697bf9112e3a6f"
+    },
+    ".cms/source/public/sensecms/images/payment/img-02.png": {
+        "source": ".cms/source/public/eduvixo/images/payment/img-02.png",
+        "source_sha256": "8a954dd2d15ac9af3cc17ca93e2af92d0f83e5ebf707df133349fa76be590ac1"
+    },
+    ".cms/source/public/sensecms/images/payment/img-03.png": {
+        "source": ".cms/source/public/eduvixo/images/payment/img-03.png",
+        "source_sha256": "ea82c9ea31bf8bbdbc3299726cbb6fb78a31c3cdba21cc7a7770174737b35bba"
+    },
+    ".cms/source/public/sensecms/images/payment/img-04.png": {
+        "source": ".cms/source/public/eduvixo/images/payment/img-04.png",
+        "source_sha256": "82a51e8dada0a794442e7b9f9780e235efdc3b314607f5a5591a744821179205"
+    },
+    ".cms/source/public/sensecms/images/product/bg.png": {
+        "source": ".cms/source/public/eduvixo/images/product/bg.png",
+        "source_sha256": "82828337b80cb21158746367ca871df1456d1770289667a6ef94196564b54d2e"
+    },
+    ".cms/source/public/sensecms/images/product/cta-2.png": {
+        "source": ".cms/source/public/eduvixo/images/product/cta-2.png",
+        "source_sha256": "88d84a259a72b3bea45a8a18977a35f139d550c673f4f8aee429c59e3b368ef5"
+    },
+    ".cms/source/public/sensecms/images/product/cta.png": {
+        "source": ".cms/source/public/eduvixo/images/product/cta.png",
+        "source_sha256": "1fb314648b6fb98e7dd16318ec8b0b8a829ac2c93244a880141d383ae49a2204"
+    },
+    ".cms/source/public/sensecms/images/product/img-01.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-01.png",
+        "source_sha256": "df3d171a97b1488f836328f50d86500321c1d3dd6b297c325f85af7194bbbc31"
+    },
+    ".cms/source/public/sensecms/images/product/img-02.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-02.png",
+        "source_sha256": "c9dade4cb702771be7bd3ca30d83373f77651dea094aeb79e102dae25db37bbb"
+    },
+    ".cms/source/public/sensecms/images/product/img-03.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-03.png",
+        "source_sha256": "508a5a5870b6220b38a3b1359f646dfc4715d59738aead89bb7429160c046be7"
+    },
+    ".cms/source/public/sensecms/images/product/img-04.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-04.png",
+        "source_sha256": "82f32e9b3552bb8530a0c27756029a2ef08bd4cb6ea1568d072301c34fd35039"
+    },
+    ".cms/source/public/sensecms/images/product/img-05.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-05.png",
+        "source_sha256": "9e8513119ca27314c9a9696feb029b22855c7e91c49686ad2a507f7b1b1ca7da"
+    },
+    ".cms/source/public/sensecms/images/product/img-06.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-06.png",
+        "source_sha256": "da53ca62f2d1b95e030263ee5325de620613e928220ca5e5ecb9f017825754e1"
+    },
+    ".cms/source/public/sensecms/images/product/img-07.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-07.png",
+        "source_sha256": "8c014689576232b6910a08759062dd201da2e507b0cfeab27c5c46b58cf6fd54"
+    },
+    ".cms/source/public/sensecms/images/product/img-08.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-08.png",
+        "source_sha256": "37c41dbd66ba4cbbb74ce1139e7c0be523f0b701bb10fd7f88078f1ab9e132fb"
+    },
+    ".cms/source/public/sensecms/images/product/img-09.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-09.png",
+        "source_sha256": "7d1cae1953d20e3da8128f42574e668109673f7730a1e47f55b8c6d9be855e14"
+    },
+    ".cms/source/public/sensecms/images/product/img-10.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-10.png",
+        "source_sha256": "3e7e44a3c2cd165be627bcb7df13c06303863d26057e9dd13b0f7734a516f532"
+    },
+    ".cms/source/public/sensecms/images/product/img-11.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-11.png",
+        "source_sha256": "3131117f9be9df500b9a275e60e98e9a484f5b7a56f38374c6ead2dbd877cc82"
+    },
+    ".cms/source/public/sensecms/images/product/img-12.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-12.png",
+        "source_sha256": "b54c3cd9aea959fe88bbe73accebb6c6fccd8520381374c730996bbcf43ed9e1"
+    },
+    ".cms/source/public/sensecms/images/product/img-13.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-13.png",
+        "source_sha256": "153cf5591bec4c69e8a08c1e232be21b45a39572e15d23db4c9cd8347c2c82b5"
+    },
+    ".cms/source/public/sensecms/images/product/img-14.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-14.png",
+        "source_sha256": "03f6b4a9a2522b86b29c579ff40168b5e502716f88064e1d2c1866fd28c9bfea"
+    },
+    ".cms/source/public/sensecms/images/product/img-15.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-15.png",
+        "source_sha256": "9f24fb9cf115ebe7cf9bbf369c5403134951dfe70f24105edb365a8913a450f2"
+    },
+    ".cms/source/public/sensecms/images/product/img-16.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-16.png",
+        "source_sha256": "77f4d597eaf03ff2bf0cb021e62b7fcc27bed49663d3f3d4b74d1e6696968d6e"
+    },
+    ".cms/source/public/sensecms/images/product/img-17.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-17.png",
+        "source_sha256": "31e9097b2d8f3a1ea0a56812433329b650f0c89eeeacd169615d73bc3bde6599"
+    },
+    ".cms/source/public/sensecms/images/product/img-18.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-18.png",
+        "source_sha256": "c49dbfba67560aec2206951fa099b74993ec0a11521e5e7023cc7a606e3d9e7b"
+    },
+    ".cms/source/public/sensecms/images/product/img-19.png": {
+        "source": ".cms/source/public/eduvixo/images/product/img-19.png",
+        "source_sha256": "4b2e66a0451193a053a79bc6b0145a1961dc1a3f6850b38205ed32d250bf7cde"
+    },
+    ".cms/source/public/sensecms/images/product/overview-01.png": {
+        "source": ".cms/source/public/eduvixo/images/product/overview-01.png",
+        "source_sha256": "728b603926cc4946b2adef644572db4afa8c553dbd63fc4e09a350321fdf305b"
+    },
+    ".cms/source/public/sensecms/images/product/overview-02.png": {
+        "source": ".cms/source/public/eduvixo/images/product/overview-02.png",
+        "source_sha256": "7955e38ab6dbb3d562ba22869d759921984756974b5129d1002efa5cf613c25b"
+    },
+    ".cms/source/public/sensecms/images/profile-bg.jpg": {
+        "source": ".cms/source/public/eduvixo/images/profile-bg.jpg",
+        "source_sha256": "aa4499fcb1ae64bde2c13e043750755fa9585d35212d799921879765979e9d1a"
+    },
+    ".cms/source/public/sensecms/images/signature.png": {
+        "source": ".cms/source/public/eduvixo/images/signature.png",
+        "source_sha256": "540a175862f2a1f0a831dcb856211850b82ded74e0644cd8c86cacdd30525bd4"
+    },
+    ".cms/source/public/sensecms/images/small/img-1.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-1.jpg",
+        "source_sha256": "9c92e7456bfbd5302877465743885159e3f0d07ac1fe278d9fe166a507d5e732"
+    },
+    ".cms/source/public/sensecms/images/small/img-10.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-10.jpg",
+        "source_sha256": "b4b963170b7086c60edc5635e0d7cfbcaad2ee8ff993ff9289a8dce32c841c11"
+    },
+    ".cms/source/public/sensecms/images/small/img-11.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-11.jpg",
+        "source_sha256": "9b7b43cacbf51d3fa8d7cee2811fa7d21ba52f25131c81aa4c03a0cab87286ed"
+    },
+    ".cms/source/public/sensecms/images/small/img-12.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-12.jpg",
+        "source_sha256": "22ed1f4deb436aa8e79c52a257129a325f271fa3862dca582acc3931661e6a47"
+    },
+    ".cms/source/public/sensecms/images/small/img-2.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-2.jpg",
+        "source_sha256": "e3dbd13dda9134328611e96441eb3871de4d94f8a283039ca46b6a11f68cfe83"
+    },
+    ".cms/source/public/sensecms/images/small/img-3.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-3.jpg",
+        "source_sha256": "02639d648b99326e61058094f5036908ad21e940aeebf08b569688a9a68a7d95"
+    },
+    ".cms/source/public/sensecms/images/small/img-4.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-4.jpg",
+        "source_sha256": "ad04235ebe77717c21b6fe7c7eb9b7433d620ab414eecc62531bea974f47ab60"
+    },
+    ".cms/source/public/sensecms/images/small/img-5.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-5.jpg",
+        "source_sha256": "881574529a04850ad011c99f3f175da68e692a21d8c71d36de015cc4974dbf79"
+    },
+    ".cms/source/public/sensecms/images/small/img-6.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-6.jpg",
+        "source_sha256": "95f04641531ebacb18e321ed83bdcee90029a84b79e370320557a76d2320e647"
+    },
+    ".cms/source/public/sensecms/images/small/img-7.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-7.jpg",
+        "source_sha256": "86fa3fae5ba0970f8e2c997a84847a01d6de3b4f709f144a74c9dfe0670417c7"
+    },
+    ".cms/source/public/sensecms/images/small/img-8.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-8.jpg",
+        "source_sha256": "ac02bf9e3426ec1d069a1906230445de5fc227c0b69e550c8793c3cd6e2bbef1"
+    },
+    ".cms/source/public/sensecms/images/small/img-9.jpg": {
+        "source": ".cms/source/public/eduvixo/images/small/img-9.jpg",
+        "source_sha256": "183056c0fb6561952b25c990adeae905c80c2880fd0e3a1fb4fdd3a3604bc1f4"
+    },
+    ".cms/source/public/sensecms/images/support.png": {
+        "source": ".cms/source/public/eduvixo/images/support.png",
+        "source_sha256": "565b67cb31d9d916b028ce5d48608614fffd52b19502b8f9d0e187f85760cf9c"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-1.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-1.png",
+        "source_sha256": "f4073a11255b78d43c0ae5d927a209494d933b633157a90a423d3150832938f2"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-10.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-10.png",
+        "source_sha256": "bd1a0256baef9fb08d5634d265c2097fa9819b4bb0b70b93bddc52149ee01af6"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-11.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-11.png",
+        "source_sha256": "ca52c5cb72d14d7dfc3e87eb1e4f04a9a826a285041908eaa3f1889d22831358"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-2.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-2.png",
+        "source_sha256": "ab6994a64796bcd95185275ddec311b16b3e6ab9718d666138be10c3bb4de1dd"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-3.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-3.png",
+        "source_sha256": "2ba3c6e6e6f1cf903824d2f287babb64118a6370b886fb8c5ca2ba5cf68e876f"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-4.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-4.png",
+        "source_sha256": "17b630f879a17986070d61e1d56a7d52abc23c4563b38d139a17d997305ebf06"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-5.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-5.png",
+        "source_sha256": "eef586c0f77d81cba77a74616c0ee2e61aa8463283f4b21001a7bee509c3b72a"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-6.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-6.png",
+        "source_sha256": "7ea6212a95bc7d4aa27f61e092fdce6b7718be03767bf988a5c494c7b9d0be20"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-7.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-7.png",
+        "source_sha256": "2416ab3281070a2cc340c523149d97a05b7187a3442ba80a4603598c6b672d0e"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-8.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-8.png",
+        "source_sha256": "07fa2b2119d974c5cd8458b2ae7846ebd11cd41df2f3899b1515933a71080263"
+    },
+    ".cms/source/public/sensecms/images/user/avatar-9.png": {
+        "source": ".cms/source/public/eduvixo/images/user/avatar-9.png",
+        "source_sha256": "62ff7f51a1ce88eb1af91ee77763239af486b715368855fe30a205c40d4800b1"
+    },
+    ".cms/source/public/sensecms/images/user/multi-user.jpg": {
+        "source": ".cms/source/public/eduvixo/images/user/multi-user.jpg",
+        "source_sha256": "b50a91e1f3f957f248e484dd1f61a381a42d511fc599af54bdc45f6197d7356a"
+    },
+    ".cms/source/public/sensecms/images/user/user-1.jpg": {
+        "source": ".cms/source/public/eduvixo/images/user/user-1.jpg",
+        "source_sha256": "78064d0f617e44c8f29d2923c5a5a50266482192e30d48e33dd2e26710491b6f"
+    },
+    ".cms/source/public/sensecms/images/user/user-2.jpg": {
+        "source": ".cms/source/public/eduvixo/images/user/user-2.jpg",
+        "source_sha256": "beac323283deda350e47eafb7def10915b3daa2e59b577164075781eb59411b0"
+    },
+    ".cms/source/public/sensecms/images/user/user-3.jpg": {
+        "source": ".cms/source/public/eduvixo/images/user/user-3.jpg",
+        "source_sha256": "eebf9f8d7712913ddcd26b4e4d1f1bf12dad665c0ba7cb2ce0a52a8d42d75e56"
+    },
+    ".cms/source/public/sensecms/images/user/user-4.jpg": {
+        "source": ".cms/source/public/eduvixo/images/user/user-4.jpg",
+        "source_sha256": "c99836ea21385cb8b816f8e03b7857adb45f663b42f60a976e3d45d1f6939f8a"
+    },
+    ".cms/source/public/sensecms/images/user/user-dummy-img.jpg": {
+        "source": ".cms/source/public/eduvixo/images/user/user-dummy-img.jpg",
+        "source_sha256": "ca52c5cb72d14d7dfc3e87eb1e4f04a9a826a285041908eaa3f1889d22831358"
+    },
+    ".cms/source/public/sensecms/images/user/user-profile.png": {
+        "source": ".cms/source/public/eduvixo/images/user/user-profile.png",
+        "source_sha256": "4f8b780090c6670f983fc106f128abf34ffa814955c374928019326d06fd6866"
+    },
+    ".cms/source/public/theme/qrcode.js": {
+        "source": ".cms/source/public/theme/qrcode.js",
+        "source_sha256": "6b0c4445aeb8e701e4ff494384230e0df2193ea1b9ff0875d4e31cf8909007c1"
+    },
+    ".cms/source/public/theme/sensecms-access.css": {
+        "source": ".cms/source/public/theme/eduvixo-access.css",
+        "source_sha256": "91e0fd53cc43b9e3a2b22fa0c608e6f427dec0f9c7b1a64f8defc6cabb754165"
+    },
+    ".cms/source/public/theme/sensecms-access.js": {
+        "source": ".cms/source/public/theme/eduvixo-access.js",
+        "source_sha256": "04ab0cdeecd36bdce0c84bc3669d4f2abf5abfcf8ccf27440fcbe964f284e5a0"
+    },
+    ".cms/source/public/theme/sensecms-accessibility.css": {
+        "source": ".cms/source/public/theme/eduvixo-accessibility.css",
+        "source_sha256": "158187cd2edbdebc041d2028fa747f745933c6db93fc66c3e2425006e51c4ac9"
+    },
+    ".cms/source/public/theme/sensecms-admin.css": {
+        "source": ".cms/source/public/theme/eduvixo-admin.css",
+        "source_sha256": "11d608ff7337a1171ba6f80305b7cfafae8a27517ae5d645284fd208b1205723"
+    },
+    ".cms/source/public/theme/sensecms-admin.js": {
+        "source": ".cms/source/public/theme/eduvixo-admin.js",
+        "source_sha256": "93f5140d9f35be296e1e1b4235547906e104871f38e0d5dc002e2ff624d8b266"
+    },
+    ".cms/source/public/theme/sensecms-auth-navigation.js": {
+        "source": ".cms/source/public/theme/eduvixo-auth-navigation.js",
+        "source_sha256": "bc5f8e8a47875732fd50690b0b7415d71bf25f40a55dd0ad74693f7271ffa1a4"
+    },
+    ".cms/source/public/theme/sensecms-captcha-refresh.js": {
+        "source": ".cms/source/public/theme/eduvixo-captcha-refresh.js",
+        "source_sha256": "37e4f2726a5c49d0f8a95de06de71c595aecf321713fa332fb02099f02db3cc9"
+    },
+    ".cms/source/public/theme/sensecms-components.css": {
+        "source": ".cms/source/public/theme/eduvixo-components.css",
+        "source_sha256": "c1eee0420748970794cc84e99f3c97ee5e0c73275f8e094a0cf5e72f98e5b05e"
+    },
+    ".cms/source/public/theme/sensecms-content-management.css": {
+        "source": ".cms/source/public/theme/eduvixo-content-management.css",
+        "source_sha256": "d1df4ae2c5914bdb9a31c74c673161338269f5e44ff479a8d37621e505d32ef2"
+    },
+    ".cms/source/public/theme/sensecms-content-management.js": {
+        "source": ".cms/source/public/theme/eduvixo-content-management.js",
+        "source_sha256": "0e39f17cb17c862b5fb38ed4ecce2afd7634bec4f93c714cd5c2aa042cb5dddc"
+    },
+    ".cms/source/public/theme/sensecms-content-workspace.css": {
+        "source": ".cms/source/public/theme/eduvixo-content-workspace.css",
+        "source_sha256": "c4d1f741bb15ba574c957ca1b355b8fd9c7c9d5f34f6737e5b9723b8e5187c82"
+    },
+    ".cms/source/public/theme/sensecms-content-workspace.js": {
+        "source": ".cms/source/public/theme/eduvixo-content-workspace.js",
+        "source_sha256": "eca6dfef58d42b0256d0bd7c1731c72513b94a0b0842df993049c5506daa209e"
+    },
+    ".cms/source/public/theme/sensecms-controls.css": {
+        "source": ".cms/source/public/theme/eduvixo-controls.css",
+        "source_sha256": "89be74241fb2520090e9dd3193c17e7703acd25ce4abc1dac1d79fc92f4596a6"
+    },
+    ".cms/source/public/theme/sensecms-conversations.css": {
+        "source": ".cms/source/public/theme/eduvixo-conversations.css",
+        "source_sha256": "017ba211b1ed1a4f81fe19d7e4086274b255603733020f9c91e9f09e03220b83"
+    },
+    ".cms/source/public/theme/sensecms-conversations.js": {
+        "source": ".cms/source/public/theme/eduvixo-conversations.js",
+        "source_sha256": "0271a344ebed36f80ddf2d7fdcf41c44cfaf3b5a9612d99704fa0735e649f353"
+    },
+    ".cms/source/public/theme/sensecms-custom.css": {
+        "source": ".cms/source/public/theme/eduvixo-custom.css",
+        "source_sha256": "516490e22df89ad574203e465b91b8e8e803f576f55acfd5517cc4d471d27036"
+    },
+    ".cms/source/public/theme/sensecms-dashboard.css": {
+        "source": ".cms/source/public/theme/eduvixo-dashboard.css",
+        "source_sha256": "01772cab7ef464d32498751b441cf8397bcb4e9a51cef049416767ef569d5d65"
+    },
+    ".cms/source/public/theme/sensecms-date-picker.css": {
+        "source": ".cms/source/public/theme/eduvixo-date-picker.css",
+        "source_sha256": "151d49cccc3fd6a10d90febe9b913ad556a4c55486f06334bce2c44d93ce5f1c"
+    },
+    ".cms/source/public/theme/sensecms-date-picker.js": {
+        "source": ".cms/source/public/theme/eduvixo-date-picker.js",
+        "source_sha256": "17bd533638f28d03c531db98a06211cb1036d5804f97b7e93a820a1669f460d9"
+    },
+    ".cms/source/public/theme/sensecms-demo-mode.css": {
+        "source": ".cms/source/public/theme/eduvixo-demo-mode.css",
+        "source_sha256": "d3665b0009347a28454aa454028d65818f223873bfa972967e736098babc7cbe"
+    },
+    ".cms/source/public/theme/sensecms-demo-mode.js": {
+        "source": ".cms/source/public/theme/eduvixo-demo-mode.js",
+        "source_sha256": "5ada3a5ec7febdeda4f75365f5c3db25ffe11a188cf82cd14617b3bf9416225e"
+    },
+    ".cms/source/public/theme/sensecms-ecosystem.css": {
+        "source": ".cms/source/public/theme/eduvixo-ecosystem.css",
+        "source_sha256": "af619e0f0e6e5ec86731dee8e91a86dd51ac9fd3a12268db4fa437464191416c"
+    },
+    ".cms/source/public/theme/sensecms-ecosystem.js": {
+        "source": ".cms/source/public/theme/eduvixo-ecosystem.js",
+        "source_sha256": "a3fe669843c3cc4eab966c1daf0f513fd3426856e972a2f19d3d5323b26e78da"
+    },
+    ".cms/source/public/theme/sensecms-editor-workflow.js": {
+        "source": ".cms/source/public/theme/eduvixo-editor-workflow.js",
+        "source_sha256": "0263d2ee719c822487fa03ec8fce7a2ae453f8b0d7db4a98915da7408b355fd3"
+    },
+    ".cms/source/public/theme/sensecms-email.css": {
+        "source": ".cms/source/public/theme/eduvixo-email.css",
+        "source_sha256": "cc670d5f89550e6750597cd016d884b3fcabfca26f1f225f3ddd649d3cf7f30d"
+    },
+    ".cms/source/public/theme/sensecms-email.js": {
+        "source": ".cms/source/public/theme/eduvixo-email.js",
+        "source_sha256": "fef7a1b8f0b66f7a49822cc45e0af3a1af49fefd599bbb96132130edd5856e6b"
+    },
+    ".cms/source/public/theme/sensecms-facilities.css": {
+        "source": ".cms/source/public/theme/eduvixo-campuses.css",
+        "source_sha256": "2ef43a49e077d116ef30c199c2850e7e1bd7db87b80e001897bce8a14d6ad8d3"
+    },
+    ".cms/source/public/theme/sensecms-fields.css": {
+        "source": ".cms/source/public/theme/eduvixo-fields.css",
+        "source_sha256": "f3e8f8574627cc44b9956ecad87c8b815e5ea72d3fdf7874a8507c8b283c7af7"
+    },
+    ".cms/source/public/theme/sensecms-fields.js": {
+        "source": ".cms/source/public/theme/eduvixo-fields.js",
+        "source_sha256": "2a39589c74785a63e2955599b13553d40f84a0f08bcdb221a8ef32b4926bbb36"
+    },
+    ".cms/source/public/theme/sensecms-form-inbox.css": {
+        "source": ".cms/source/public/theme/eduvixo-form-inbox.css",
+        "source_sha256": "d168e2e0776aa162dc01e664c1e4504b4eb8143fb7811938f8e1814b9143b5a9"
+    },
+    ".cms/source/public/theme/sensecms-form-inbox.js": {
+        "source": ".cms/source/public/theme/eduvixo-form-inbox.js",
+        "source_sha256": "3204e65253ea098913e5bc9d698fa0019c6c47901c921918031a9b6cd516b67e"
+    },
+    ".cms/source/public/theme/sensecms-icons-runtime.js": {
+        "source": ".cms/source/public/theme/eduvixo-icons-runtime.js",
+        "source_sha256": "41873b8d37be157049a397025d9fc066982bde260cc70b5e3e22bfeb80d47989"
+    },
+    ".cms/source/public/theme/sensecms-icons.js": {
+        "source": ".cms/source/public/theme/eduvixo-icons.js",
+        "source_sha256": "f79f9deb7ba7eb73ba51c93c23f12c60764f17e9b3629f7bd13795e4a353987b"
+    },
+    ".cms/source/public/theme/sensecms-live-chat.css": {
+        "source": ".cms/source/public/theme/eduvixo-live-chat.css",
+        "source_sha256": "9602b1a953c76f92e1564236ae3c234800d8220b49307e8b3be2f7638dcbb364"
+    },
+    ".cms/source/public/theme/sensecms-live-chat.js": {
+        "source": ".cms/source/public/theme/eduvixo-live-chat.js",
+        "source_sha256": "8d7bb0c1e82da3a162f2bc8005dfdd538c5adacc0d3f7eefd87225d6d67c2d1d"
+    },
+    ".cms/source/public/theme/sensecms-login.css": {
+        "source": ".cms/source/public/theme/eduvixo-login.css",
+        "source_sha256": "138bd2afa2ac9adbb7d796fb05d37b0f983ed716effda6aa7bf77e7e156c7abe"
+    },
+    ".cms/source/public/theme/sensecms-marketplace-governance.css": {
+        "source": ".cms/source/public/theme/eduvixo-marketplace-governance.css",
+        "source_sha256": "e5e8fb56c70fd05facce535b8fcb54b2ba41c01b2f170328dabd32affe29d4f0"
+    },
+    ".cms/source/public/theme/sensecms-marketplace-governance.js": {
+        "source": ".cms/source/public/theme/eduvixo-marketplace-governance.js",
+        "source_sha256": "63d803862fbbb205ea77b2f344afeb5b8adf252c8b42ffcf088f7e80f6ece69c"
+    },
+    ".cms/source/public/theme/sensecms-marketplace-moderation.css": {
+        "source": ".cms/source/public/theme/eduvixo-marketplace-moderation.css",
+        "source_sha256": "a8abc0778802af21918efb1e838c581d7382b1dba0db9d8fcbfe701ac1bc4d23"
+    },
+    ".cms/source/public/theme/sensecms-marketplace.css": {
+        "source": ".cms/source/public/theme/eduvixo-marketplace.css",
+        "source_sha256": "8e791bdcedc4e19e669308b09a20a2f8382c1055771b4654d724b48b95cf7361"
+    },
+    ".cms/source/public/theme/sensecms-marketplace.js": {
+        "source": ".cms/source/public/theme/eduvixo-marketplace.js",
+        "source_sha256": "e029d1febf3dcb48d8902606ceff31dc97b876c2786feee4476a71711a8a1e59"
+    },
+    ".cms/source/public/theme/sensecms-media-library.css": {
+        "source": ".cms/source/public/theme/eduvixo-media-library.css",
+        "source_sha256": "62f0a8ec0fbb25fdd72685debdfd698b504f8ec28c714f8d53c7211673c8646c"
+    },
+    ".cms/source/public/theme/sensecms-media-library.js": {
+        "source": ".cms/source/public/theme/eduvixo-media-library.js",
+        "source_sha256": "672fe8904fedf525085ac0c3d9f0636e0f52b08fd1996587b91d24c5bd50e340"
+    },
+    ".cms/source/public/theme/sensecms-notifications.css": {
+        "source": ".cms/source/public/theme/eduvixo-notifications.css",
+        "source_sha256": "9c0f8cfdbe6a674fabd8bc8b1f61c992b601afa9b803f65133ebabe7718f1f0c"
+    },
+    ".cms/source/public/theme/sensecms-notifications.js": {
+        "source": ".cms/source/public/theme/eduvixo-notifications.js",
+        "source_sha256": "38d7b8777e3a68d31162d6c159d88e681ec002f986714f46927675417179fc92"
+    },
+    ".cms/source/public/theme/sensecms-page-builder.css": {
+        "source": ".cms/source/public/theme/eduvixo-page-builder.css",
+        "source_sha256": "bfe6f70b518110f5509abca31618a3058972e6ba2f9ed28a7be4b611f70513d4"
+    },
+    ".cms/source/public/theme/sensecms-page-builder.js": {
+        "source": ".cms/source/public/theme/eduvixo-page-builder.js",
+        "source_sha256": "53e6fc0995b8b9a70d8c83f5f92343c829da9ceb94eb2d280d4b62abf47ceef7"
+    },
+    ".cms/source/public/theme/sensecms-profile.css": {
+        "source": ".cms/source/public/theme/eduvixo-profile.css",
+        "source_sha256": "6eed7bf0e3a476b54ae9f7c698a48c621a88833eee4760ccfab9ad0cfc073a54"
+    },
+    ".cms/source/public/theme/sensecms-session.js": {
+        "source": ".cms/source/public/theme/eduvixo-session.js",
+        "source_sha256": "5aa6c3fd20e526821f7f2b5f9ed4185150208ee0893147dbbaeebac392246d66"
+    },
+    ".cms/source/public/theme/sensecms-shell.css": {
+        "source": ".cms/source/public/theme/eduvixo-shell.css",
+        "source_sha256": "ac63f8a3047f82e5a26bc7b48fa5fe3c07f21c01e7761f818be5389ea3b57799"
+    },
+    ".cms/source/public/theme/sensecms-shell.js": {
+        "source": ".cms/source/public/theme/eduvixo-shell.js",
+        "source_sha256": "e962c3c1101cff9aa1057f8e1f81c55d92358bc977ce61e76bf4bea375b3955c"
+    },
+    ".cms/source/public/theme/sensecms-survey-public.css": {
+        "source": ".cms/source/public/theme/eduvixo-survey-public.css",
+        "source_sha256": "118d9ca69da728117018525b2f068fb77d9d464a21350f84b57b2ce4a3776127"
+    },
+    ".cms/source/public/theme/sensecms-survey-public.js": {
+        "source": ".cms/source/public/theme/eduvixo-survey-public.js",
+        "source_sha256": "aef8162c142dbfadc8acfef7b474aecc73b8290ee457f6553018ae9f7429d214"
+    },
+    ".cms/source/public/theme/sensecms-surveys.css": {
+        "source": ".cms/source/public/theme/eduvixo-surveys.css",
+        "source_sha256": "ec4bc0a110569a6ce983f99980494f14fe09f672c5122dedd0d55a5f404a6fb0"
+    },
+    ".cms/source/public/theme/sensecms-surveys.js": {
+        "source": ".cms/source/public/theme/eduvixo-surveys.js",
+        "source_sha256": "f86428b8d3f58b288b64369f696e030b48bfe0610dc86924567ff7ae1838e335"
+    },
+    ".cms/source/public/theme/sensecms-system-update.css": {
+        "source": ".cms/source/public/theme/eduvixo-system-update.css",
+        "source_sha256": "8d17267efd6913b1cd7c3a6f980cb597554114489cb4877d91c59764ce4e91b5"
+    },
+    ".cms/source/public/theme/sensecms-system-update.js": {
+        "source": ".cms/source/public/theme/eduvixo-system-update.js",
+        "source_sha256": "a3d2a06d66ffd0e24acfc677c8d6633b5bcdd8cb0bbdfe8214539c102550b78f"
+    },
+    ".cms/source/public/theme/sensecms-telegram-connect.css": {
+        "source": ".cms/source/public/theme/eduvixo-telegram-connect.css",
+        "source_sha256": "551599d18209d499551be3dcb0edbc4097ed9891b193acdf3a15136b6efbbe2e"
+    },
+    ".cms/source/public/theme/sensecms-telegram-connect.js": {
+        "source": ".cms/source/public/theme/eduvixo-telegram-connect.js",
+        "source_sha256": "ff4e20edd0ea963067cc113d0a74866e0984641b24c28b8e5719e5598af97456"
+    },
+    ".cms/source/public/theme/sensecms-text-zoom.css": {
+        "source": ".cms/source/public/theme/eduvixo-text-zoom.css",
+        "source_sha256": "4fa53097e1d51608720a27dd9da01af8e227ee9f50a27342f01589dca2abb065"
+    },
+    ".cms/source/public/theme/sensecms-themes.css": {
+        "source": ".cms/source/public/theme/eduvixo-themes.css",
+        "source_sha256": "663e0180663a73182d9fab0bf61a4e85d005fea13fac5608af6810210059f27d"
+    },
+    ".cms/source/public/theme/sensecms-themes.js": {
+        "source": ".cms/source/public/theme/eduvixo-themes.js",
+        "source_sha256": "f74dccd367caf1e5ee448ba8b2c1847a49b079e022d97e220d2a3ac98078fb2e"
+    },
+    ".cms/source/public/theme/sensecms-ui.js": {
+        "source": ".cms/source/public/theme/eduvixo-ui.js",
+        "source_sha256": "13f1c12a2a796c9c72864508ba75d878fba7a498f02c3d25f01f09155dea49a4"
+    },
+    ".cms/source/public/theme/sensecms-unsaved-guard.css": {
+        "source": ".cms/source/public/theme/eduvixo-unsaved-guard.css",
+        "source_sha256": "ab3670616d64c53fe2512b836740090673522ee281ba1e40e4dfab50ed4c27c3"
+    },
+    ".cms/source/public/theme/sensecms-unsaved-guard.js": {
+        "source": ".cms/source/public/theme/eduvixo-unsaved-guard.js",
+        "source_sha256": "0f65f8b0d433bbd3c5d65178ecee7165bd2b138dbb15bffaf182edac8e99fd2a"
+    },
+    ".cms/source/public/theme/sensecms-web-push.js": {
+        "source": ".cms/source/public/theme/eduvixo-web-push.js",
+        "source_sha256": "c3df856344d83a84afa37afaf6873b4bf70fdee00b46da75f731af9e83ef5dcc"
+    },
+    ".cms/source/public/theme/sensecms-workspaces.css": {
+        "source": ".cms/source/public/theme/eduvixo-workspaces.css",
+        "source_sha256": "597db487eaf7197422d02895a7753ffbd1f244e45d610d773ce1b83e7d6739e5"
+    }
+}

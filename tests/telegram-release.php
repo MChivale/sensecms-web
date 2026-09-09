@@ -1,0 +1,23 @@
+<?php
+declare(strict_types=1);
+if(PHP_SAPI!=='cli'||PHP_OS_FAMILY==='Windows')exit(1);
+$root=dirname(__DIR__).'/.cms/source';
+if($root!=='/root/sense-workspace-test.SC495Gg0/.cms/source')throw new RuntimeException('Private QA only');
+require $root.'/bootstrap.php';$rt=new App\Core\Runtime($root);$db=App\Core\Runtime::connect($rt->read('installed')['database']);
+$manager=new App\Core\PackageManager($db,$root,'0.1.0');$slug='telegram-notifications';
+$before=$manager->package('plugin',$slug);if(($before['version']??'')!=='0.1.0')throw new RuntimeException('Expected QA 0.1.0');
+$settings=$db->query("SELECT * FROM notification_channel_settings WHERE plugin_slug='telegram-notifications'")->fetchAll();
+$other=$db->query("SELECT type,slug,version,active FROM extension_packages WHERE slug<>'telegram-notifications' ORDER BY type,slug")->fetchAll();
+$stage=$manager->stageLocalFile($argv[1],1);$result=$manager->install($stage['token'],1);
+if($result['version']!=='0.1.1')throw new RuntimeException('Upgrade failed');
+$manager->rollback('plugin',$slug,1);
+if($manager->package('plugin',$slug)['version']!=='0.1.0')throw new RuntimeException('Rollback failed');
+$stage=$manager->stageLocalFile($argv[1],1);$manager->install($stage['token'],1);
+if($manager->package('plugin',$slug)['version']!=='0.1.1')throw new RuntimeException('Re-upgrade failed');
+if($settings!==$db->query("SELECT * FROM notification_channel_settings WHERE plugin_slug='telegram-notifications'")->fetchAll())throw new RuntimeException('Upgrade changed settings');
+$manager->setActive('plugin',$slug,false,1);$manager->uninstall('plugin',$slug,1);
+$stage=$manager->stageLocalFile($argv[1],1);$manager->install($stage['token'],1);
+if($manager->package('plugin',$slug)['version']!=='0.1.1')throw new RuntimeException('Clean install failed');
+if($settings!==$db->query("SELECT * FROM notification_channel_settings WHERE plugin_slug='telegram-notifications'")->fetchAll())throw new RuntimeException('Reinstall changed settings');
+if($other!==$db->query("SELECT type,slug,version,active FROM extension_packages WHERE slug<>'telegram-notifications' ORDER BY type,slug")->fetchAll())throw new RuntimeException('Unrelated packages changed');
+echo "PASS actual signed ZIP: upgrade, rollback, re-upgrade, deactivate, uninstall, clean reinstall; settings and unrelated packages preserved.\n";

@@ -1,104 +1,104 @@
 # Sense CMS
 
-A general-purpose PHP CMS, web installer and independently installable extensions.
-This repository also owns the Sense CMS product website and package distribution.
+Standalone development repository for a general-purpose PHP CMS, its administration,
+official product website and independently installable extensions.
 
-## Current implementation
+**Project directory:** `F:/Git/MChivale/sensecms-web`.
+No other project checkout is required to build or develop Sense CMS.
 
-The development Core implements signed extension archives and planning, Chivale
-licensing, a license-first web installer and an initial owner Workspace (login,
-activity, site settings and license recovery). The first browser screen contains
-only the license field and verification action; requirements and database/owner
-setup remain inaccessible until the license is accepted for the canonical domain.
+## Source layout
 
-The Sense CMS product theme now contains ten public pages including technical
-documentation. Signed themes support operator-CLI installation, versioned storage
-and rollback; Core serves the selected theme independently of administration.
-
-This is **not yet a finished CMS release**: the general extension lifecycle,
-content/media editing, the package-management UI and release distribution are not
-integrated. The verified development product website and initial licensed Core are
-now deployed at https://www.sensecms.com; no public installer or stable download is
-exposed. SenseCMS.com takes priority; Cambo Jumbo is deferred. See the
-[production deployment record](.wrk/2026-09-06-production.md).
-
-## Repository boundaries
-
-| Path | Responsibility |
+| Directory | Responsibility |
 | --- | --- |
-| `.cms/source` | Portable Core and web installer source |
-| `.modules` | Independently installed application features |
-| `.plugins` | Event-driven integrations and extensions |
-| `.addons` | Optional administrative/operational tools |
-| `.themes` | Public presentation packages, including `cambo-jumbo` |
-| `web` | Sense CMS product website and distribution application |
-| `deploy` | Server configuration and deployment tooling |
-| `scripts`, `tests` | Repository build and verification tools |
+| `.cms/source` | Portable Core, Workspace and licence-first installation |
+| `.themes/sensecms` | Official Sense CMS website theme |
+| `.plugins` | Analytics, calendar integrations and Telegram packages |
+| `.addons` | Calendar addon |
+| `.modules` | Independent application modules |
+| `.src` | Official-site catalogue, Telegram services and branding |
+| `web` | Product-site entry point/assets and private local runtime |
+| `.install/web` | Generated `index.php` + `install.zip`, ignored by Git |
+| `scripts`, `tests`, `deploy` | Build, verification and server tooling |
+| `docs`, `.wrk` | Contracts and preserved engineering history |
+| `.cfg` | Private local configuration; never committed/distributed |
 
-The administrative Workspace belongs to Core, not to any public theme. Eduvixo
-is the reference for its design and existing implementation. Educational data,
-campus functions and Cambo Jumbo's previous custom administration are not Core.
-Package source folders are not public web directories.
+Administration belongs to Core and works independently of public themes.
+Website-only distribution and shared-bot services are not bundled in customer Core.
+Optional packages/themes are independently installed, not copied from production.
 
-## Development
+## Current status
 
-PHP 8.5+ with Sodium and ZIP is required for package tooling. No framework or
-third-party dependency has been introduced.
+Development Core includes a general-purpose Workspace, facilities, content,
+permissions, package lifecycle and notification channels. The product website and
+Marketplace are managed through Sense CMS. See
+[the main work log](.wrk/2026-09-06-workspace-migration.md) for implementation evidence.
+
+**This is not yet a Stable release.** The two-file bootstrap has extraction,
+integrity, resumption and licence-first HTTP coverage. Complete newly licensed setup
+with a new database using the exact artifact and target Nginx/Apache acceptance remain
+release gates. External calendar-account acceptance and further catalogue adaptations
+remain separate tasks. Verify live production before treating history as current.
+
+## Private configuration
+
+All local operator configuration is in ignored `.cfg`:
+
+- `License.txt`: Core product/model/protocol/key; preserved CLI-compatible format.
+- `Package-licenses.txt`: product-name/key map for Core and paid packages.
+- `Telegram.txt`: Sense CMS bot username/token.
+- `SSH.txt`, `DNS.txt`, `Email.txt`, `Catalog.txt`, `Production-owner.json`:
+  existing environment, delivery and ownership configuration.
+
+Never print these contents or copy another installation's encrypted runtime.
+Publisher signing secrets and independent trust remain privately provisioned on the
+server. Git ignores `.cfg`, private storage, `.local` and generated archives.
+
+## Development and checks
+
+Use PHP 8.5+; Python for HTTP tests and Node for JavaScript tests. Server requirements:
+[installation guide](.cms/source/README.md). No new framework is required.
 
 ```text
+php tests/project-boundaries.php
 php tests/packages.php
 php tests/licensing.php
 php tests/themes.php
-php scripts/build-installer.php
-php scripts/package.php build .modules/<slug> <release.zip> module
-php scripts/package.php verify <release.zip> <trust-store.json> 0.1.0
+php tests/installer-package.php
+python tests/web-installer.py
+git diff --check
 ```
 
-The builder requires `SENSE_PACKAGE_SIGNING_KEY_FILE` pointing to a protected
-Base64 Ed25519 secret key supplied by the release operator. It never creates or
-trusts a signing key automatically. The verifier reads an independently provisioned
-JSON map of key IDs to Base64 public keys. The development Core compatibility
-version `0.1.0` is not a licensed product version.
+Inspect database fixture guards first; never target production or an existing database.
 
-Licensing diagnostics use ignored `.cfg/License.txt`:
-`php scripts/license.php https://www.sensecms.com --test-storage`. This validates the
-real license and exercises encrypted storage only in a temporary private directory.
+## Installer artifacts
 
-See [the package contract](docs/packages.md) and [implementation decisions](.wrk/2026-09-06-core-foundation.md).
+```text
+php scripts/build-installer.php --web
+```
 
-## Installer development build
+The output directory `.install/web` must be empty; replacement is refused.
+Upload matching `index.php` and `install.zip` to a NEW empty `public` document root.
+Opening the HTTPS domain verifies/extracts Core privately, then opens `/install`
+with licence verification first. See [deployment/recovery instructions](.install/README.md).
+This is not an updater; never replace the production entry point with the bootstrap.
 
-`scripts/build-installer.php` builds `.cms/releases/sensecms-install-0.1.0-dev.zip`
-from allowed Core source folders only. Private storage, keys, configuration
-credentials, test fixtures and installed state are excluded. Existing ZIPs are
-never overwritten. Follow the [portable installation guide](.cms/source/README.md)
-for canonical hostname preparation, HTTPS, permissions and browser setup.
+## Product website and packages
 
-`tests/installer-http.py` exercises real licensing and database-backed HTTP flows
-only inside an isolated Linux `sensecms-install-test.XXXXXXXX` directory. It needs
-a private `.cfg/License.txt`, PHP, Python and local MariaDB administrative access.
-It creates and removes only a uniquely named disposable database/user; never run
-it against a production installation. The tested ZIP contains no test credentials.
-
-## Product website and themes
-
-`.themes/sensecms` owns the product website, not Core. Local presentation preview:
+Loopback presentation preview, without production changes:
 
 ```text
 php -S 127.0.0.1:8872 -t web/public scripts/preview-site.php
 ```
 
-This loopback-only preview does not install or bypass production licensing.
-For an installed Core, build a signed theme with the existing package CLI, then
-run as the PHP runtime user from the Core installation directory:
+Package tooling: `scripts/package.php`, independently provisioned Ed25519 key/trust.
+See [package contracts](docs/packages.md). Core identity:
+`Sense CMS` / `Sense CMS System` / protocol `1.0`; release versions do not change it.
+Free downloads require Core licensing; paid packages their own identity/validity.
 
-```text
-php scripts/theme.php install /private/theme.zip /private/trust.json
-php scripts/theme.php rollback /private/trust.json
-```
+## Continuing work
 
-Provision publisher trust separately. The declared `sensecms-release` identifier
-does not itself establish trust; no production signing key is shipped or generated
-automatically. Only theme packages without unresolved dependencies are supported
-by this lifecycle. Older release directories are retained for recovery. This is
-not yet a general module/plugin installer or an admin package-management screen.
+Read [AGENTS.md](AGENTS.md), `.info` and latest work-log sections first.
+The repository already has its own Git history and `sensecms-web` origin remote.
+Local pending changes are preserved, not automatically committed. Historical import
+and provenance records stay in `.wrk`; they are not dependencies. Do not rerun the
+archived importer or copy unrelated websites/education databases into this project.

@@ -1,0 +1,1 @@
+(()=>{const button=document.querySelector('[data-captcha-refresh]');if(!button)return;const replacement=button.cloneNode(true);button.replaceWith(replacement);replacement.addEventListener('click',()=>{const image=document.querySelector('.sensecms-login-captcha img');if(image)image.src=(replacement.dataset.captchaUrl||'/captcha/login.png')+'?refresh=1&'+Date.now()})})();

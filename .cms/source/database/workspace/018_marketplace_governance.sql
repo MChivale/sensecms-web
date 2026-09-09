@@ -1,0 +1,50 @@
+CREATE TABLE IF NOT EXISTS marketplace_sources (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
+    catalog_url VARCHAR(500) NOT NULL UNIQUE,
+    publisher_key_id VARCHAR(100) NOT NULL,
+    enabled TINYINT(1) NOT NULL DEFAULT 1,
+    last_synced_at DATETIME NULL,
+    last_error VARCHAR(500) NULL,
+    created_by BIGINT UNSIGNED NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    INDEX source_status(enabled,last_synced_at)
+);
+CREATE TABLE IF NOT EXISTS marketplace_entries (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    source_id BIGINT UNSIGNED NULL,
+    type VARCHAR(20) NOT NULL,
+    slug VARCHAR(100) NOT NULL,
+    version VARCHAR(30) NOT NULL,
+    release_channel VARCHAR(20) NOT NULL DEFAULT 'stable',
+    publisher_key_id VARCHAR(100) NOT NULL,
+    package_url VARCHAR(500) NULL,
+    package_checksum CHAR(64) NOT NULL,
+    manifest JSON NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'published',
+    verified_at DATETIME NOT NULL,
+    created_at DATETIME NOT NULL,
+    updated_at DATETIME NOT NULL,
+    UNIQUE KEY marketplace_release(source_id,type,slug,version,release_channel),
+    INDEX marketplace_discovery(status,type,release_channel)
+);
+CREATE TABLE IF NOT EXISTS marketplace_submissions (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    type VARCHAR(20) NOT NULL,
+    slug VARCHAR(100) NOT NULL,
+    version VARCHAR(30) NOT NULL,
+    publisher_key_id VARCHAR(100) NOT NULL,
+    archive_path VARCHAR(500) NOT NULL,
+    package_checksum CHAR(64) NOT NULL,
+    manifest JSON NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'submitted',
+    review_note VARCHAR(1000) NULL,
+    submitted_by BIGINT UNSIGNED NULL,
+    reviewed_by BIGINT UNSIGNED NULL,
+    submitted_at DATETIME NOT NULL,
+    reviewed_at DATETIME NULL,
+    updated_at DATETIME NOT NULL,
+    INDEX submission_queue(status,submitted_at),
+    UNIQUE KEY submission_release(type,slug,version,publisher_key_id)
+);

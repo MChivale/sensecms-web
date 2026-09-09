@@ -2,6 +2,7 @@
 /.backups/
 /.local/
 /.cms/releases/
+/.install/web/
 /.cms/source/.env
 /.cms/source/storage/
 /web/.env

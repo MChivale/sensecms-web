@@ -1,5 +1,10 @@
 # SenseCMS.com first production application deployment
 
+Latest state: full Workspace was enabled by the verified cutover recorded under
+"Production cutover completed" in `2026-09-06-workspace-migration.md`. The initial-Core
+description below is historical. Current backup is
+`/root/sensecms-backups/20260906T164750Z-workspace`; do not rerun initial provisioning.
+
 ## Scope and status
 
 User explicitly requested continued Sense CMS development and production publishing.
@@ -30,6 +35,23 @@ still outstanding. Cambo Jumbo was not changed.
   local `.cfg/Production-owner.json`, with root-only server copy `owner.json` under
   the private operator directory. Do not print or commit its contents. The local
   file records the initial credential and becomes stale when the owner changes it.
+
+## Future demo directories (2026-09-06)
+
+User requested directory preparation only for the later demo on the same server.
+Verified that `/home/demo.sensecms.com` did not exist and no demo virtual host or
+PHP pool was configured. Created `/home/demo.sensecms.com`, its `web` directory and
+`web/public`, all root:root 0755, plus `web/storage`, root:root 0700. Verified real
+paths, ownership/modes and absence of application files. This is a sibling of the
+production installation, not a directory inside its public document root.
+
+No application, test data, secrets or licenses copied; no DNS, certificate, database,
+account, PHP pool or Nginx configuration changed. At demo deployment, establish its
+own runtime account/pool and database, assign only private writable storage to that
+identity and set the virtual host document root to `web/public`. Do not reuse the
+production database or writable storage. These empty directories alone do not
+enable a demo website. Nginx config test passed, nginx/php8.5-fpm/mariadb remained
+active and the production homepage returned HTTP 200. No service reload was needed.
 
 ## Account management
 

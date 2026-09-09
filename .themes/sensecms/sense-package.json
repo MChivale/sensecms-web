@@ -3,7 +3,7 @@
   "type": "theme",
   "slug": "sensecms",
   "name": "Sense CMS product website",
-  "version": "0.1.0",
+    "version": "0.3.8",
   "requires": {
     "php": {"min": "8.5.0", "max_exclusive": "9.0.0"},
     "core": {"min": "0.1.0", "max_exclusive": "1.0.0"}

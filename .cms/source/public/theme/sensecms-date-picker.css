@@ -1,0 +1,30 @@
+.sensecms-date-field{position:relative;display:block;min-width:0;margin:0!important}
+.sensecms-date-field>.form-input,.sensecms-date-field>input{width:100%;padding-right:44px;font-variant-numeric:tabular-nums}
+.sensecms-date-field>input:not(.form-input){min-height:44px;padding:11px 44px 11px 13px;border:1px solid #cddae8;border-radius:9px;background:#fff;color:inherit;font:inherit;outline:0}.sensecms-date-field>input:not(.form-input):focus{border-color:#2f7df6;box-shadow:0 0 0 3px rgba(47,125,246,.1)}
+.sensecms-date-trigger{position:absolute;right:5px;top:50%;display:grid;width:32px;height:32px;padding:0;place-items:center;transform:translateY(-50%);border:0;border-radius:8px;background:transparent;color:#64748b;cursor:pointer;transition:background .16s,color .16s}
+.sensecms-date-trigger:hover,.sensecms-date-trigger:focus-visible{background:#eaf2ff;color:#2465ca;outline:0}
+.sensecms-date-trigger svg{width:16px;height:16px}
+.sensecms-date-picker{position:fixed;z-index:10020;width:min(330px,calc(100vw - 24px));overflow:hidden;border:1px solid #d9e3ef;border-radius:15px;background:#fff;color:#172033;box-shadow:0 24px 70px rgba(15,23,42,.2);animation:sensecmsDateIn .16s ease-out}
+.sensecms-date-picker[hidden]{display:none}
+.sensecms-date-picker__head{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:8px;padding:12px;border-bottom:1px solid #e8edf4;background:#f8fafc}
+.sensecms-date-picker__head>button{display:grid;width:34px;height:34px;padding:0;place-items:center;border:1px solid #dce5ef;border-radius:9px;background:#fff;color:#526178;cursor:pointer}
+.sensecms-date-picker__head>button:hover,.sensecms-date-picker__head>button:focus-visible{border-color:#a9c8f4;color:#2465ca;outline:0;box-shadow:0 0 0 3px rgba(47,125,246,.1)}
+.sensecms-date-picker__head svg{width:15px;height:15px}
+.sensecms-date-picker__month{display:grid;grid-template-columns:minmax(0,1fr) 67px;gap:6px}
+.sensecms-date-picker__month select,.sensecms-date-picker__month input,.sensecms-date-picker__time select{height:34px;border:1px solid #dce5ef;border-radius:8px;background:#fff;color:#25334a;font:700 12px/1 system-ui,sans-serif;outline:0}
+.sensecms-date-picker__month select{padding:0 8px}.sensecms-date-picker__month input{width:67px;padding:0 8px;text-align:center;font-variant-numeric:tabular-nums}
+.sensecms-date-picker__month select:focus,.sensecms-date-picker__month input:focus,.sensecms-date-picker__time select:focus{border-color:#73a7ef;box-shadow:0 0 0 3px rgba(47,125,246,.1)}
+.sensecms-date-picker__calendar{padding:10px 12px 8px}
+.sensecms-date-picker__week,.sensecms-date-picker__days{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.sensecms-date-picker__week span{display:grid;height:26px;place-items:center;color:#94a0b1;font-size:9px;font-weight:800;text-transform:uppercase}
+.sensecms-date-picker__days button{position:relative;display:grid;aspect-ratio:1;min-width:0;padding:0;place-items:center;border:0;border-radius:9px;background:transparent;color:#334155;font:650 11px/1 system-ui,sans-serif;cursor:pointer}
+.sensecms-date-picker__days button:hover,.sensecms-date-picker__days button:focus-visible{background:#edf4ff;color:#2169dd;outline:0}
+.sensecms-date-picker__days button.is-other{color:#a8b1bf}.sensecms-date-picker__days button.is-today{box-shadow:inset 0 0 0 1px #9dbff0;color:#2169dd}.sensecms-date-picker__days button.is-selected{background:#2f7df6;color:#fff;box-shadow:0 5px 12px rgba(47,125,246,.28)}
+.sensecms-date-picker__time{display:flex;align-items:center;gap:7px;margin:0 12px 10px;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc}
+.sensecms-date-picker__time>span{margin-right:auto;color:#64748b;font-size:10px;font-weight:750;text-transform:uppercase;letter-spacing:.08em}.sensecms-date-picker__time select{width:58px;padding:0 7px}.sensecms-date-picker__time b{color:#94a3b8}
+.sensecms-date-picker__foot{display:flex;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid #e8edf4;background:#fbfcfe}
+.sensecms-date-picker__foot button{height:32px;padding:0 10px;border:0;border-radius:8px;background:transparent;color:#526178;font-size:11px;font-weight:700;cursor:pointer}.sensecms-date-picker__foot button:hover{background:#edf2f7;color:#25334a}.sensecms-date-picker__foot .is-apply{margin-left:auto;background:#2f7df6;color:#fff}.sensecms-date-picker__foot .is-apply:hover{background:#246bdc;color:#fff}
+.sensecms-date-field>input[aria-invalid=true]{border-color:#dc3545!important;box-shadow:0 0 0 3px rgba(220,53,69,.08)!important}
+[data-theme=dark] .sensecms-date-picker,.dark .sensecms-date-picker{border-color:#334155;background:#172033;color:#e7edf6}[data-theme=dark] .sensecms-date-picker__head,[data-theme=dark] .sensecms-date-picker__time,[data-theme=dark] .sensecms-date-picker__foot,.dark .sensecms-date-picker__head,.dark .sensecms-date-picker__time,.dark .sensecms-date-picker__foot{border-color:#2c3a51;background:#111a2b}[data-theme=dark] .sensecms-date-picker__head>button,[data-theme=dark] .sensecms-date-picker__month select,[data-theme=dark] .sensecms-date-picker__month input,[data-theme=dark] .sensecms-date-picker__time select,.dark .sensecms-date-picker__head>button,.dark .sensecms-date-picker__month select,.dark .sensecms-date-picker__month input,.dark .sensecms-date-picker__time select{border-color:#3a4960;background:#172033;color:#e7edf6}[data-theme=dark] .sensecms-date-picker__days button,.dark .sensecms-date-picker__days button{color:#dbe4f0}[data-theme=dark] .sensecms-date-picker__days button.is-other,.dark .sensecms-date-picker__days button.is-other{color:#64748b}
+@keyframes sensecmsDateIn{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:none}}
+@media(max-width:480px){.sensecms-date-picker{left:12px!important;right:12px!important;bottom:12px!important;top:auto!important;width:auto;border-radius:16px}.sensecms-date-picker__days button{aspect-ratio:auto;height:38px}}

@@ -32,7 +32,7 @@ foreach ([true, 'false', 0, null] as $error) {
     $invalid = $reply; $invalid['error'] = $error;
     $reject(fn() => $client->response(200, $encode($invalid)), 'explicit boolean success required');
 }
-foreach (['name', 'model', 'version'] as $field) {
+foreach (['name', 'model'] as $field) {
     $invalid = $reply; $invalid['data']['product'][$field] = 'wrong';
     $reject(fn() => $client->response(200, $encode($invalid)), 'product ' . $field . ' mismatch');
 }
@@ -46,10 +46,51 @@ $invalid = $reply; unset($invalid['data']['valid_to']);
 $reject(fn() => $client->response(200, $encode($invalid)), 'missing expiry field is not unlimited');
 $reject(fn() => LicenseClient::assertKey('invalid'), 'malformed key');
 $reject(fn() => LicenseClient::assertPeriod(null, 100, 100), 'exact expiry boundary');
-$invalid = $data; $invalid['product']['version'] = '9.0';
+$invalid = $data; $invalid['product']['model'] = 'Other package';
 $reject(fn() => $client->assertCached($invalid, time()), 'cached product mismatch');
 $invalid = $data; $invalid['valid_until'] = 'never';
 $reject(fn() => $client->assertCached($invalid, time()), 'cached date type mismatch');
+
+foreach (['2.0', '9.4.1', null] as $version) {
+    $updated = $reply; $updated['data']['product']['version'] = $version;
+    $assert($client->response(200, $encode($updated)) === $data, 'response version does not restrict entitlement');
+    $updated = $data; $updated['product']['version'] = $version;
+    $client->assertCached($updated, time());
+    $assert(true, 'cached release version does not restrict entitlement');
+}
+$updated = $reply; unset($updated['data']['product']['version']);
+$assert($client->response(200, $encode($updated)) === $data, 'provider version is not required for authorization');
+foreach (['null', 'false', '42', '"unexpected"', '[]'] as $body) $reject(fn() => $client->response(200, $body), 'non-object license response rejected');
+
+$cms = $product['license'];
+$free = ['pricing' => 'free', 'version' => '9.0.0'];
+$paid = ['pricing' => 'paid', 'version' => '2.3.4', 'license' => ['product_name' => 'Fixture Calendar', 'product_model' => 'Fixture Calendar Addon', 'product_version' => '2.3.4']];
+$policy = App\Core\Packages\Entitlement::class;
+$assert($policy::licenseConfig($free, $cms) === $cms, 'free package requires the CMS identity');
+$free['license'] = $paid['license'];
+$assert($policy::licenseConfig($free, $cms) === $cms, 'free package cannot override the CMS identity');
+$paidConfig = $policy::licenseConfig($paid, $cms);
+$assert($paidConfig['product_name'] === 'Fixture Calendar' && $paidConfig['product_model'] === 'Fixture Calendar Addon' && $paidConfig['product_version'] === '1.0', 'paid identity is separate with fixed protocol version');
+$paidClient = new LicenseClient($paidConfig);
+$reject(fn() => $paidClient->response(200, $encode($reply)), 'CMS license cannot authorize a paid package');
+$paidReply = $reply; $paidReply['data']['product'] = ['name' => 'Fixture Calendar', 'model' => 'Fixture Calendar Addon', 'version' => '9.0'];
+$paidData = $paidClient->response(200, $encode($paidReply));
+$assert($paidData['product']['version'] === '1.0', 'paid updates use the same entitlement');
+$reject(fn() => $client->response(200, $encode($paidReply)), 'paid license cannot replace a CMS license');
+$other = $paid; $other['license']['product_model'] = 'Fixture Other Addon';
+$otherClient = new LicenseClient($policy::licenseConfig($other, $cms));
+$reject(fn() => $otherClient->response(200, $encode($paidReply)), 'license for one paid package cannot authorize another');
+$expired = $paidReply; $expired['data']['valid_to'] = '2026-01-02 00:00:00';
+$reject(fn() => $paidClient->response(200, $encode($expired)), 'paid license expiry still enforced');
+foreach ([[], ['pricing' => 'unknown'], ['pricing' => false], ['pricing' => 'paid'], ['pricing' => 'paid', 'license' => $cms], ['pricing' => 'paid', 'license' => ['product_name' => 'x', 'product_model' => "bad\r\nheader"]]] as $invalid) {
+    $reject(fn() => $policy::licenseConfig($invalid, $cms), 'undeclared or unsafe package entitlement rejected');
+}
+$headers = $policy::headers($paid, str_repeat('a', 32), 'https://WWW.SenseCMS.com/', $cms);
+$assert(in_array('X-SenseCMS-Version: 1.0', $headers, true) && in_array('X-SenseCMS-Domain: https://www.sensecms.com', $headers, true), 'download uses fixed license version and canonical domain');
+$upgraded = $paid; $upgraded['version'] = '15.0.0'; $upgraded['license']['product_version'] = '15.0';
+$assert($headers === $policy::headers($upgraded, str_repeat('a', 32), 'https://www.sensecms.com', $cms), 'new package version sends the same license request');
+$reject(fn() => $policy::headers($paid, "invalid\r\nheader", 'https://www.sensecms.com', $cms), 'download credential injection rejected');
+$reject(fn() => $policy::headers($paid, str_repeat('a', 32), 'https://sensecms.com/path', $cms), 'download domain path rejected');
 
 // Authenticated test fixtures are built only here; no production validation bypass.
 $temp = sys_get_temp_dir() . '/sense-license-test-' . bin2hex(random_bytes(12));
@@ -65,6 +106,9 @@ try {
     file_put_contents($temp . '/key.bin', $key); chmod($temp . '/key.bin', 0600); $write($record);
     $service = new LicenseService($temp, $client);
     $assert($service->enforce('https://www.sensecms.com') === $data, 'authenticated fresh cache accepted');
+    $assert($service->telegramHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/telegram/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'Telegram exports validated canonical installation identity');
+    $reject(fn()=>$service->telegramHeaders('https://www.sensecms.com','https://attacker.example'),'Telegram credential export refuses third party');
+    $reject(fn()=>$service->telegramHeaders('https://other.example','https://www.sensecms.com/api/telegram/v1'),'Telegram credential export refuses foreign installation');
     $assert(!str_contains((string) file_get_contents($temp . '/license.lic'), $record['key']), 'license not stored in plaintext');
     $reject(fn() => $service->enforce('https://sensecms.com'), 'cache domain mismatch');
     $invalid = $record; $invalid['checked_at'] = time() + 300; $write($invalid);
