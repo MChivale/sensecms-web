@@ -1,1 +1,32 @@
-(()=>{'use strict';const root=document.querySelector('[data-system-update]');if(!root)return;const q=s=>root.querySelector(s);let state=JSON.parse(q('[data-update-bootstrap]').textContent),busy=false;const render=()=>{const working=['queued','running'].includes(state.job?.status);q('[data-update-version]').textContent=state.version;q('[data-update-heading]').textContent=working?'Update in progress':state.available?'Update '+state.latest.version+' is available':state.checked_at?'Your installation is up to date':'Waiting for the first update check';q('[data-update-release]').textContent=state.latest?.summary||'The official catalog is checked every six hours.';q('[data-update-install]').disabled=busy||working||!state.available||document.body.dataset.sensecmsDemo==='1';q('[data-update-check]').disabled=busy||working;q('[data-update-message]').textContent=state.error||state.job?.message||'No automatic installation. Updates require administrator confirmation.';q('[data-update-checked]').textContent=state.checked_at?'Last successful check: '+new Date(state.checked_at*1000).toLocaleString():'Waiting for the server worker.'};async function load(action){if(busy)return;busy=true;try{const options=action?{method:'POST',body:new URLSearchParams({csrf:root.dataset.csrf,action,version:state.latest?.version||''})}:{};const response=await fetch('/system/update'+(action?'':'?status=1'),{...options,cache:'no-store',headers:{Accept:'application/json','X-SenseCMS-Request':'1'}});if(response.status===503){q('[data-update-message]').textContent='The system is being updated. This page will reconnect automatically.';return}const payload=await response.json();if(!response.ok||!payload.ok)throw Error(payload.message||'Update status unavailable.');state=payload.data;if(action)window.SenseCMSUI?.toast('info',payload.message);render()}catch(error){if(action)window.SenseCMSUI?.toast('error',error.message)}finally{busy=false;render()}}q('[data-update-check]').addEventListener('click',()=>load('check'));q('[data-update-install]').addEventListener('click',()=>window.SenseCMSUI?.modal('Install SenseCMS update','A private recovery snapshot will be created. The website will briefly enter maintenance mode. Continue?',()=>load('install')));setInterval(()=>{if(!document.hidden)load()},5000);render()})();
+(() => {
+    'use strict';
+    const init = () => {
+        const root = document.querySelector('[data-system-update]');
+        if (!root || root.dataset.updateReady === '1') return;
+        root.dataset.updateReady = '1';
+        const button = root.querySelector('[data-update-check]');
+        const message = root.querySelector('[data-update-message]');
+        root.querySelector('[data-update-install]').disabled = true;
+        button.addEventListener('click', async () => {
+            button.disabled = true; message.textContent = 'Verifying the signed Stable release catalogue…';
+            try {
+                const response = await fetch('/system/update', {method: 'POST', credentials: 'same-origin',
+                    headers: {'Accept': 'application/json', 'Content-Type': 'application/x-www-form-urlencoded'},
+                    body: new URLSearchParams({csrf: root.dataset.csrf, action: 'check'})});
+                const result = await response.json();
+                if (!response.ok || !result.ok) throw new Error(result.message || 'Release check failed.');
+                const state = result.data;
+                if (!state.verified) throw new Error(state.error || 'The release catalogue could not be verified.');
+                root.querySelector('[data-update-heading]').textContent = state.available ? 'A Stable Core update is available' :
+                    state.latest.version ? 'No newer Stable Core release is listed' : 'No Stable Core release has been published';
+                root.querySelector('[data-update-release]').textContent = state.latest.version ? 'Latest Stable: ' + state.latest.version : 'Development builds are not Stable releases.';
+                root.querySelector('[data-update-checked]').textContent = 'Last successful check: ' + new Date(state.checked_at * 1000).toLocaleString();
+                message.textContent = 'Signature verified. No installation was performed.' + (state.compatible ? '' : ' PHP compatibility requires review.');
+            } catch (error) { message.textContent = error.message || 'Release check failed. Please retry.'; }
+            finally { button.disabled = false; }
+        });
+    };
+    document.addEventListener('DOMContentLoaded', init);
+    document.addEventListener('sensecms:content-ready', init);
+    init();
+})();

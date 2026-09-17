@@ -1,0 +1,2 @@
+# Reviewed social publishing queue. The worker has a non-blocking per-installation lock.
+* * * * * sensecms /usr/bin/php8.5 /home/sensecms.com/web/addons/social-publishing/scripts/social-worker.php /home/sensecms.com/web >> /home/sensecms.com/web/storage/social-publishing-worker.log 2>&1

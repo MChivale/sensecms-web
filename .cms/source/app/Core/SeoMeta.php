@@ -46,7 +46,7 @@ final class SeoMeta
         foreach (['site_name','alternate_name','organization_description','author','publisher','twitter_site','twitter_creator','facebook_app_id','country_code','google_site_verification','bing_site_verification','yandex_verification','pinterest_domain_verify','default_social_image_alt'] as $key) {
             $result[$key] = self::text($input[$key] ?? '', $key === 'organization_description' ? 1000 : 255);
         }
-        $result['organization_type'] = self::choice($input['organization_type'] ?? '', ['EducationalOrganization','School','CollegeOrUniversity','Organization'], 'EducationalOrganization');
+        $result['organization_type'] = self::choice($input['organization_type'] ?? '', ['EducationalOrganization','School','CollegeOrUniversity','Organization'], 'Organization');
         $result['robots'] = self::robots((string) ($input['robots'] ?? ''));
         foreach (['site_url','organization_logo','default_social_image','facebook_url','instagram_url','linkedin_url','youtube_url'] as $key) {
             $value = self::text($input[$key] ?? '', 1000);

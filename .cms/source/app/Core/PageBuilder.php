@@ -10,7 +10,7 @@ final class PageBuilder
     {
         $catalog = self::definitions((array) ($theme['builder']['blocks'] ?? []), 'theme:' . (string) ($theme['slug'] ?? 'theme'), 'Theme sections');
         $system = require dirname(__DIR__, 2) . '/config/page-builder.php';
-        $catalog = array_replace($catalog, self::definitions(is_array($system) ? $system : [], 'core', 'SenseCMS modules'));
+        $catalog = array_replace($catalog, self::definitions(is_array($system) ? $system : [], 'core', 'Core sections'));
         if (isset($theme['supported_blocks'])) $catalog = array_intersect_key($catalog, array_fill_keys((array) $theme['supported_blocks'], true));
         foreach ($plugins as $slug => $plugin) {
             if (!in_array($slug, $activePlugins, true)) continue;
@@ -75,19 +75,17 @@ final class PageBuilder
             $fields = self::fields((array) ($definition['fields'] ?? []));
             $sharedFields = self::fields((array) ($definition['shared_fields'] ?? []));
             if (!$fields && !$sharedFields) continue;
-            $defaultFields=array_map(static fn(array$field):array=>array_replace($field,['required'=>false]),$fields);
-            $defaultSharedFields=array_map(static fn(array$field):array=>array_replace($field,['required'=>false]),$sharedFields);
-            $defaults=self::sanitizeData((array)($definition['defaults']??[]),$defaultFields);
+            $defaults=self::sanitizeData((array)($definition['defaults']??[]),$fields,true);
             $localizedDefaults=[];
             foreach((array)($definition['localized_defaults']??[]) as$locale=>$localizedDefault){
                 if(!is_string($locale)||!preg_match('/^[a-z]{2}(?:-[a-z]{2})?$/',$locale)||!is_array($localizedDefault))continue;
-                $localizedDefaults[$locale]=self::sanitizeData(array_replace_recursive($defaults,$localizedDefault),$defaultFields);
+                $localizedDefaults[$locale]=self::sanitizeData(array_replace_recursive($defaults,$localizedDefault),$fields,true);
             }
             $catalog[$type] = [
                 'label'=>mb_substr(trim((string)($definition['label']??$type)),0,80), 'description'=>mb_substr(trim((string)($definition['description']??'')),0,220),
                 'icon'=>preg_match('/^[a-z0-9-]{2,60}$/',(string)($definition['icon']??''))?$definition['icon']:'panel-top', 'group'=>mb_substr(trim((string)($definition['group']??$fallbackGroup)),0,80),
                 'singleton'=>(bool)($definition['singleton']??false), 'source'=>$source, 'source_label'=>self::sourceLabel($source), 'fields'=>$fields, 'shared_fields'=>$sharedFields,
-                'defaults'=>$defaults, 'localized_defaults'=>$localizedDefaults, 'shared_defaults'=>self::sanitizeData((array)($definition['shared_defaults']??[]),$defaultSharedFields),
+                'defaults'=>$defaults, 'localized_defaults'=>$localizedDefaults, 'shared_defaults'=>self::sanitizeData((array)($definition['shared_defaults']??[]),$sharedFields,true),
                 'renderer'=>self::safeRenderer((string)($definition['renderer']??''),$source),
             ];
         }
@@ -115,7 +113,7 @@ final class PageBuilder
         return $fields;
     }
 
-    private static function sanitizeData(array $input, array $fields): array
+    private static function sanitizeData(array $input, array $fields, bool $defaults = false): array
     {
         $data=[];
         foreach($fields as$field){
@@ -123,12 +121,12 @@ final class PageBuilder
             if($field['type']==='repeater'){
                 $items=is_array($value)?array_slice(array_values($value),0,$field['max']):[];
                 if(count($items)<$field['min'])throw new \RuntimeException($field['label'].' requires at least '.$field['min'].' items.');
-                $data[$key]=array_map(static fn(mixed $item):array=>self::sanitizeData(is_array($item)?$item:[],$field['fields']),$items); continue;
+                $data[$key]=array_map(static fn(mixed $item):array=>self::sanitizeData(is_array($item)?$item:[],$field['fields'],$defaults),$items); continue;
             }
             if($field['type']==='checkbox'){$data[$key]=(bool)$value;continue;}
             if($field['type']==='number'){$data[$key]=max($field['min'],min($field['max'],(int)$value));continue;}
             $value=trim((string)$value);
-            if($field['required']&&$value==='')throw new \RuntimeException($field['label'].' is required in every active language.');
+            if(!$defaults&&$field['required']&&$value==='')throw new \RuntimeException($field['label'].' is required in every active language.');
             if($field['type']==='select'){if(!array_key_exists($value,$field['options']))$value=(string)array_key_first($field['options']);$data[$key]=$value;continue;}
             if(mb_strlen($value)>$field['max'])throw new \RuntimeException($field['label'].' exceeds its character limit.');
             if($field['type']==='email'&&$value!==''&&filter_var($value,FILTER_VALIDATE_EMAIL)===false)throw new \RuntimeException($field['label'].' must contain a valid email address.');

@@ -109,6 +109,8 @@ try {
     $assert($service->telegramHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/telegram/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'Telegram exports validated canonical installation identity');
     $reject(fn()=>$service->telegramHeaders('https://www.sensecms.com','https://attacker.example'),'Telegram credential export refuses third party');
     $reject(fn()=>$service->telegramHeaders('https://other.example','https://www.sensecms.com/api/telegram/v1'),'Telegram credential export refuses foreign installation');
+    $assert($service->socialHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/social/meta/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'Social onboarding exports validated canonical installation identity');
+    $reject(fn()=>$service->socialHeaders('https://www.sensecms.com','https://attacker.example'),'Social onboarding credential export refuses third party');
     $assert(!str_contains((string) file_get_contents($temp . '/license.lic'), $record['key']), 'license not stored in plaintext');
     $reject(fn() => $service->enforce('https://sensecms.com'), 'cache domain mismatch');
     $invalid = $record; $invalid['checked_at'] = time() + 300; $write($invalid);

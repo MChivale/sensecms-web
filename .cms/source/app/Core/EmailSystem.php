@@ -13,6 +13,7 @@ final class EmailSystem
     private const SETTINGS = 'email_system_settings';
     private const TEMPLATES = 'email_system_templates';
     private const FONTS = ['Arial','Georgia','Tahoma','Trebuchet MS','Verdana'];
+    private const DEFAULT_LOGO = '/sensecms/images/sensecms-logo-email.png';
 
     public function __construct(private readonly PDO $db, private readonly CmsRepository $cms, private readonly Secrets $secrets, private readonly array $config, private readonly string $baseUrl) {}
 
@@ -78,7 +79,7 @@ final class EmailSystem
         if ($url !== '' && !$this->validAssetUrl($url)) throw new RuntimeException('Use a local asset path or a secure HTTPS logo URL.');
         $appearance['logo_url'] = $url;
         if ($logo && ($logo['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) $appearance['logo_url'] = $this->storeLogo($logo);
-        if (!empty($input['restore_logo'])) $appearance['logo_url'] = '/theme-assets/sensecms/images/sensecms-logo-email.png';
+        if (!empty($input['restore_logo'])) $appearance['logo_url'] = self::DEFAULT_LOGO;
         $settings['appearance'] = $appearance;
         $this->cms->saveSetting(self::SETTINGS, $settings);
         $this->cms->recordActivity($actorId, 'email.appearance.updated', 'email', ['logo'=>$appearance['logo_url'],'font'=>$font]);
@@ -108,7 +109,7 @@ final class EmailSystem
         if (!$user) throw new RuntimeException('The current user account is unavailable.');
         $recipient = trim((string)$recipient) ?: trim((string)$user['email']);
         if (mb_strlen($recipient) > 190 || !filter_var($recipient, FILTER_VALIDATE_EMAIL)) throw new RuntimeException('Enter a valid test recipient e-mail address.');
-        $this->send($recipient, 'E-mail delivery test', 'Your e-mail configuration is working', "This message confirms that your Base CMS installation can deliver secure system e-mails.\n\nNo further action is required.", 'Open Base CMS', $this->baseUrl . '/settings', 'Sent from the E-mail settings verification tool.');
+        $this->send($recipient, 'E-mail delivery test', 'Your e-mail configuration is working', "This message confirms that your Sense CMS installation can deliver secure system e-mails.\n\nNo further action is required.", 'Open Sense CMS', $this->baseUrl . '/settings', 'Sent from the E-mail settings verification tool.');
         return $recipient;
     }
 
@@ -176,13 +177,13 @@ final class EmailSystem
         $mail = (array)($this->config['mail'] ?? []);
         $defaultMode = trim((string)($mail['host'] ?? '')) !== '' ? 'smtp' : (filter_var(($mail['from_address'] ?? ''), FILTER_VALIDATE_EMAIL) ? 'native' : 'disabled');
         $defaults = [
-            'server'=>['mode'=>$defaultMode,'host'=>(string)($mail['host']??''),'port'=>(int)($mail['port']??587),'security'=>(string)($mail['security']??(((int)($mail['port']??587)===465)?'ssl':'tls')),'username'=>(string)($mail['username']??''),'password_cipher'=>'','from_address'=>(string)($mail['from_address']??''),'from_name'=>(string)($mail['from_name']??'Base CMS')],
-            'appearance'=>['font'=>'Arial','page_bg'=>'#f1f5f9','content_bg'=>'#ffffff','text_color'=>'#334155','heading_color'=>'#0b2a63','accent_color'=>'#1763d6','muted_color'=>'#64748b','logo_url'=>'/theme-assets/sensecms/images/sensecms-logo-email.png'],
+            'server'=>['mode'=>$defaultMode,'host'=>(string)($mail['host']??''),'port'=>(int)($mail['port']??587),'security'=>(string)($mail['security']??(((int)($mail['port']??587)===465)?'ssl':'tls')),'username'=>(string)($mail['username']??''),'password_cipher'=>'','from_address'=>(string)($mail['from_address']??''),'from_name'=>(string)($mail['from_name']??'Sense CMS')],
+            'appearance'=>['font'=>'Arial','page_bg'=>'#f1f5f9','content_bg'=>'#ffffff','text_color'=>'#334155','heading_color'=>'#0b2a63','accent_color'=>'#1763d6','muted_color'=>'#64748b','logo_url'=>self::DEFAULT_LOGO],
         ];
         $stored = $this->cms->setting(self::SETTINGS, []);
         if (!is_array($stored)) return $defaults;
         $settings=['server'=>array_replace($defaults['server'],(array)($stored['server']??[])),'appearance'=>array_replace($defaults['appearance'],(array)($stored['appearance']??[]))];
-        if (($settings['appearance']['logo_url']??'')==='/theme-assets/sensecms/images/sensecms-logo-email.svg') $settings['appearance']['logo_url']=$defaults['appearance']['logo_url'];
+        if (in_array($settings['appearance']['logo_url']??'', ['/theme-assets/sensecms/images/sensecms-logo-email.svg','/theme-assets/sensecms/images/sensecms-logo-email.png'], true)) $settings['appearance']['logo_url']=self::DEFAULT_LOGO;
         return $settings;
     }
 
@@ -223,7 +224,7 @@ final class EmailSystem
     {
         $template = $this->templates()[$slug];
         $role = trim((string)($user['role_name'] ?? '')) ?: 'platform user';
-        $tokens = ['{{name}}'=>(string)$user['name'],'{{site_name}}'=>'Base CMS','{{role}}'=>$role,'{{email}}'=>(string)$user['email'],'{{action_url}}'=>$actionUrl,'{{login_url}}'=>$this->baseUrl.'/login','{{expires_in}}'=>$expires];
+        $tokens = ['{{name}}'=>(string)$user['name'],'{{site_name}}'=>trim((string)$this->cms->setting('site_name','Sense CMS'))?:'Sense CMS','{{role}}'=>$role,'{{email}}'=>(string)$user['email'],'{{action_url}}'=>$actionUrl,'{{login_url}}'=>$this->baseUrl.'/login','{{expires_in}}'=>$expires];
         $this->send((string)$user['email'], strtr($template['subject'],$tokens), strtr($template['heading'],$tokens), strtr($template['body'],$tokens), strtr($template['button_label'],$tokens), $actionUrl, strtr($template['footer'],$tokens));
     }
 
@@ -238,7 +239,7 @@ final class EmailSystem
         $font = htmlspecialchars((string)$a['font'],ENT_QUOTES,'UTF-8');
         $paragraphs = array_values(array_filter(preg_split('/\R{2,}/u',trim($body))?:[],'strlen'));
         $content = implode('',array_map(static fn(string $part):string=>'<p style="margin:0 0 18px;line-height:1.7">'.nl2br(htmlspecialchars($part,ENT_QUOTES,'UTF-8'),false).'</p>',$paragraphs));
-        $html = '<!doctype html><html><body style="margin:0;padding:0;background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';color:'.htmlspecialchars($a['text_color'],ENT_QUOTES,'UTF-8').';font-family:'.$font.',Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';padding:32px 12px"><tr><td align="center"><table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:'.htmlspecialchars($a['content_bg'],ENT_QUOTES,'UTF-8').';border-radius:18px;overflow:hidden;box-shadow:0 12px 36px rgba(15,23,42,.08)"><tr><td align="center" style="padding:38px 40px 24px"><img src="'.htmlspecialchars($logo,ENT_QUOTES,'UTF-8').'" width="220" alt="SenseCMS" style="display:block;width:220px;max-width:70%;height:auto"></td></tr><tr><td style="padding:8px 40px 40px"><h1 style="margin:0 0 22px;color:'.htmlspecialchars($a['heading_color'],ENT_QUOTES,'UTF-8').';font-size:28px;line-height:1.25;text-align:center">'.htmlspecialchars($heading,ENT_QUOTES,'UTF-8').'</h1>'.$content.'<p style="margin:28px 0;text-align:center"><a href="'.htmlspecialchars($actionUrl,ENT_QUOTES,'UTF-8').'" style="display:inline-block;padding:14px 24px;border-radius:10px;background:'.htmlspecialchars($a['accent_color'],ENT_QUOTES,'UTF-8').';color:#fff;font-weight:700;text-decoration:none">'.htmlspecialchars($button,ENT_QUOTES,'UTF-8').'</a></p><p style="margin:24px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:13px;line-height:1.6">'.htmlspecialchars($footer,ENT_QUOTES,'UTF-8').'</p></td></tr></table><p style="margin:18px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:12px">Secure message from Base CMS</p></td></tr></table></body></html>';
+        $html = '<!doctype html><html><body style="margin:0;padding:0;background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';color:'.htmlspecialchars($a['text_color'],ENT_QUOTES,'UTF-8').';font-family:'.$font.',Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';padding:32px 12px"><tr><td align="center"><table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:'.htmlspecialchars($a['content_bg'],ENT_QUOTES,'UTF-8').';border-radius:18px;overflow:hidden;box-shadow:0 12px 36px rgba(15,23,42,.08)"><tr><td align="center" style="padding:38px 40px 24px"><img src="'.htmlspecialchars($logo,ENT_QUOTES,'UTF-8').'" width="220" alt="SenseCMS" style="display:block;width:220px;max-width:70%;height:auto"></td></tr><tr><td style="padding:8px 40px 40px"><h1 style="margin:0 0 22px;color:'.htmlspecialchars($a['heading_color'],ENT_QUOTES,'UTF-8').';font-size:28px;line-height:1.25;text-align:center">'.htmlspecialchars($heading,ENT_QUOTES,'UTF-8').'</h1>'.$content.'<p style="margin:28px 0;text-align:center"><a href="'.htmlspecialchars($actionUrl,ENT_QUOTES,'UTF-8').'" style="display:inline-block;padding:14px 24px;border-radius:10px;background:'.htmlspecialchars($a['accent_color'],ENT_QUOTES,'UTF-8').';color:#fff;font-weight:700;text-decoration:none">'.htmlspecialchars($button,ENT_QUOTES,'UTF-8').'</a></p><p style="margin:24px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:13px;line-height:1.6">'.htmlspecialchars($footer,ENT_QUOTES,'UTF-8').'</p></td></tr></table><p style="margin:18px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:12px">Secure message from Sense CMS</p></td></tr></table></body></html>';
         $text = $heading."\n\n".$body."\n\n".$button.': '.$actionUrl."\n\n".$footer;
         (new MailService($config))->sendHtml($to,$subject,$html,$text);
     }

@@ -1,0 +1,2 @@
+# Public signed catalogue; no accounts or installation keys are transmitted.
+23 * * * * sensecms /usr/bin/php8.5 /home/sensecms.com/web/scripts/check-updates.php >> /home/sensecms.com/web/storage/update-worker.log 2>&1

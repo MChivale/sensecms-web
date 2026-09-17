@@ -151,6 +151,21 @@ try {
     $token = bin2hex(random_bytes(32));
     $server->prepare("INSERT INTO email_action_tokens (user_id,purpose,token_hash,request_ip_hash,expires_at,created_at) VALUES (2,'password_reset',?,?,DATE_ADD(UTC_TIMESTAMP(),INTERVAL 1 HOUR),UTC_TIMESTAMP())")->execute([hash('sha256', $token),hash('sha256', '127.0.0.1')]);
     $email = new App\Core\EmailSystem($server, $cms, new App\Core\Secrets(bin2hex(random_bytes(32))), [], 'https://example.test');
+    $coreLogo='/sensecms/images/sensecms-logo-email.png';
+    $assert($email->dashboard()['settings']['appearance']['logo_url']===$coreLogo,'Default email logo is independent of public themes');
+    $logoFile=dirname(__DIR__).'/.cms/source/public'.$coreLogo;
+    $assert(is_file($logoFile)&&getimagesize($logoFile)['mime']==='image/png','Portable Core bundles a valid email PNG');
+    foreach (['png','svg'] as $extension) {
+        $cms->saveSetting('email_system_settings',['appearance'=>['logo_url'=>'/theme-assets/sensecms/images/sensecms-logo-email.'.$extension]]);
+        $assert($email->dashboard()['settings']['appearance']['logo_url']===$coreLogo,'Legacy theme email logo resolves to portable Core '.$extension);
+    }
+    foreach (['https://example.test/custom-logo.png','/media/custom-logo.png',''] as $customLogo) {
+        $cms->saveSetting('email_system_settings',['appearance'=>['logo_url'=>$customLogo]]);
+        $assert($email->dashboard()['settings']['appearance']['logo_url']===$customLogo,'Custom or intentionally empty email logo is preserved');
+    }
+    $email->saveAppearance(array_replace($email->dashboard()['settings']['appearance'],['restore_logo'=>1]),null,1);
+    $assert($email->dashboard()['settings']['appearance']['logo_url']===$coreLogo,'Restore logo uses portable Core asset');
+    $cms->saveSetting('email_system_settings',[]);
     $email->setPassword($token, $password . 'new');
     $editor = $server->query('SELECT password,session_version FROM users WHERE id=2')->fetch();
     $assert(password_verify($password . 'new', $editor['password']) && (int) $editor['session_version'] === 3, 'Recovery changes password and revokes sessions');
@@ -189,6 +204,12 @@ try {
     }
     $secret = sodium_crypto_sign_secretkey(sodium_crypto_sign_keypair());
     $publicKey = base64_encode(sodium_crypto_sign_publickey_from_secretkey($secret));
+    // Historical lifecycle fixtures are independent of the product release being prepared.
+    foreach (['sense-package.json', 'addon.json'] as $file) {
+        $json = json_decode(file_get_contents($packageSource . '/' . $file), true, flags: JSON_THROW_ON_ERROR);
+        $json['version'] = '0.1.0';
+        file_put_contents($packageSource . '/' . $file, json_encode($json, JSON_THROW_ON_ERROR));
+    }
     $packages = new App\Core\PackageManager($server, $packageRoot, '0.1.0');
     $v1 = $packageRoot . '/calendar-0.1.0.zip';
     App\Core\Packages\Archive::build($packageSource, $v1, $secret);
@@ -323,6 +344,14 @@ try {
     $projected = $freshPackages->package('theme', 'sensecms');
     $assert($projected['active'] && $projected['signature_status'] === 'unverified', 'Damaged archive stays visible without a false verified signature');
     $assert($themeManager->active()['directory'] === $themeInstall['directory'], 'Metadata verification failure does not silently switch the website');
+    $video=$packageRoot.'/boundary.mp4';$stream=fopen($video,'wb');fwrite($stream,"\x00\x00\x00\x18ftypisom\x00\x00\x02\x00isomiso2");ftruncate($stream,App\Core\MediaLibrary::MAX_VIDEO);fclose($stream);
+    $library=new App\Core\MediaLibrary($server,$packageRoot.'/public');
+    $asset=$library->store(['name'=>'QA boundary.mp4','tmp_name'=>$video,'error'=>UPLOAD_ERR_OK,'size'=>1],1,null,null,false);
+    $assert((int)$asset['size_bytes']===App\Core\MediaLibrary::MAX_VIDEO&&filesize($packageRoot.'/public'.$asset['path'])===App\Core\MediaLibrary::MAX_VIDEO,'Exact 80 MiB video stored with actual size in isolated database and filesystem');
+    $rows=(int)$server->query('SELECT COUNT(*) FROM media')->fetchColumn();
+    $stream=fopen($video,'ab');fwrite($stream,'x');fclose($stream);clearstatcache(true,$video);
+    $reject(fn()=>$library->store(['name'=>'QA oversized.mp4','tmp_name'=>$video,'error'=>UPLOAD_ERR_OK,'size'=>1],1,null,null,false),'Oversize video rejected despite forged size');
+    $assert($rows===(int)$server->query('SELECT COUNT(*) FROM media')->fetchColumn(),'Rejected upload leaves database unchanged');
     sodium_memzero($secret);
     echo "Completed $count Workspace migration, functional and package checks.\n";
 } finally {

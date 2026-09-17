@@ -4,7 +4,7 @@ $publicPath = (string) ($page['public_path'] ?? $path);
 $marketplace = $publicPath === '/extensions' || (bool) preg_match('~^/extensions/catalog(?:/(?:theme|plugin|addon|module))?$~D', $publicPath);
 $section = match (true) {
     $publicPath === '/contact' => 'contact',
-    $publicPath === '/download' => 'release',
+    in_array($publicPath, ['/download','/update'], true) => 'release',
     $publicPath === '/docs' => 'resources',
     str_starts_with($publicPath, '/docs/') => 'guide',
     str_starts_with($publicPath, '/extensions') => 'extensions',
@@ -39,6 +39,7 @@ $featuredResource = $section === 'resources';
         <?php if ($section === 'extensions'): ?><nav class="category-nav" aria-label="Extension categories"><a href="<?= $categoryHome ?>"<?= $publicPath === $categoryHome ? ' aria-current="page"' : '' ?>><?= $categoryHome === '/extensions/catalog' ? 'All packages' : 'Overview' ?></a><?php foreach ($categories as $url=>$label): ?><a href="<?= $url ?>"<?= ($publicPath === $url || str_starts_with($publicPath, $url . '/')) ? ' aria-current="page"' : '' ?>><?= $label ?></a><?php endforeach; ?></nav><?php endif; ?>
     </div>
 </section>
+<?php if ($publicPath === '/update'): require __DIR__ . '/updates.php'; endif; ?>
 <?php if ($marketplace): require __DIR__ . '/marketplace.php'; else: ?>
 <div class="container subpage-body subpage-body-<?= $section ?><?= $contactSplit ? ' contact-composed' : '' ?>">
 <?php if ($section === 'guide'): ?>

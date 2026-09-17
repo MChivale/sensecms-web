@@ -10,9 +10,29 @@ Historical provenance/work records are retained, not runtime dependencies.
 
 Product: Sense CMS, a general-purpose PHP CMS.
 www.sensecms.com is the official product website and package distribution site.
-demo.sensecms.com will be a separate installation on the same server as www, to be built later.
-User reports demo.sensecms.com DNS was added. Empty server directories are prepared:
-/home/demo.sensecms.com/web/public (future document root) and ../storage (private).
-Demo application, database, dedicated PHP identity/pool and virtual host remain deferred.
+demo.sensecms.com is now user-installed on the same server, with its own database
+and private runtime at /home/demo.sensecms.com/web; DocumentRoot is web/public.
+Treat demo and www as independent installations. Never automatically mirror their
+accounts, configuration, data or deployments; operate only on the requested target.
+Demo has a separate read-only demo@sensecms.com account; the original account is Owner.
+As verified 2026-09-11, both installations have independently provisioned Demo accounts:
+active on demo, disabled on www. Demo sees every backend section without system.owner;
+server-side writes remain blocked. Only Owner can change account activation/Demo mode.
+Disabling revokes current sessions; enabling never revives an older session version.
+As verified 2026-09-11, demo uses its own demo-sensecms Unix user/PHP-FPM pool and
+/run/php/php8.5-demo-sensecms.sock; www retains sensecms/php8.5-sensecms.sock.
+Private storage, sessions, temporary files and logs are installation-local. Public
+upload roots alone inherit www-data read access. Never copy runtime keys or run
+demo maintenance under the official site's Unix identity.
 Current priority: Sense CMS backend and the product website; do not turn www into a demo.
+As verified 2026-09-13, both run Core build1.0.0; official theme/Calendar/Telegram1.0.0,
+Analytics0.1.2 and calendar-provider plugins0.1.1. Signed transition and rollback passed
+isolated QA; source version1.0.0 is not a claim of Stable installer acceptance.
+Only latest theme is visible. Older archives remain in private operator recovery storage.
 Private loopback QA fixtures are testing environments, not public demonstration sites.
+As verified 2026-09-13, new official-site live chats retain the server-observed IP and
+an approximate offline country for authorised operators only. The September 2026
+DB-IP Lite index is private runtime data; public chat state excludes both fields and
+conversation deletion erases them. Demo was not changed by this scoped deployment.
+Do not rebuild installer files or ZIPs during routine fixes. Deploy and verify the
+requested source changes first; build installation artifacts only on explicit request.

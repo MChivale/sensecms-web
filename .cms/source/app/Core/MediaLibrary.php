@@ -9,20 +9,36 @@ use RuntimeException;
 
 final class MediaLibrary
 {
+    public const MAX_FILES = 10;
+    public const MAX_VIDEO = 83886080;
+    public const MAX_BATCH = 99614720; // 95 MiB, reserving 1 MiB for multipart fields.
+    public const MAX_REQUEST = 100663296;
     private const TYPES = [
         'image/jpeg'=>['jpg','image',8388608], 'image/png'=>['png','image',8388608], 'image/webp'=>['webp','image',8388608],
-        'video/mp4'=>['mp4','video',83886080], 'audio/mpeg'=>['mp3','audio',20971520], 'application/pdf'=>['pdf','document',20971520],
+        'video/mp4'=>['mp4','video',self::MAX_VIDEO], 'audio/mpeg'=>['mp3','audio',20971520], 'application/pdf'=>['pdf','document',20971520],
     ];
 
     public function __construct(private readonly PDO $db, private readonly string $publicRoot) {}
 
+    public static function validateBatch(array $files): void
+    {
+        if (!$files || count($files) > self::MAX_FILES) throw new RuntimeException('Choose between 1 and 10 media files.');
+        $size = 0;
+        foreach ($files as $file) {
+            $path = (string) ($file['tmp_name'] ?? '');
+            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK && is_file($path)) $size += (int) filesize($path);
+        }
+        if ($size > self::MAX_BATCH) throw new RuntimeException('Selected files may total up to 95 MiB per upload. Send smaller batches.');
+    }
+
     public function store(array $file,int $userId,?int $facilityId=null,?int $folderId=null,bool $uploaded=true):array
     {
-        if(($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK||!is_file((string)($file['tmp_name']??'')))throw new RuntimeException('Choose a valid media file.');
-        $source=(string)$file['tmp_name'];$size=(int)($file['size']??filesize($source));$mime=(new \finfo(FILEINFO_MIME_TYPE))->file($source)?:'';
+        if(in_array($file['error']??UPLOAD_ERR_NO_FILE,[UPLOAD_ERR_INI_SIZE,UPLOAD_ERR_FORM_SIZE],true))throw new RuntimeException('The file exceeds the server upload limit. Maximum media file size is 80 MiB; images and documents have lower limits.');
+        if(($file['error']??UPLOAD_ERR_NO_FILE)!==UPLOAD_ERR_OK||!is_file((string)($file['tmp_name']??'')))throw new RuntimeException('Choose a valid, completely uploaded media file.');
+        $source=(string)$file['tmp_name'];$size=(int)filesize($source);$mime=(new \finfo(FILEINFO_MIME_TYPE))->file($source)?:'';
         if(in_array($mime,['audio/mp3','audio/x-mpeg'],true))$mime='audio/mpeg';if(in_array($mime,['application/mp4','application/octet-stream'],true)&&str_contains((string)file_get_contents($source,false,null,0,24),'ftyp'))$mime='video/mp4';
         if(!isset(self::TYPES[$mime]))throw new RuntimeException('Accepted formats are JPG, PNG, WebP, MP4, MP3 and PDF.');[$extension,$kind,$limit]=self::TYPES[$mime];
-        if($size<1||$size>$limit)throw new RuntimeException($kind==='video'?'Videos may be up to 80 MB.':($kind==='image'?'Images may be up to 8 MB.':'Files may be up to 20 MB.'));
+        if($size<1||$size>$limit)throw new RuntimeException($kind==='video'?'Videos may be up to 80 MiB.':($kind==='image'?'Images may be up to 8 MiB.':'Files may be up to 20 MiB.'));
         if($mime==='application/pdf'&&strncmp((string)file_get_contents($source,false,null,0,5),'%PDF-',5)!==0)throw new RuntimeException('The selected PDF is invalid.');
         $width=$height=null;if($kind==='image'){$dimensions=@getimagesize($source);if(!$dimensions)throw new RuntimeException('The selected image is invalid.');[$width,$height]=$dimensions;if($width<1||$height<1||$width>12000||$height>12000||$width*$height>40000000)throw new RuntimeException('The image dimensions are too large to process safely.');}
         $checksum=hash_file('sha256',$source);$duplicate=$this->db->prepare('SELECT id FROM media WHERE checksum=? AND facility_id <=> ? AND status="active" LIMIT 1');$duplicate->execute([$checksum,$facilityId]);if($existing=(int)($duplicate->fetchColumn()?:0))return$this->detail($existing,null);

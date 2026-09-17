@@ -14,6 +14,12 @@ $pages = require $source . '/pages.php';
 $count = 0;
 $assert = static function (bool $ok, string $name) use (&$count): void { if (!$ok) throw new RuntimeException('FAIL ' . $name); $count++; echo 'PASS ' . $name . PHP_EOL; };
 $reject = static function (callable $call, string $name) use ($assert): void { try { $call(); } catch (RuntimeException $e) { $assert(true, $name); return; } $assert(false, $name); };
+$emailLogo='/theme-assets/sensecms/images/sensecms-logo-email.png';
+[$logoStatus,$logoHeaders,$logoBody]=$theme->response($emailLogo);
+$assert($logoStatus===200&&$logoHeaders['Content-Type']==='image/png','Default email logo is bundled in the product theme');
+$assert($logoBody===file_get_contents($source.'/assets/sensecms/images/sensecms-logo-email.png')&&getimagesizefromstring($logoBody)['mime']==='image/png','Email logo route returns the exact valid PNG');
+[$headStatus,$headHeaders,$headBody]=$theme->response($emailLogo,'HEAD');
+$assert($headStatus===200&&$headBody===''&&(int)$headHeaders['Content-Length']===strlen($logoBody),'Email logo HEAD has correct length and no body');
 $catalogPackage = ['type'=>'theme','slug'=>'catalog-test','name'=>'Catalog test','version'=>'0.1.0','installed_version'=>'0.2.0','pending_version'=>'0.2.0','managed_releases'=>true,'active'=>true,'source'=>'package','signature_status'=>'verified','manifest'=>['engine'=>'>=0.1.0 <1.0.0','release_channel'=>'stable']];
 $remoteRelease = ['id'=>7,'type'=>'theme','slug'=>'catalog-test','version'=>'0.2.0','release_channel'=>'stable','manifest'=>[]];
 $catalog = static fn(array $package, array $remote = [], array $themes = [], array $legacy = []) => App\Core\MarketplaceCatalog::build('0.1.0', $themes, [], [], [$package], $legacy, [], [], $remote);
@@ -52,7 +58,10 @@ foreach ($pages as $path => $page) {
     $assert($theme->response($path, 'HEAD')[2] === '', 'HEAD ' . $path);
     $assert(!preg_match('/href="[^" ]*#[^" ]+"/', str_replace('href="#main"', '', $body)), 'navigation uses real page URLs ' . $path);
     preg_match_all('/(?:href|src)="(\/[^"#]*)(?:#[^"]*)?"/', $body, $links);
-    foreach (array_unique($links[1]) as $link) $assert($theme->response($link, 'HEAD')[0] === 200, 'internal link ' . $path . ' -> ' . $link);
+    foreach (array_unique($links[1]) as $link) {
+        if($link==='/system/update'){$assert($theme->response($link,'HEAD')[0]===404,'Core Update link is not owned by the public theme');continue;}
+        $assert($theme->response((string)parse_url($link,PHP_URL_PATH), 'HEAD')[0] === 200, 'internal link ' . $path . ' -> ' . $link);
+    }
 }
 foreach (['/missing', '/theme-assets/../pages.php', '/theme-assets/pages.php', '/theme-assets/../../.cfg/SSH.txt'] as $path) $assert($theme->response($path)[0] === 404, 'unknown/private path ' . $path);
 $assert($theme->response('/', 'POST')[0] === 405, 'read-only public routes');
@@ -101,14 +110,14 @@ foreach (require dirname(__DIR__) . '/.src/package-catalog.php' as $product) {
     $marketBlocks[] = ['type'=>'text','payload'=>['title'=>$product['name'],'text'=>'<p><strong>' . ($product['usd_year']===0?'Free':'USD '.$product['usd_year'].' / year') . '</strong></p><p>'.$product['description'].'</p><p>Not available yet</p>','cta_url'=>'/extensions/catalog/'.$product['type'].'/'.$product['slug'],'cta_label'=>'View package']];
 }
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog','blocks'=>$marketBlocks]);
-$assert(substr_count($market, 'data-market-item ')===13, 'marketplace presents all CMS products as cards');
+$assert(substr_count($market, 'data-market-item ')===14, 'marketplace presents all CMS products as cards');
 $entryMarket=$managed(['title'=>'Marketplace','public_path'=>'/extensions','blocks'=>$marketBlocks]);
-$assert(substr_count($entryMarket,'data-market-item ')===13 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
+$assert(substr_count($entryMarket,'data-market-item ')===14 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
 $assert(str_contains($entryMarket,'data-market-category="plugin"') && str_contains($entryMarket,'data-market-price="free"'), 'primary marketplace contains category and price chips');
 $assert(substr_count($entryMarket,'data-market-dialog ')===1 && str_contains($entryMarket,'aria-labelledby="market-dialog-title"'), 'marketplace provides one accessible inline details dialog');
-$assert(substr_count($entryMarket,'data-market-open href=')===26 && substr_count($entryMarket,'data-market-status hidden')===13, 'all product actions support dialogs with real no-JS detail links');
+$assert(substr_count($entryMarket,'data-market-open href=')===28 && substr_count($entryMarket,'data-market-status hidden')===14, 'all product actions support dialogs with real no-JS detail links');
 $assert(str_contains($entryMarket,'disabled>Download unavailable') && str_contains($entryMarket,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
-$assert(substr_count($market, 'data-pricing="free"')===5, 'marketplace retains five free product tiers');
+$assert(substr_count($market, 'data-pricing="free"')===6, 'marketplace retains six free product tiers');
 $assert(str_contains($market, 'data-market-filters hidden') && str_contains($market, 'data-market-count'), 'marketplace controls progressively enhance visible server-rendered cards');
 $assert(str_contains($market, 'USD 120 / year') && str_contains($market, 'Separate licence'), 'marketplace displays prices and entitlement labels');
 $marketBlocks[] = ['type'=>'text','payload'=>['title'=>'Editorial <unsafe>','text'=>'<p>Preserved editorial note</p><script>unsafe()</script>']];

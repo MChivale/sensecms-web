@@ -29,7 +29,13 @@ final class WorkflowRepository
 
     public function counts(?array $facilityIds = null): array
     {
-        $counts=['all'=>0,'in_review'=>0,'changes_requested'=>0,'approved'=>0,'draft'=>0];foreach(['in_review','changes_requested','approved','draft']as$state){$counts[$state]=count($this->queue($facilityIds,$state));$counts['all']+=$counts[$state];}return$counts;
+        $counts=['all'=>0,'in_review'=>0,'changes_requested'=>0,'approved'=>0,'draft'=>0];
+        $scope=$this->scopeSql($facilityIds,'x');
+        $where="x.status<>'archived' AND x.workflow_state IN ('in_review','changes_requested','approved','draft') AND (x.workflow_state<>'approved' OR x.status='draft')".$scope['sql'];
+        $statement=$this->db->prepare("SELECT workflow_state,SUM(total) total FROM (SELECT x.workflow_state,COUNT(*) total FROM pages x WHERE {$where} GROUP BY x.workflow_state UNION ALL SELECT x.workflow_state,COUNT(*) total FROM posts x WHERE {$where} GROUP BY x.workflow_state) counts GROUP BY workflow_state");
+        $statement->execute([...$scope['params'],...$scope['params']]);
+        foreach($statement->fetchAll() as $row){$counts[$row['workflow_state']]=(int)$row['total'];$counts['all']+=(int)$row['total'];}
+        return$counts;
     }
 
     public function history(string $type,int$id):array

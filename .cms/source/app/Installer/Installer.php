@@ -87,7 +87,7 @@ final class Installer
                 // Public routing also requires installed.json, written only after all migrations succeed.
                 $this->runtime->write('workspace', array_replace($workspace, ['enabled'=>true, 'secret'=>$workspace['secret'] ?? bin2hex(random_bytes(32))]));
             }
-            $this->runtime->write('installed', ['base_url' => $baseUrl, 'database' => $dbConfig, 'installed_at' => gmdate(DATE_ATOM), 'core_version' => '0.1.0']);
+            $this->runtime->write('installed', ['base_url' => $baseUrl, 'database' => $dbConfig, 'installed_at' => gmdate(DATE_ATOM), 'core_version' => (require $this->runtime->root . '/config/product.php')['core_version']]);
             unlink($this->runtime->root . '/storage/installing.json');
         } finally {
             if ($db?->inTransaction()) $db->rollBack();

@@ -55,7 +55,8 @@ final class PublicController extends Controller
 
     public function show(string $locale, string $slug = 'home'): never
     {
-        $fallback=$this->cms->defaultLocale($this->config['default_locale']);$facility=$this->facilities->primary($locale,$fallback);if(!$facility){http_response_code(404);exit('Facility not found');}$this->renderFacility($locale,$slug,$facility,false);
+        if (!in_array($locale, array_column($this->cms->languages(), 'locale'), true)) { http_response_code(404); exit('Language not found'); }
+        $fallback=$this->cms->defaultLocale($this->config['default_locale']);$facility=$this->facilities->primary($locale,$fallback);if(!$facility){$this->redirect('/');}$this->renderFacility($locale,$slug,$facility,false);
     }
 
     public function showPageAtPath(array $route): never
@@ -147,6 +148,21 @@ final class PublicController extends Controller
             'formCsrf' => $this->publicFormToken(),
             'formCaptchaEnabled' => (bool) (((array) $this->cms->setting('captcha_settings', []))['enabled'] ?? true),
         ]);
+    }
+
+    protected function view(string $file, array $data = []): never
+    {
+        $html = (static function (string $file, array $data): string {
+            extract($data, EXTR_SKIP);
+            ob_start();
+            try { require $file; return (string) ob_get_contents(); }
+            finally { ob_end_clean(); }
+        })($file, $data);
+        if (!empty($data['extensionStates']['live-chat']) && empty($data['isThemePreview'])) {
+            $html = \App\Core\PublicChat::inject($html, (array) ($data['liveChatSettings'] ?? []), (string) ($data['locale'] ?? 'en'));
+        }
+        echo $html;
+        exit;
     }
 
     private function publicFormToken(): string

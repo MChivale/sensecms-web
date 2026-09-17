@@ -116,6 +116,8 @@ final class InstallerBuilder
     public static function web(string $root, string $directory): array
     {
         if (is_link($directory) || !is_dir($directory) || count(scandir($directory)) !== 2) throw new RuntimeException('Web installer output must be an existing empty directory.');
+        $version = (require $root . '/config/product.php')['core_version'];
+        if (!is_string($version) || !preg_match('/^\d+\.\d+\.\d+$/D', $version)) throw new RuntimeException('Invalid Core build version.');
         $result = self::build($root, $directory . '/install.zip');
         $inventory = self::verify($directory . '/install.zip')['files'];
         $zip = new ZipArchive();
@@ -123,8 +125,8 @@ final class InstallerBuilder
         $inventory['installer-manifest.json'] = hash('sha256', $zip->getFromName('installer-manifest.json'));
         $zip->close();
         $template = file_get_contents(__DIR__ . '/web-installer.php');
-        $bootstrap = str_replace(['__SENSE_ARCHIVE_HASH__', '__SENSE_INVENTORY__', '__SENSE_LOGO__'],
-            [$result['sha256'], var_export($inventory, true), base64_encode((string) file_get_contents($root . '/public/assets/logo.svg'))], $template);
+        $bootstrap = str_replace(['__SENSE_ARCHIVE_HASH__', '__SENSE_INVENTORY__', '__SENSE_LOGO__', '__SENSE_VERSION__'],
+            [$result['sha256'], var_export($inventory, true), base64_encode((string) file_get_contents($root . '/public/assets/logo.svg')), $version], $template);
         $handle = fopen($directory . '/index.php', 'xb');
         if (!$handle) throw new RuntimeException('Cannot publish web bootstrap.');
         try { if (fwrite($handle, $bootstrap) !== strlen($bootstrap)) throw new RuntimeException('Cannot write web bootstrap.'); }
@@ -144,7 +146,8 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
             echo 'Web bootstrap and development install.zip created; SHA-256 ' . $result['sha256'] . PHP_EOL;
             exit;
         }
-        $target = $argv[1] ?? dirname(__DIR__) . '/.cms/releases/sensecms-install-0.1.0-workspace-dev.zip';
+        $version = (require dirname(__DIR__) . '/.cms/source/config/product.php')['core_version'];
+        $target = $argv[1] ?? dirname(__DIR__) . '/.cms/releases/sensecms-install-' . $version . '-workspace-dev.zip';
         if ($argc === 1 && !is_dir(dirname($target)) && !mkdir(dirname($target), 0700, true)) throw new RuntimeException('Cannot create development release directory.');
         $result = InstallerBuilder::build(dirname(__DIR__) . '/.cms/source', $target);
         echo $result['files'] . ' inventoried installer files; unsigned development build with fresh Workspace installation.' . PHP_EOL;

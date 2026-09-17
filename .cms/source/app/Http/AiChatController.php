@@ -5,26 +5,39 @@ declare(strict_types=1);
 namespace App\Http;
 
 use App\Core\AiChatService;
+use App\Core\Auth;
+use App\Core\CmsRepository;
 
 final class AiChatController extends Controller
 {
-    public function __construct(private readonly AiChatService $chat) {}
+    public function __construct(private readonly AiChatService $chat, private readonly ?CmsRepository $cms = null) {}
     public function reply(bool $forceHuman = false): never
     {
         $this->headers();
+        $this->guard(true);
+        if (!is_string($_POST['message'] ?? null) || !is_string($_POST['name'] ?? '') || !is_string($_POST['locale'] ?? 'en')) {
+            http_response_code(422); echo json_encode(['error'=>'Invalid chat message.']); exit;
+        }
         unset($_SESSION['ai_chat_ended']);
         $window = $_SESSION['ai_rate_window'] ?? 0;
         if ($window < time() - 600) { $_SESSION['ai_rate_window'] = time(); $_SESSION['ai_rate_count'] = 0; }
         if (($_SESSION['ai_rate_count'] ?? 0) >= 12) { http_response_code(429); echo json_encode(['error' => 'Please wait a few minutes before sending another message.']); exit; }
         $_SESSION['ai_rate_count'] = ($_SESSION['ai_rate_count'] ?? 0) + 1;
-        try { echo json_encode($this->chat->reply((string) ($_POST['message'] ?? ''), preg_replace('/[^a-z-]/', '', (string) ($_POST['locale'] ?? 'en')) ?: 'en', $_SESSION['ai_conversation'] ??= $this->uuid(), (string) ($_POST['name'] ?? ''), $forceHuman), JSON_UNESCAPED_UNICODE); }
-        catch (\Throwable $exception) { http_response_code(422); echo json_encode(['error' => $exception->getMessage()]); }
+        try { echo json_encode($this->chat->reply((string) ($_POST['message'] ?? ''), preg_replace('/[^a-z-]/', '', (string) ($_POST['locale'] ?? 'en')) ?: 'en', $_SESSION['ai_conversation'] ??= $this->uuid(), (string) ($_POST['name'] ?? ''), $forceHuman, \App\Core\IpCountry::ip($_SERVER['REMOTE_ADDR'] ?? null)), JSON_UNESCAPED_UNICODE); }
+        catch (\Throwable $exception) {
+            $message = $exception->getMessage();
+            $expected = in_array($message, ['Please enter a message up to 2,000 characters.', 'This conversation has ended. Start a new chat to continue.'], true);
+            if (!$expected) error_log('Public chat send failed: ' . $exception::class);
+            http_response_code($expected ? 422 : 503);
+            echo json_encode(['error' => $expected ? $message : 'Sending could not be confirmed. Check the conversation before trying again.']);
+        }
         exit;
     }
 
     public function state(): never
     {
         $this->headers();
+        $this->guard(false);
         $conversation = (string) ($_SESSION['ai_conversation'] ?? '');
         if ($conversation === '') { echo json_encode(['ok' => true, 'data' => !empty($_SESSION['ai_chat_ended']) ? ['status' => 'closed', 'ended' => true] : null]); exit; }
         $state = $this->chat->state($conversation);
@@ -36,6 +49,16 @@ final class AiChatController extends Controller
         }
         echo json_encode(['ok' => true, 'data' => $state], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         exit;
+    }
+
+    private function guard(bool $write): void
+    {
+        if ($this->cms === null) { http_response_code(503); echo json_encode(['error'=>'Live chat is temporarily unavailable.']); exit; }
+        if (((array) $this->cms->setting('extension_states', []))['live-chat'] ?? true) {
+            if (!$write || Auth::verifyCsrf($_POST['csrf'] ?? null)) return;
+            http_response_code(419); echo json_encode(['error'=>'Your session expired. Refresh this page before sending.']); exit;
+        }
+        http_response_code(403); echo json_encode(['error'=>'Live chat is currently disabled.']); exit;
     }
 
     private function headers(): void

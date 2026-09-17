@@ -31,16 +31,40 @@ try {
     if (!in_array($_SERVER['REQUEST_METHOD'] ?? 'GET', ['GET', 'POST', 'HEAD'], true)) { header('Allow: GET, HEAD, POST'); $reply(['message' => 'Method not allowed.'], 405); }
     $installed = $runtime->read('installed');
     $workspaceEnabled = $installed && ($runtime->read('workspace')['enabled'] ?? false) === true;
-    $bodyLimit = $workspaceEnabled && preg_match('#^/(?:content|profile|settings|appearance|system|api)(?:/|$)#D', $path) ? 67108864 : 16384;
+    $bodyLimit = $workspaceEnabled && preg_match('#^/(?:content|profile|settings|appearance|system|api)(?:/|$)#D', $path) ? App\Core\MediaLibrary::MAX_REQUEST : 16384;
     if ((int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $bodyLimit) $reply(['message' => 'Request too large.'], 413);
+    $postLimit = ini_parse_quantity((string) ini_get('post_max_size'));
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $postLimit > 0 && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $postLimit) $reply(['message' => 'Upload exceeds this server’s POST limit. Send a smaller batch or ask the operator to review upload settings.'], 413);
     if ($installed && $path === '/packages/download') App\Http\DistributionController::run($runtime,(bool)$local);
     $adminPath = preg_match('#^/(?:install|login|logout|dashboard|settings|license|account)(?:/|$)#D', $path)
-        || $workspaceEnabled && preg_match('#^/(?:profile|content|appearance|marketplace|system|api|calendar|surveys|forms|seo|ai|conversations|forgot-password|reset-password|set-password|captcha|extension-assets)(?:/|$)#D', $path);
+        || $workspaceEnabled && preg_match('#^/(?:profile|content|appearance|marketplace|system|api|calendar|surveys|forms|seo|ai|conversations|social-publishing|forgot-password|reset-password|set-password|captcha|extension-assets)(?:/|$)#D', $path);
     $managedPage = false;
     $publicPage = null;
+    $startSession = static function () use ($root, $local): void {
+        ini_set('session.use_strict_mode', '1'); ini_set('session.use_only_cookies', '1');
+        if (!is_dir($root . '/storage/sessions') && !mkdir($root . '/storage/sessions', 0700)) throw new RuntimeException('Cannot create private sessions.');
+        session_save_path($root . '/storage/sessions'); session_name('sensecms_session');
+        session_set_cookie_params(['httponly' => true, 'secure' => !$local, 'samesite' => 'Strict', 'path' => '/']); session_start();
+    };
     // Public presentation avoids administration; Workspace data is read without an admin session.
     if ($installed && !$adminPath) {
         $themeRoot = (new App\Core\Packages\ThemeManager($runtime))->activePath();
+        if ($themeRoot === null) {
+            try { $runtime->license()->enforce($baseUrl); }
+            catch (LicenseException) { $reply(['message' => 'Website temporarily unavailable.'], 503); }
+            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST') { header('Allow: GET, HEAD'); $reply(['message' => 'Method not allowed.'], 405); }
+            $homeCms = new App\Core\CmsRepository(Runtime::connect($installed['database']), new App\Core\EventBus(), $runtime);
+            if ($workspaceEnabled && preg_match('#^/([a-z]{2,5})(?:/home)?$#D', $path, $homeRoute)
+                && in_array($homeRoute[1], array_column($homeCms->languages(), 'locale'), true)) {
+                header('Location: /', true, 302); exit;
+            }
+            $siteName = (string) $homeCms->setting('site_name', 'Sense CMS');
+            $isHome = $path === '/';
+            http_response_code($isHome ? 200 : 404);
+            header('Content-Type: text/html; charset=UTF-8'); header('X-Robots-Tag: noindex, nofollow');
+            if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'HEAD') require $root . '/app/Views/public-home.php';
+            exit;
+        }
         $managedPage = $workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && preg_match('#^/[a-z]{2}(?:-[a-z]{2})?(?:/|$)#D', $path);
         $discovery = $workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && in_array($path, ['/robots.txt', '/sitemap.xml'], true);
         $publicCms = null;
@@ -59,15 +83,19 @@ try {
                 $context['theme_settings'] = $publicCms->setting('theme_settings', []);
             }
             [$status, $headers, $body] = (new App\Core\PublicTheme($themeRoot, $baseUrl))->response($path, $_SERVER['REQUEST_METHOD'] ?? 'GET', $context);
+            if ($status === 200 && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && $publicCms !== null
+                && str_starts_with($headers['Content-Type'] ?? '', 'text/html')
+                && (((array) $publicCms->setting('extension_states', []))['live-chat'] ?? true)) {
+                $startSession();
+                $body = App\Core\PublicChat::inject($body, (array) $publicCms->setting('live_chat_settings', []), $publicCms->defaultLocale('en'));
+                $headers['Cache-Control'] = 'private, no-store';
+            }
             http_response_code($status);
             foreach ($headers as $name => $value) header($name . ': ' . $value);
             echo $body; exit;
         }
     }
-    ini_set('session.use_strict_mode', '1'); ini_set('session.use_only_cookies', '1');
-    if (!is_dir($root . '/storage/sessions') && !mkdir($root . '/storage/sessions', 0700)) throw new RuntimeException('Cannot create private sessions.');
-    session_save_path($root . '/storage/sessions'); session_name('sensecms_session');
-    session_set_cookie_params(['httponly' => true, 'secure' => !$local, 'samesite' => 'Strict', 'path' => '/']); session_start();
+    $startSession();
     $csrf = Auth::csrf(); $post = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
     if ($post && !$workspaceEnabled && !Auth::verifyCsrf($_POST['csrf'] ?? null)) $reply(['message' => 'Your session expired. Refresh the page and try again.'], 419);
     if (!$installed) {

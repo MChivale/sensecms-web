@@ -1,11 +1,11 @@
 {
   "name": "Sense CMS Calendar",
   "slug": "calendar",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "author": "QUANT Software House",
   "type": "addon",
   "description": "Professional scheduling with conflict prevention, resources, recurring series, time zones, all-day events and multi-channel reminders.",
-  "compatible_engine_version": "^0.1",
+  "compatible_engine_version": ">=0.1.0 <2.0.0",
   "dependencies": [],
   "permissions": [
     "calendar.view",

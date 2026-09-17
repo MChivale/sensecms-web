@@ -15,6 +15,7 @@ final class ExtensionContext
         public readonly AccessControl $access,
         public readonly DashboardController $dashboard,
         public readonly array $config,
-        public readonly string $root
+        public readonly string $root,
+        public readonly ?EventBus $events = null
     ) {}
 }

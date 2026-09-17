@@ -25,7 +25,7 @@ final class MailService
         if (!filter_var($to, FILTER_VALIDATE_EMAIL)) throw new \RuntimeException('The notification recipient is invalid.');
         $from = trim((string) ($this->config['from_address'] ?? ''));
         if (!filter_var($from, FILTER_VALIDATE_EMAIL)) throw new \RuntimeException('The mail sender is not configured.');
-        $headers = array_merge(['From: ' . $this->mailbox((string) ($this->config['from_name'] ?? 'Base CMS'), $from), 'MIME-Version: 1.0'], $contentHeaders);
+        $headers = array_merge(['From: ' . $this->mailbox((string) ($this->config['from_name'] ?? 'Sense CMS'), $from), 'MIME-Version: 1.0'], $contentHeaders);
         if ($replyTo && filter_var($replyTo, FILTER_VALIDATE_EMAIL)) $headers[] = 'Reply-To: ' . $replyTo;
         $host = trim((string) ($this->config['host'] ?? ''));
         if ($host === '') {

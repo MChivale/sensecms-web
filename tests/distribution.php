@@ -13,9 +13,10 @@ $reject=static function(callable $fn,string $name)use($check):void {try{$fn();}c
 try {
     $reject(fn()=>new Distribution($runtime),'distribution disabled by default');
     $pair=sodium_crypto_sign_keypair();$secret=sodium_crypto_sign_secretkey($pair);$public=sodium_crypto_sign_publickey($pair);
-    $archive=$root.'/storage/distribution/releases/theme-sensecms-0.3.8.zip';
+    $version=json_decode((string)file_get_contents(dirname(__DIR__).'/.themes/sensecms/sense-package.json'),true)['version'];
+    $archive=$root.'/storage/distribution/releases/theme-sensecms-'.$version.'.zip';
     Archive::build(dirname(__DIR__).'/.themes/sensecms',$archive,$secret);sodium_memzero($secret);
-    $entry=['enabled'=>true,'type'=>'theme','slug'=>'sensecms','version'=>'0.3.8','file'=>basename($archive),'sha256'=>hash_file('sha256',$archive),'bytes'=>filesize($archive),'channel'=>'development','pricing'=>'free'];
+    $entry=['enabled'=>true,'type'=>'theme','slug'=>'sensecms','version'=>$version,'file'=>basename($archive),'sha256'=>hash_file('sha256',$archive),'bytes'=>filesize($archive),'channel'=>'development','pricing'=>'free'];
     $cfg=['enabled'=>true,'publishers'=>['sensecms-release'=>base64_encode($public)],'products'=>['theme:sensecms'=>$entry]];
     $runtime->write('distribution',$cfg);$service=new Distribution($runtime);
     $check(count($service->offers())===1 && !isset($service->offers()['theme:sensecms']['file']),'public offers omit private file configuration');

@@ -1859,3 +1859,1688 @@ licence/bot secrets without printing them. Also passed 73 licensing, 55 package,
 git ls-files confirms .cfg/.local/generated installer contents are not tracked.
 Existing dirty/untracked work preserved; repository already has sensecms-web origin.
 No Git commit/push, project/task creation, production deployment, DB or server changes.
+
+## 2026-09-09 — system audit: architecture, security and release readiness
+
+Scope: analysis requested by the user, not implementation or production promotion.
+Baseline: commit 67501f3, clean main checkout, 547 tracked files. Inspected project
+instructions/history, source boundaries, entry points, authentication/access control,
+content/builder/workflow/media, package/runtime/update contracts, licensing/secrets,
+notification/integration code and tests, installer and deployment definitions.
+Private .cfg file inventory was checked without exposing credentials. No other
+project configuration was used. This is a cross-system audit, not a claim that every
+branch has been executed or that production passed a penetration test.
+
+Architecture: PHP 8.5+ custom modular monolith. Portable Core and administration in
+.cms/source; runtime configuration/keys in private storage; MariaDB 10.11+ Workspace
+with 27 migration files. Public theme in .themes/sensecms; independent plugins/addons;
+.modules currently has no source files. Website-only catalogue and Telegram broker
+remain in .src, outside customer Core. Nginx public DocumentRoot and dedicated FPM
+pool are defined in deploy. Core build 0.1.0 remains separate from licensing protocol
+1.0 (Sense CMS / Sense CMS System). No new framework is warranted by this audit.
+
+### Confirmed priority findings
+
+1. P1 — Non-owner privilege escalation through access management.
+   AccessControl::saveUser checks users.manage but does not restrict assignment of
+   the Owner role to an existing Owner actor. saveRole checks roles.manage but lets
+   that actor assign system.owner to a new role. The Administrator seed explicitly
+   excludes system.owner, so the distinction is not enforced by these mutation paths.
+   Evidence: AccessControl.php lines 158-229; database/workspace/
+   015_access_editorial_workflow.sql lines 107-120; DashboardController.php 558-568.
+   Reproduced using the actual AccessControl implementation and an isolated SQLite
+   :memory: fixture with NOW() registered, a real permission graph and two users:
+   before saveUser: system.owner=0; after self-assignment of owner: system.owner=1.
+   Independently, a non-owner with roles.manage successfully created a role carrying
+   system.owner. No mocked authorization decision and no production account changes.
+   Fix boundary: protect privileged role/permission grants and management of owners,
+   including indirect grants and password changes; add negative non-owner tests.
+
+2. P1 — HTML sanitization can be bypassed by nested unrecognized elements.
+   HtmlSanitizer::cleanChildren unwraps an unknown element and immediately continues;
+   its promoted children are not recursively sanitized. A single wrapper preserves
+   script, onerror or javascript: href payloads. Two wrappers preserve an onerror
+   attribute even after both save-time and render-time sanitization:
+   input: <unknown><unknown><img src="/missing.png" onerror="alert(1)"></unknown></unknown>
+   save:  <unknown><img src="/missing.png" onerror="alert(1)"></unknown>
+   render:<img src="/missing.png" onerror="alert(1)">
+   Evidence: Core/HtmlSanitizer.php 28-46, Core/PageBuilder.php 118-136,
+   .themes/sensecms/views/blocks.php 8-9. Reproduced locally with actual sanitizer.
+   Public CSP was present and can prevent script execution; browser execution or
+   production compromise was NOT demonstrated. CSP does not repair unsafe output.
+   Fix boundary: sanitize descendants before promotion; test nesting, forbidden
+   elements/attributes/URLs, repeated sanitization and actual builder/theme rendering.
+
+3. P1 release gate — Core updater does not implement the current portable contract.
+   Core/SystemUpdate.php:18 reads absent app/release.json and falls back to 1.0.0,
+   while config/product.php declares 0.1.0. Line 56 calls marketplaceHeaders(), absent
+   from LicenseService. Lines 109-123 require the old migration baseline and paths,
+   unlike Installer/WorkspaceMigration and database/workspace. The update allowlist
+   does not cover the current full Core distribution. maintenance.json is written
+   but no request entry point consumes it; worker.lock is not a request-traffic lock.
+   No runnable SystemUpdate worker entry point/cron or dedicated updater tests were
+   found in active tracked source. OfficialCatalog.php:12 expects distribution.public_key,
+   while the current website distribution contract uses independently pinned publishers.
+   Live unauthenticated GET /api/marketplace/v1/official/ and /core-package/ returned
+   404. This does not alone prove all authenticated routes absent, but corroborates
+   the missing integration found in source. Do not advertise safe Core updates or
+   enable this legacy execution path merely by adding a cron. A replacement needs
+   coherent version/trust/transport contracts, maintenance coordination, migration
+   checks and tested recovery using exact release artifacts.
+
+4. P2 — Module archive support is not module lifecycle/runtime support.
+   Packages/Manifest.php:11 accepts module; PackageManager.php:14 only accepts
+   theme/plugin/addon. ExtensionRuntime.php only loads addon/plugin, as do extension
+   asset and lifecycle routes. The Extensions view calls built-in components
+   "15 portable SenseCMS modules"; these are not independently installable modules.
+   Decide/implement the advertised module lifecycle consistently through manifest,
+   installation, dependencies, runtime, assets, permissions, UI and rollback tests.
+
+5. P2 — Package activation can leave inconsistent state.
+   PackageManager.php:383-390 invokes syncRuntimeState, then updates extension_packages,
+   then audits, without the lock/transaction used by install/uninstall/rollback.
+   Failure between writes can leave installed_plugins/settings and extension_packages
+   disagreeing; concurrent addon toggles can overwrite the shared extension_states
+   read/modify/write. This is source-confirmed risk; no production failure injected.
+   Verify transactional activation and concurrency against isolated MariaDB.
+
+6. P2 — Upload limits contradict the advertised video capacity.
+   MediaLibrary.php:15,25 allows 80 MiB video; public/index.php:34 rejects a Workspace
+   request larger than 64 MiB, including multipart overhead. Tracked Nginx/FPM configs
+   do not establish matching general upload limits (Telegram has its own 64k limit).
+   An 80 MiB upload cannot pass the application guard regardless of upstream settings.
+   Align UI/application/PHP/Nginx limits and test boundaries; effective production
+   global Nginx/PHP limits were not inspected and must not be assumed from templates.
+
+7. P2 — Editorial counters are truncated and unnecessarily load content rows.
+   WorkflowRepository.php:26 caps queue() at 250; counts():30-32 counts four such
+   result sets. A state with 251 items reports 250. Separate aggregate counts from
+   paginated queue retrieval and test totals above the display limit.
+
+8. P2 product consistency — General-purpose Core still has educational/old branding.
+   AiChatService.php:60-61 hardcodes a school/admissions assistant. SeoMeta.php:49
+   defaults to EducationalOrganization when sanitizing unspecified organization type.
+   Page-builder defaults and SiteChrome retain educational copy. EmailSystem.php:226
+   hardcodes Base CMS into the site_name token; recovery/email/update views also use
+   Base CMS. Live /forgot-password returned that label. Replace owned defaults with
+   generic/site-configured values, preserving saved content, legacy tokens and valid
+   third-party identities; do not blanket-rebrand dependency or provenance files.
+
+### Verification performed in this audit
+
+944 existing checks passed locally: project-boundaries 11; packages 55; licensing 73;
+themes/site 448; installer-package 43; web-installer 28; analytics PHP 14; analytics
+consent/UI 18; Google 27; Microsoft 32; Apple 64; Telegram broker 58/client 28/profile 1;
+Web Push crypto 1/worker 15; notification settings 15; distribution 13.
+These are test-program checks, not a coverage percentage or 944 end-to-end scenarios.
+The security reproductions above were additional diagnostics; existing passing tests
+do not cover those adverse cases. PHP lint: all 196 tracked PHP files passed.
+git diff --check passed before report and was checked again afterward.
+Installer ZIP remains unchanged: SHA-256
+25ae85f513958f8a206012f0d76dd6112117fe47bc427232bdf9e7bd58eb0c94.
+
+Read-only live GET: /, /extensions, /packages/download, /forgot-password = 200;
+all six checked responses (including the two updater 404s) had HSTS and CSP.
+Public download metadata currently exposed seven offers. No licensed download,
+provider API operation, mail, Telegram message or subscription was submitted.
+
+### Remaining acceptance and recommended order
+
+No live database migration/package lifecycle was executed in this Windows audit.
+The existing MariaDB tests require a separate Linux fixture; do not run them against
+production. Exact generated installer + real licence + new database + Nginx/Apache
+acceptance remains open, as documented by the installer contract. Current production
+server hashes, effective permissions/config, service logs and authenticated desktop/
+mobile UI were not re-audited. Google/Microsoft/Apple live delivery and GA property
+delivery were not validated; mocked protocol success is not live-account acceptance.
+
+No tracked GitHub Actions workflow exists. This does not prove there is no external CI.
+docs/packages.md still describes general plugin lifecycle as future although plugins
+have implementation/tests, and tests/package-release.php:36 insists on exactly two
+archives despite the expanded product inventory. Update both with actual scope.
+
+Recommended work sequence: (1) access-control and sanitizer fixes with regression
+tests; (2) safe Core update contract and isolated recovery acceptance; (3) consistent
+module lifecycle and atomic package activation; (4) exact-artifact installation and
+provider acceptance; (5) upload/counting/default-copy/documentation/CI consistency.
+Keep the release explicitly DEVELOPMENT until its gates actually pass. Do not rebuild
+or publish Stable, deploy changes, commit or push on the strength of this audit alone.
+
+Only this work-log report was changed. No application code, credentials, generated
+artifacts, production data or infrastructure were modified; no commit/push performed.
+
+## 2026-09-09 — security fixes and verified production deployment
+
+User explicitly authorized fixes followed by production deployment. This delivery
+addresses the two reproduced security defects, not every remaining release gate.
+Preserved the preceding uncommitted audit report and all existing data/configuration.
+
+Changes:
+- HtmlSanitizer now recursively cleans descendants before unwrapping unsupported
+  elements. Safe semantic content survives; nested scripts, dangerous attributes and
+  javascript URLs do not survive save-time or theme-render sanitization.
+- AccessControl checks both requested and existing target roles against the actor's
+  permissions, including inactive roles and custom roles carrying system.owner.
+  Non-owners cannot assign Owner, modify privileged accounts (including password/
+  e-mail changes or downgrades), edit privileged roles, or grant missing permissions.
+  The owner slug remains reserved. Permissions are refreshed before writes and Demo
+  User writes are explicitly refused. Legitimate lower-privilege management and
+  intentional owner handover remain supported.
+- User/role writes share a schema-specific MariaDB advisory lock acquired before
+  authorization checks, preventing concurrent grants from racing account edits and
+  preserving the existing final-writable-owner rule. Failures release the lock.
+  No new schema, dependencies, permission IDs or role assignments were introduced.
+- Added tests/security-regressions.php and its README commands. SQLite :memory:
+  provides local checks; --mysql uses only a new random senseqa_security_<hex> DB
+  and drops that exact fixture in finally. No production database tests/mutations.
+- Added a one-time checksum-guarded scripts/deploy-security.py operator procedure,
+  following existing deployment conventions, with separate --check/--deploy modes,
+  backup, exact candidate checks, automatic file rollback and post-deploy validation.
+
+Validation:
+- 80 new local security checks passed. 84 passed on isolated MariaDB, including
+  blocked concurrent user/role writes and preserved state after each rejection.
+- Verified test sensitivity against original code: old sanitizer fails nested HTML;
+  after changing only sanitizer, original AccessControl fails "Manager cannot become
+  Owner" under MariaDB. An earlier server SQLite attempt was unavailable because
+  pdo_sqlite is not installed; successful MariaDB runs replace that unavailable mode.
+- Server QA: 109 full Workspace migration/functional/package lifecycle checks and
+  448 theme/site checks passed. Existing package/licensing/installer/boundary checks
+  also passed locally. No live external-provider delivery was triggered.
+- New exact local installer pair built after preserving the former pair in
+  .local/installer-before-security-20260909T180755. 28 bootstrap HTTP checks pass,
+  including exact extracted hashes, session isolation and licence-first flow.
+  ZIP SHA-256: 6899e06a08ab09ab6b5048eba016ee37e0997a620115ebc7262b7b49341fdad1.
+  Bootstrap SHA-256: 40ce0efd7f0f7f84e30abb87c1cfe271e46ee782a4414406c6dc8ee7e5445a4e.
+  Still DEVELOPMENT; not a production updater and not uploaded over the live site.
+
+Production:
+- Verified configured host ind, canonical www.sensecms.com, root
+  /home/sensecms.com/web, database sensecms_site, PHP 8.5.10 and healthy services.
+  Both original production file hashes matched the audited Git baseline exactly.
+  Independent cached SSH host identity checked; password passed through a transient
+  named pipe, not command arguments, files, output or work notes.
+- Recovery: /root/sensecms-backups/20260909T110757Z-security contains verified full
+  web-before.tgz (16,938,339 bytes), consistent database-before.sql (408,234 bytes),
+  original two source files and deployment.json with before/after hashes. Archives
+  are private mode0600. No DB restore or migration was performed.
+- Atomically replaced only app/Core/AccessControl.php and app/Core/HtmlSanitizer.php,
+  retaining root:root/0644 source permissions. Verified deployed SHA-256:
+  AccessControl: 6be51208efd68c72c899445cc1d5fb583f5695be59fd50bff3a41203e20c4ce9.
+  HtmlSanitizer: 9f607aa85ca59da9d7f75500d82b05d085bc7104cc6fad0b3dc3cf3accc4ac8c.
+- A private one-shot FastCGI probe invalidated only these opcode-cache entries and
+  verified the new sanitizer and access guard in the real FPM runtime. Probe removed
+  immediately; no public endpoint added and no shared FPM restart/reload required.
+- HTTP200/CSP verified for /, /extensions, /docs, /contact, /login, /forgot-password,
+  /packages/download. Real owner HTTP authentication passed using its own existing
+  session challenge without disabling CAPTCHA. Authenticated HTML checks passed for
+  dashboard, access users/roles, pages and themes. Invalid-CSRF access mutation419;
+  test session logged out. This was HTTP/UI-render verification, not screenshot QA.
+- Account identities, password hashes, active/demo/session-version fields and all
+  user-role/role-permission assignments unchanged. Private installation/workspace/
+  theme configuration and license encryption files retain original hashes. Normal
+  login/session/audit activity is expected; no content, packages or settings changed.
+- nginx, php8.5-fpm and mariadb active after deployment; zero fresh critical service
+  journal lines since deployment and no fresh Nginx application errors. Configured
+  storage/php-error.log was absent; do not interpret its absence alone as log proof.
+  Final filesystem check found no retained security-probe PHP file.
+
+Acceptance source and logs retained privately at /root/sense-security-HPaVs4RF.
+Source rollback: restore ONLY the two backed-up PHP files with original permissions,
+invalidate those FPM opcode entries and recheck HTTP/owner UI. Restoring old source
+reintroduces the vulnerabilities; prefer a forward fix. Do not restore the database
+or private runtime merely to roll back this code-only patch; retain subsequent data.
+
+Remaining audit items (Core updater, full module lifecycle, activation atomicity,
+upload/count/default-copy consistency and broader Stable/provider acceptance) are
+unchanged by this patch. No Stable promotion, external publication, Git commit/push,
+theme package revision, demo deployment or new dependencies were performed.
+
+Final pass: all 944 pre-existing local checks and the 80 new SQLite checks passed;
+all 197 PHP files passed lint, deployment-script syntax and git diff --check passed.
+Fresh Nginx/FPM journal scan at all priorities found zero PHP warning/fatal/parse/
+notice or uncaught-error signatures. Effective FPM error-log path was confirmed.
+Private deployment receipt retained locally in .local/security-deployment.json.
+Temporary local transfer archive/helper removed; QA source/logs and recovery archives
+remain deliberately retained. No live rollback was necessary.
+
+## 2026-09-09 — maintenance hardening, transactional activation and accurate totals
+
+Continued the authorized audit fixes and production deployment after interruption.
+The earlier AccessControl/HtmlSanitizer fixes remain intact. This batch closes the
+activation/count defects and contains the unsafe legacy updater; it does NOT deliver
+a working automatic Core update channel or promote a Stable release.
+
+Implementation:
+- SystemUpdate keeps its public constructor/method signatures but removes the
+  incompatible legacy replacement/DDL worker. Check/install/run/archive operations
+  fail closed with 503, including old queued jobs. Status uses config/product.php
+  core_version (0.1.0), never a caller override or legacy 1.0.0 fallback. It never
+  advertises a verified/latest release from old timestamps or unsigned metadata.
+  Reading status creates no runtime files. Existing signed extension catalogue
+  verification is retained separately; publisher provisioning is not solved here.
+- SystemUpdateController preserves authentication, permissions, demo and CSRF
+  gates and exposes unavailable operations as HTTP503. The panel uses existing
+  components/styles, explicit operator-deployment guidance and disabled controls,
+  without claiming the installation is up to date. The replacement JS never polls
+  or sends update requests; console.php cache-busts it for existing browsers.
+- PackageManager::setActive shares the install/rollback/uninstall advisory lock.
+  Registry, installed-plugin state, Forms/addon extension_states and audit commit
+  together, rolling back on failure. Removed DashboardController's duplicate
+  settings write outside the transaction. Unrelated settings/config are preserved.
+- WorkflowRepository::counts aggregates pages/posts directly instead of counting
+  four queues capped at 250. Existing state/status and facility visibility rules
+  remain unchanged; bounded queue rendering is not expanded.
+- Added maintenance-regressions.php (SQLite or guarded random MariaDB fixture)
+  and system-update.cjs. README documents commands and the automatic-update boundary.
+  Extended the existing exact-hash deployment procedure with --maintenance mode,
+  preserving its earlier security mode rather than duplicating operator tooling.
+
+Validation:
+- 16 local SQLite maintenance checks and 29 isolated MariaDB checks passed: forged
+  catalogue/stale jobs, unavailable methods without writes, disabled server HTML,
+  totals above 600, facility scopes, audit-failure rollback for addon/Forms/ordinary
+  plugin, preserved plugin configuration and lock contention/release.
+- 5 JS lifecycle checks pass for initial/replaced panel content without network or
+  polling. 80 SQLite / 84 MariaDB security checks still pass. Server QA also passes
+  all 109 Workspace migration/functional/package and 448 theme/site checks.
+- Local boundary, package, licence, theme, installer, analytics/consent, Google,
+  Microsoft, Apple, Telegram broker/client/profile, Web Push, notification-settings
+  and distribution suites pass. All 198 PHP files lint; Python syntax and
+  git diff --check pass. Historical tests/telegram-package.php was inadvertently
+  included in the local list: its Windows guard exits immediately without mutation;
+  this Linux-only historical lifecycle script was NOT accepted or bypassed. Relevant
+  current lifecycle verification is the isolated Workspace/maintenance suite.
+
+Deployment and recovery evidence:
+- Private QA: /root/sense-maintenance-HvrDfbrm; source, test/deployment logs and
+  read-only post-deployment checks retained. Production remains exactly
+  https://www.sensecms.com, /home/sensecms.com/web, database sensecms_site.
+- Initial attempt backup /root/sensecms-backups/20260909T122915Z-maintenance.
+  All HTTP/FPM checks passed, but the strict whole-row package comparison triggered
+  automatic source rollback. Read-only comparison against the SQL backup proved
+  ONLY extension_packages.updated_at changed on four existing bundled records:
+  normal syncBundled behaviour when rendering /appearance/themes. All ten package
+  identities/other fields, five installed-plugin rows and five settings rows matched.
+  No database restoration or data deletion occurred. Previous security fixes remained.
+- Corrected the verification to compare EVERY package field except that documented
+  metadata timestamp; all plugin/settings fields remain compared. Retry completed
+  and verified: /root/sensecms-backups/20260909T123210Z-maintenance. Full source backup
+  web-before.tgz 16,942,494 bytes and consistent database-before.sql 408,494 bytes,
+  both mode0600, plus exact original files and before/after SHA-256 deployment.json.
+  Local receipt: .local/maintenance-deployment.json. The failed attempt is retained.
+- Eight exact files deployed: Core/PackageManager.php, Core/SystemUpdate.php,
+  Core/WorkflowRepository.php, Http/DashboardController.php,
+  Http/SystemUpdateController.php, Views/console-system-update.php, Views/console.php
+  (all under app/), and public/theme/sensecms-system-update.js. Per-file atomic rename
+  preserves ownership/modes; all candidate/deployed hashes checked. One-shot private
+  FPM probe invalidated affected PHP opcodes and verified real Core/security code;
+  removed immediately. No shared service restart, schema/infrastructure change,
+  dependency addition or production package toggling.
+- Public HTTP200/CSP: /, /extensions, /docs, /contact, /login, /forgot-password,
+  /packages/download. Real owner login, dashboard/access/users/roles/pages/themes
+  and update HTML pass. Live status shows 0.1.0, supported/available/verified false;
+  authenticated valid-CSRF check/install return503. Invalid access CSRF still419.
+  Served JS hash/cache-busted reference confirmed. This is HTTP-render verification,
+  not screenshot/mobile-browser acceptance. The operator session was logged out.
+- User/password/permission assignments, private configuration/encryption/license
+  files, package activity/configuration and all settings preserved. Rejected update
+  requests change no saved jobs/catalogues. Independent read-only production row
+  counting matches WorkflowRepository aggregates; empty facility scope stays empty.
+- nginx/php8.5-fpm/mariadb active. No fresh Nginx application error signatures;
+  service journal since 12:32:10 UTC has zero PHP warning/fatal/parse/notice, uncaught
+  or critical/error signatures. Effective FPM error_log remains storage/php-error.log
+  (absent); absence is not treated as independent proof. No probe file remained.
+- Source rollback: restore only the eight original files from the successful backup
+  with original modes, invalidate their FPM opcode entries and recheck HTTP/owner UI.
+  Do not restore the database/private runtime for this source-only batch: preserve
+  subsequent business writes. Reverting SystemUpdate re-enables unsafe legacy logic,
+  so prefer a forward correction. Automatic rollback was exercised on the first run.
+
+Installer and remaining boundaries:
+- Preserved the prior matching pair at .local/installer-before-maintenance-20260909;
+  generated fresh DEVELOPMENT .install/web artifacts. All 28 exact bootstrap HTTP
+  checks pass, including extracted source hashes and licence-first flow.
+  ZIP SHA-256 c6a1b49fdd550ae9e479367584b3adf5d907e7a1ec1d40716d48c242a7f1ed9a;
+  index.php SHA-256 763362be8c819444dc512d8f5504260fd18b717f31f2b633a8f721a0df356358.
+  Neither artifact was uploaded over production. Full exact-artifact licensed DB
+  setup and real Nginx/Apache acceptance remain Stable gates.
+- Remaining audit work: implemented signed Core updater/recovery contract, full
+  module lifecycle, upload-limit consistency, generic default-copy cleanup and
+  external-provider acceptance. No Stable promotion, Git commit/push, demo work,
+  external messages or package release was performed.
+
+Final cleanup: removed only the temporary local SSH/diagnostic helpers; their
+non-secret diagnostic copies remain in private server QA. Kept deployment receipts,
+previous installer pair and both recovery archives. Source/private-key pattern scan
+found no exposed key material; final deployment-script syntax/diff checks pass.
+
+## 2026-09-09 — official Update page, signed Stable checks and notifications
+
+User added an Update navigation item and requested /update, an online own-CMS check
+directly below the hero, manual checks from each CMS and automatic notifications.
+Preserved the existing navigation and all preceding dirty work. No Stable release
+was fabricated, no automatic installation enabled, no Git commit/push performed.
+
+Implementation and contracts:
+- Product theme 0.3.9 adds /update using existing hero/components/tokens, followed
+  immediately by the installation-check form and latest Stable release list. It
+  distinguishes an authenticated empty Stable catalogue from service failure.
+  The source-only route does not replace an existing managed CMS page; preflight
+  confirmed no managed /update page. The user's navigation was untouched.
+- CoreReleases verifies a bounded Ed25519 envelope, exact Sense CMS/Stable identity,
+  lifetime and release-row contract. Requests use fixed HTTPS origin/path, public
+  DNS pinning, no proxy/redirects, TLS verification, bounded size and timeouts.
+  SystemUpdate saves only successfully verified metadata, rejects issuance rollback,
+  separates installed/latest versions, reports PHP compatibility, and never certifies
+  failed/expired checks. Archive installation and old legacy worker remain blocked.
+- Independent public trust is installation-local storage/update-trust.json, provisioned
+  by the operator. On the official site it matches the existing private publisher and
+  independently provisioned trust.json. No private key, trust store, customer runtime
+  or website-only service is bundled in the Core installer. Customer installs need
+  their public verification key provisioned before checking; documentation explains it.
+- SystemUpdateController retains authenticated system.manage, Demo and CSRF guards;
+  check is functional, unsupported install remains503. Check UI has one submit handler
+  across AJAX lifecycle, explicit loading/failure states and disabled install action.
+- Successful checks are due every six hours, errors back off one hour, manual checks
+  have a 60-second cooldown and nonblocking shared file lock. Existing notifications
+  endpoint runs due checks for system.manage/non-Demo users and reuses its Core update
+  notification item only for a verified newer Stable version. CLI check-updates.php
+  and an hourly installation-specific cron work independently of an open browser.
+  No email, Telegram, Web Push subscription or external user message is added.
+- The website-only endpoint /api/updates/v1/catalog verifies the saved signed envelope
+  before serving it. The reviewed .src/core-releases.json inventory is empty, because
+  no Stable Core release is approved. Root-only publication refreshes its 24-hour
+  signature validity every six hours; FPM never receives signing-key access. This is
+  metadata refresh, not a release promotion or package-download authorization.
+- Online checking uses an explicit HTTPS origin, a random nonce and a session-free
+  /update-connect landing. Same-origin Continue preserves Strict session cookies;
+  unauthenticated users sign in on their own CMS, then return to a fixed update route.
+  The user confirms check-and-share in that panel. postMessage sends only version,
+  latest version, verification time and flags to the fixed official origin. The
+  website accepts exact source/origin/nonce, bounded freshness and one response only.
+  No keys, cookies, accounts or content cross domains. No implicit session discovery.
+  Older CMS installs require the new Core/check handler and trust provisioning.
+
+Verification:
+- 27 isolated release checks: genuine empty feed, signature tampering/wrong key,
+  schema/product/channel/time/size/row failures, prerelease and duplicate rejection,
+  due checks, newer Stable comparison, failed-check suppression/backoff, metadata
+  rollback refusal and permanently blocked legacy installation.
+- 14 CMS JS checks: no unsolicited network/polling, CSRF POST, explicit sharing,
+  fixed target/minimal payload, no sharing on failure, reenabled controls and AJAX
+  reinitialization. 16 website JS checks: empty/error distinction, URL constraints,
+  spoofed source/origin/nonce/fields/time rejected and single-response acceptance.
+- Isolated server QA /root/sense-updates-4c0rnb7y: 29 MariaDB maintenance checks,
+  84 security, 109 Workspace migration/functional/package and 466 theme/site checks
+  pass. All 205 PHP files lint; deployment/test Python syntax and git diff --check pass.
+  No fixture database points to production. Local installer/boundary tests pass.
+- Browser inspected actual /update with retained user menu, real empty Stable state,
+  hero/form ordering and desktop layout. Mobile 390px check found no horizontal
+  overflow (document width375, viewport390); form width293 and single-column controls.
+  Unit tests cover cross-origin message validation and HTTP acceptance covers the
+  real authenticated check/bridge screen. A complete real two-installation browser
+  login-and-callback rehearsal remains unverified; no external customer account was
+  created or used. In-app popup tracking was not reliable, so it is not claimed as
+  end-to-end callback evidence. Ordinary popup/opener restrictions have documented
+  direct-panel fallback. No screenshot/UI claim substitutes for these distinctions.
+
+Production delivery:
+- Initial /root/sensecms-backups/20260909T133300Z-updates attempt automatically rolled
+  source/theme/config back when the HTTP test parsed an HTML redirect as JSON. Access
+  logs proved public routes, signed catalogue and manual check succeeded; the test
+  omitted Accept: application/json on /api/notifications. Fixed that test contract,
+  not application authorization. The inactive orphan theme archive was verified and
+  moved to the next backup's retained-orphan-theme before a fresh install. No deletion
+  or database restoration; all recovery state retained.
+- Final backup /root/sensecms-backups/20260909T133533Z-updates: web-before.tgz
+  17,627,865 bytes and database-before.sql421,407 bytes, both root-only mode0600;
+  originals, exact target ownership/modes, accepted hashes and deployment.json.
+  Local receipt .local/updates-deployment.json. Final status verified.
+- Eleven Core files, website endpoint, narrowly added Nginx exact location, update
+  worker cron and private metadata publication tooling were published. Source hashes
+  match accepted QA. Shared FPM opcodes invalidated via private deleted one-shot
+  probe, no FPM restart. Nginx config tested before graceful reload.
+- Signed immutable theme sensecms-0.3.9-017cb4da57452a26 activated via ThemeManager,
+  with verified archive SHA-256
+  017cb4da57452a26a57392e3a2a89496108e5715a7c050d44ac00937972c1be5.
+  Runtime ownership repaired before activation; previous 0.3.8 retained. Public
+  package download offer stays at its previous version; this is not a Stable release.
+- Actual HTTP checks: public pages/assets/landing200 and CSP; catalogue GET200,
+  POST405, correctly empty Stable list; owner login; bridge confirmation UI; invalid
+  CSRF419; valid check200/verified=true; install503; notifications JSON200/no false
+  Core alert; dashboard/pages/access/themes200; smoke-test session logged out.
+- User identities/passwords/permissions, all menus/menu items/translations and all
+  existing page records/translations match the predeployment snapshot exactly.
+  Private installed/workspace/license files retain hashes. No schema/data migration.
+- Real PHP-user CLI succeeded twice, showing build0.1.0 and available=false. nginx,
+  PHP-FPM, MariaDB and cron active; no fresh critical/PHP error signatures in checked
+  Nginx log or service journal since 13:35:33 UTC. No retained update-probe file.
+- Recovery: disable only the two new cron entries, restore the recorded originals
+  and Nginx configuration/theme pointer, invalidate affected opcodes and recheck.
+  Do not restore the database or overwrite later user/menu changes for code rollback.
+  Retain signed theme and both backups for inspection; do not rerun deployment blindly.
+
+Fresh local DEVELOPMENT installer built after preserving the previous matching pair
+in .local/installer-before-release-checks-20260909. All 28 exact-artifact bootstrap
+HTTP checks pass; archive SHA-256
+903b9ed8e0fbf705d8c6369822a5dccef2841e1df12f49aa9e0a13b80070edca,
+index.php 0861461a136f27a9d833be658affc03939c8b42724a0ff342d563018b82654c5.
+No bootstrap overwrote production. Exact-artifact licensed DB install/Nginx/Apache,
+full automatic Core installation/recovery, module lifecycle, upload limits, generic
+defaults and provider-account acceptance remain separate audit/release work.
+
+Cleanup: stopped the local loopback preview, removed the reproducible transfer tar
+and temporary SSH/Nginx-inspection helpers. Server QA, exact deployment receipts,
+immutable theme archives and both production recovery backups remain. The final
+private-key/token pattern scan found no matches; no secrets were logged or committed.
+
+## 2026-09-09 — Update page simplified at the user's request
+
+Scope supersedes the previous cross-domain bridge requirement: `/update` now lists
+Stable releases and notes only. Removed the domain form, popup/message protocol,
+session-free landing view/route and special post-login return. Manual signed checks,
+six-hour automatic checks/notifications and the disabled Core installer remain.
+There is still no accepted Stable Core release; no development artifact was promoted.
+Unrelated pending work, the user's menu and all business data were preserved.
+
+Verification: CMS/website JS regression suites pass (including no sharing even with
+an old bridge attribute/opener); 27 signed-feed checks, 465 theme checks, local
+80 security/16 maintenance checks and isolated MariaDB 84 security/29 maintenance
+checks pass. Modified PHP lint, Python syntax, git diff --check and 43 installer
+distribution checks pass. Initial private QA missed `.src/package-catalog.php`;
+added the exact local fixture dependency and reran successfully before deployment.
+
+Production: signed immutable theme `sensecms-0.3.10-522fe650512043b6`, archive SHA-256
+522fe650512043b64d49c2825548064c1902c3f2d5b28c8762a4b10d9f9b8b40.
+Six Core files replaced with accepted hashes, obsolete `app/Views/update-connect.php`
+removed and recoverable from backup. No database migration, infrastructure change,
+service restart, public package promotion, commit or push. FPM opcodes invalidated
+through a private one-shot probe, then probe deleted.
+
+Recovery backup `/root/sensecms-backups/20260909T135800Z-update-simplification`:
+web-before.tgz17,636,650 bytes, database-before.sql421,466 bytes, both0600; exact
+originals, ownership/modes, signed theme and deployment.json retained. Local receipt
+`.local/update-simplification-deployment.json`; QA `/root/sense-simplify-LVpGVHhi`.
+For code rollback restore only recorded source and theme pointer, including the
+removed landing, invalidate affected FPM opcodes and recheck. Do not restore the
+database or discard newer business edits. Previous signed theme0.3.9 remains.
+
+Live acceptance: website/metadata/assets200, removed landing404, authenticated
+ordinary update UI even with stale bridge query, invalid CSRF419, signed check200,
+install503, notifications JSON200/no false update, adjacent panel pages200; test
+session logged out. Exact identity/permission/menu/page snapshots and private
+installation/licence hashes unchanged. Real PHP-user CLI passes; nginx/PHP-FPM/
+MariaDB/cron active, no fresh Nginx/PHP errors or service-journal priority0–3 entries
+since13:58:00UTC. Chrome DOM and screenshots confirm release-only page: mobile390px
+document390px/card354px, desktop1440px document1425px; no horizontal overflow. First
+full-page screenshot timed out; subsequent viewport screenshots passed. Temporary
+viewport emulation cleared after inspection.
+
+Fresh local DEVELOPMENT installer preserves the preceding pair at
+`.local/installer-before-update-simplification-20260909`. All28 exact-artifact HTTP
+checks pass. ZIP SHA-256e7ae85656c594a9da7690beaacb06ce1c435a878c7ce631f59984d3e9e39109a,
+bootstrap SHA-256c9a2a4046846ed369e66c2fe91ec0dd908fdffb7919a9af70845a71c2dda48a1.
+No production bootstrap overwrite. Full new licensed DB/server acceptance and other
+previously documented audit gates remain; two-installation bridge acceptance is
+no longer applicable. Temporary local SSH helper and transfer archive removed.
+
+## 2026-09-10 — Upload limits and generic Core defaults (deployed)
+
+User authorized continuing the remaining fixes and production delivery. Scope:
+upload limits across UI/Core/PHP/Nginx, plus owned Base CMS labels and the generic
+SEO/chat/header/footer defaults. No saved business content, module implementation,
+theme release or new Stable publication was included.
+
+Root cause and implementation:
+- MediaLibrary allowed 80 MiB MP4 but the front controller allowed only 64 MiB per
+  administrative request; legacy storeVideo used decimal80,000,000 instead. Live
+  private FPM probe showed inherited upload_max_filesize/post_max_size8G and20 files;
+  site Nginx had no general explicit limit (only Telegram64k overrides).
+- MediaLibrary centralizes80 MiB video,95 MiB aggregate files,96 MiB request and10
+  files. Actual temporary file sizes replace caller-supplied sizes. Too many files
+  or an oversized aggregate is rejected before persistence, not silently sliced.
+  Per-file limits remain8 MiB image/20 MiB audio/PDF. PHP partial/oversize uploads
+  and upstream HTTP413 produce actionable messages. A smaller operator PHP POST
+  limit is detected before a misleading CSRF error when Content-Length is available.
+- UI displays the aggregate and binary-unit limits, rejects excess count/aggregate,
+  retains selection after failure and reenables controls. Cache key updated.
+  Dedicated production pool now80M per file/96M POST instead of inherited8G; Nginx
+  administration96m, public location16k; existing Telegram64k/rate limits preserved.
+  Admin URLs rewrite to the only PHP front controller; they never serve PHP source
+  from the newly scoped location. Templates and portable operator README documented.
+- Removed Base CMS from owned application messages, recovery/email UI and mailer
+  defaults. Email site_name token reads configured site name, default Sense CMS.
+  AI default context is website/service-oriented, not school/admissions-specific.
+  SEO sanitization defaults to Organization but still accepts explicit School etc.
+  SiteChrome EN/KM/ZH defaults are generic; new site_name token and legacy school
+  token both work; stored overrides remain authoritative. Media tags use generic
+  examples. No actual email or AI provider request was sent by these checks.
+
+Verification:
+-18 media/default checks: exact per-type thresholds, actual-size spoof rejection,
+  aggregate/count bounds, explicit education identity preservation and saved/legacy
+  footer tokens. JS upload suite: count/aggregate/no request on failure,80 MiB request,
+  CSRF, non-JSON413, control recovery and selection preservation.
+- Real multipart PHP server on Windows accepts83,886,080 bytes and rejects one byte
+  over. Isolated Linux Nginx plus separate FPM processes, bound only to loopback,
+  repeat that acceptance and verify early413 for96 MiB+1 administration and16 KiB+1
+  public requests. Initial QA readiness check used / and saw403 before FPM was ready;
+  fixed readiness to require the fixture's actual /index.php422 response, not an
+  unrelated status. No production setting was weakened to fix the test.
+- Isolated MariaDB Workspace suite112 checks, including actual80 MiB file storage,
+  database recorded size and rejection without extra rows. Security84/maintenance29
+  on isolated MariaDB; local security80/maintenance16; theme465; installer43;
+  PHP lint, Python syntax and git diff --check pass. Fixture databases/directories
+  are random disposable targets and removed by the tests. No80 MiB production upload.
+
+Production evidence:
+- QA /root/sense-media-C1YgZvc9; backup
+  /root/sensecms-backups/20260909T205322Z-media-defaults (UTC; local task dateSept10).
+  web-before.tgz18,328,802 bytes and database-before.sql421,525 bytes, both0600;
+  exact source/config originals and metadata in files/targets.json. Receipt
+  deployment.json copied to .local/media-defaults-deployment.json.
+- Fifteen Core source files and this site's Nginx/FPM pool deployed with exact hashes.
+  Nginx/FPM syntax tests passed before graceful reload (no service restart). Runtime
+  probe confirms80M/96M. Source/config hashes match accepted candidate. Existing
+  theme0.3.10 and all private installation/licensing hashes unchanged.
+- Authenticated HTTP acceptance includes media screen/new limit copy/cache key,
+  dashboard/pages/access/themes, signed release check/CSRF/install503/notifications.
+  Public recovery now Sense CMS; website/JS200; oversized request headers without
+  bodies produce413 on upload and contact routes. No production files, emails or
+  business records created by these checks; own test login session logged out.
+- Exact users/permissions/settings/menus/pages/media snapshots unchanged. No schema
+  migration or data restoration. nginx/php8.5-fpm/MariaDB/cron active; no fresh PHP
+  or critical Nginx signatures. Expected oversize rejection error-log entries are
+  not application failures. Service journal priority0–3 empty since20:53:22UTC.
+- Recovery: restore the recorded15 source files and two scoped configs with saved
+  ownership/modes, test both configs, gracefully reload PHP-FPM/Nginx and recheck.
+  Do not restore database or overwrite newer user settings to roll back code.
+
+New matching DEVELOPMENT installer retains prior pair in
+.local/installer-before-media-defaults-20260910;28 exact bootstrap HTTP checks pass.
+ZIP SHA-256826d10defc2f8125068a2ee4816dca5f54f1126df0c1745ebcd9b8378c6c3476;
+bootstrap SHA-256bfb4f0aedce8815fb9a3f4b71c289c6c387abb6902b86bf17d2537724a6648cd.
+No bootstrap was uploaded over production, no commit/push or Stable promotion.
+
+Remaining: school-specific page-builder presets/localized defaults and some legacy
+editor labels still need a compatible cleanup; this is NOT a claim that every school
+reference is removed. Preserve component keys/saved content and third-party product
+identities. Module lifecycle, exact licensed-new-install/server acceptance, provider
+account acceptance and public Stable release gates remain. Automatic Core installation
+is still disabled. Local transfer tar and temporary SSH/probe helpers removed; server
+QA, deployment receipts and private recovery archives retained.
+
+## 2026-09-10 — Generic builder presets and truthful section labels (deployed)
+
+Continued user-authorized cleanup after interruption. Fourteen Core files deployed:
+PageBuilder, three preset configuration files and ten administration views. No
+database migration, theme activation, infrastructure change, service reload/restart,
+package promotion, commit or push. The preceding upload/security/update fixes remain.
+
+Changes:
+- All15 built-in builder component IDs and field contracts remain; visible admissions
+  and programs labels are Process steps and Services. EN/KM/ZH defaults now describe
+  general teams/services/projects, with no inherited school copy or old theme image
+  paths. Images/posters/alt text start empty; editors select real media. Statistics
+  use explicit unfilled figures instead of fabricated school numbers. Saved data is
+  not rewritten or migrated to these defaults.
+- Catalogue construction previously suppressed required only at the top field level,
+  so blank nested gallery images were rejected while merely reading the catalogue.
+  Added an internal defaults flag propagated recursively through sanitizeData; only
+  preset construction bypasses required-value validation. Save validation still
+  checks nested required media, URL safety, repeater bounds and component rules.
+- Generic labels/examples in posts, categories, navigation, media, facilities,
+  live-chat and legacy editor labels. Navigation documents site_name and preserved
+  school token. Core section tabs now describe built-in sections, not15 separately
+  installable modules. Counts are computed; theme supported-block limitations are
+  explicit. Legacy route/query/DOM keys remain compatible. Full module lifecycle
+  remains unimplemented, not silently claimed by this wording change.
+
+Verification:
+-175 new builder checks pass: every component/locale, no school defaults or old
+  theme media, all legacy keys/order, safe URL validation, blank nested preset fields
+  vs enforced save requirements, preserved explicit school titles/media paths in
+  round trips, and official theme's exact three-section boundary. This is validation
+  evidence, not a claim of publishing new pages on production.
+- Isolated server QA /root/sense-builder-I06xQGCK: builder175, media/default18,
+  Workspace112 (including real file storage fixture), MariaDB security84 and
+  maintenance29, theme465. PHP lint, Python syntax and git diff --check pass.
+  Installer43 distribution and28 exact-artifact bootstrap HTTP checks pass.
+- Live owner HTTP acceptance: extensions section labels/count text; posts generic
+  copy; footer token help; actual builder data-builder-payload catalogue restricted
+  to text/custom-html/contact-form; media limits, signed release check, CSRF419,
+  blocked install503, notifications and adjacent/public routes. No content save,
+  file upload, notification transmission or account changes; test session logged out.
+  Browser inventory exposed only an unauthenticated IAB, so no authenticated visual
+  screenshot or click-through acceptance is claimed this batch. Existing layout and
+  styles were unchanged; UI copy/catalogue checked in authenticated HTTP responses.
+
+Production evidence and recovery:
+- Backup /root/sensecms-backups/20260909T213354Z-builder-presets (UTC; localSept10):
+  web-before.tgz18,336,702 bytes; database-before.sql421,584 bytes; both0600.
+  Exact file originals/ownership/modes, candidate hashes and deployment.json retained;
+  local receipt .local/builder-presets-deployment.json.
+- All14 deployed hashes match accepted QA. Only affected PHP opcodes invalidated
+  via a private one-shot FPM probe, deleted afterwards. Nginx/PHP config checks pass;
+  nginx/php8.5-fpm/MariaDB/cron active. No fresh Nginx/PHP errors or service-journal
+  priority0–3 entries since21:33:54UTC. Private installed/workspace/theme/license
+  hashes unchanged. Exact users/permissions/settings/menus/pages/media/blocks,
+  translations/shared sections/revision snapshots unchanged.
+- Roll back only recorded14 source files with preserved ownership/modes and invalidate
+  opcodes; do not restore the database or overwrite later editorial changes. Previous
+  theme0.3.10 and earlier backup batches remain retained.
+
+Fresh DEVELOPMENT installer: previous pair retained at
+.local/installer-before-builder-presets-20260910.
+ZIP SHA-256b5ba2dbd68c352bf1e9903b6ec8b7070b5a936cb5fd7da8792f1127f000dbf00;
+bootstrap SHA-25643dabdc045307afd40807f10f53bc3ab10446863e1c3c690024b3bec40be3ff1.
+No production bootstrap replacement. Temporary local transfer and SSH helper removed.
+
+Remaining: legacy DashboardController::defaultHome/defaultPopup still include old
+school copy and an image fallback; investigate callers and saved/fallback behavior
+before adjusting them. This batch cleans builder presets, not every product fallback.
+Independent module lifecycle, exact licensed installation/server acceptance, provider
+account acceptance and public Stable promotion remain open. Documentation now separates
+implemented plugin/add-on lifecycle from unimplemented independent module runtime.
+
+## 2026-09-10 — Empty, non-injecting popup defaults (deployed)
+
+Removed the unused private DashboardController::defaultHome (no callers in active
+source/tooling). New popup content, media, highlights and localized values start
+empty; disabled state, dimensions, colours and frequency remain. Without nested
+starter highlights/translations, recursive merging no longer resurrects omitted
+campaign items or overrides root content with fabricated translated defaults.
+Explicitly saved school content is valid and remains untouched. PublicController
+already reads saved settings directly; public rendering was not changed.
+
+One production Core file changed: app/Http/DashboardController.php, SHA-256
+9f1f6c368755116764ae4eb1d4f5c4799e66b0c87b498c806d26b226fdc1be53.
+No data migration, theme/config changes, restart, package promotion or Git operation.
+QA /root/sense-popup-nQQo93Ij accepted popup27, builder175, media18, Workspace112,
+MariaDB security84 and maintenance29, theme465. PHP lint and git diff --check pass.
+Live owner HTTP acceptance includes the popup form, adjacent panel/public routes,
+signed update check, CSRF rejection and disabled installer. Test session logged out;
+no campaign save or outbound notification. Exact database snapshots of users,
+permissions, settings, menus, pages, media, blocks, translations/shared sections and
+revisions match before/after. Private installation/theme/licence hashes unchanged.
+No authenticated browser screenshot/click-through acceptance claimed.
+
+Backup: /root/sensecms-backups/20260909T214419Z-popup-defaults (UTC), complete web
+and database recovery archives, file originals and permissions, deployment receipt.
+Local receipt: .local/popup-defaults-deployment.json. Only affected PHP opcode was
+invalidated using a deleted private FPM probe. Configuration checks, four active
+services and fresh PHP/Nginx error checks pass. Rollback: restore only this recorded
+source file with its ownership/mode and invalidate opcode; never restore the DB over
+new editorial data.
+
+Regenerated matching DEVELOPMENT installer; prior pair retained in
+.local/installer-before-popup-defaults-20260910. ZIP SHA-256
+a9700aef1a922a591d0d51b0843f6c1551019903eed12b6828173e990ee682e1;
+bootstrap SHA-25644b348edc56ddbbc9eae619a7f33984afc66c0de35ba7c462ac02b658a67be3e.
+Installer distribution43, exact bootstrap HTTP28 and standalone boundaries11 checks
+pass. Recovery archives are0600: web18,333,033 bytes and database421,643 bytes;
+service journal priority0–3 is empty since21:44:19UTC. Temporary local SSH helper
+and transfer archive removed; private QA and recovery evidence retained. No production
+bootstrap replacement. Independent module lifecycle, exact newly licensed complete
+installation/server acceptance, provider-account acceptance and Stable promotion
+remain open. The earlier legacy Dashboard fallback cleanup is now closed.
+
+## 2026-09-10 — Exact web-installer handoff for user installation
+
+User will perform licensed database installation and explicitly requires output at
+F:/Git/MChivale/sensecms-web/.install/web. That directory was empty on current
+inspection; rebuilt the exact current Core into index.php (65,500 bytes) and
+install.zip (8,801,795 bytes). Hashes match the preceding popup candidate:
+bootstrap44b348edc56ddbbc9eae619a7f33984afc66c0de35ba7c462ac02b658a67be3e;
+ZIP a9700aef1a922a591d0d51b0843f6c1551019903eed12b6828173e990ee682e1.
+No Core change, new package, Stable promotion or production deployment this turn.
+The removed .install/README.md was left as found; root README now gives the full
+two-file browser workflow and links to the existing Core requirements instead.
+
+Extended tests/web-installer.py with an explicit --nginx fixture: private temporary
+installation, dedicated loopback Nginx/FPM processes, unprivileged PHP worker,
+separate configuration/logs, process teardown and temporary-directory cleanup.
+Does not reload/configure system services or access any production database/key.
+Remote QA /root/sense-install-5OlRCB5Y received only the exact installer and HTTP test.
+All34 Nginx/FPM checks pass, including extraction, tamper rejection, existing-file
+preservation, CSRF, session ownership, resumability, every extracted source hash,
+real licence-first installer, blocked database bypass, and private/non-front PHP
+path denial. Local PHP server28, distribution43 (including all extracted PHP lint),
+boundaries11, licensing73, packages55, security80 SQLite, maintenance16 SQLite and
+popup27 pass; update/upload JavaScript tests and git diff --check pass. Exact remote
+artifact hashes match local files; production nginx/php8.5-fpm/MariaDB remain active.
+
+Scope of acceptance: loopback HTTP with the existing strictly local test flag,
+not target public TLS. Apache is not installed on this host; no server package was
+installed or service changed. Target TLS/Apache, real licence activation, database
+completion and post-install owner acceptance remain unverified and belong to the
+user's forthcoming installation. Optional independent modules and external-account
+acceptance remain separate; they were not represented as delivered prerequisites.
+Temporary local SSH helper and transfer archive removed; private QA artifact retained.
+
+## 2026-09-10 — Bootstrap empty-storage fix and requested demo database
+
+Screenshot investigation confirmed the uploaded bootstrap and ZIP match the previous
+accepted pair. The actual demo root contains public/index.php, public/install.zip
+and an empty storage sibling. The guard incorrectly rejected that prepared storage,
+not the two public installer files. Updated scripts/web-installer.php and the generated
+.install/web/index.php only (no Core payload or ZIP regeneration). Initial and
+pre-publication guards now permit only an empty writable non-symlink storage directory;
+private mode0700 is enforced before writing setup. Other existing data remains blocked.
+Errors/help explicitly distinguish the parent installation folder from public.
+Updated README and regression fixtures. Local HTTP37 and isolated Nginx/FPM48 pass,
+including nonempty storage, storage changed during extraction, symlink rejection,
+resumption, integrity and licence-first acceptance. PHP lint/diff checks pass.
+New bootstrap SHA-256430b7994516d88e82b71e910cbf9eb63be9bb9878fdbde991469fdcf188a4c17;
+ZIP remains a9700aef1a922a591d0d51b0843f6c1551019903eed12b6828173e990ee682e1.
+No bootstrap upload to the user's demo; user will transfer the corrected file.
+
+Explicitly authorized database provisioning on verified ind.ittsp.net (82.180.147.156),
+MariaDB11.8.6. Created previously absent sensecms_demo schema (utf8mb4_unicode_ci)
+and same-named user restricted to localhost/127.0.0.1, with a cryptographically random
+password and grants limited to the escaped exact schema name, no GRANT OPTION.
+Credentials saved at user-requested .cfg/MySQL.demo.txt (Git-ignored; ACL current
+Windows user and SYSTEM only); private recovery copy root0600 on server. No secret
+values recorded here or emitted by tooling. Both localipv4 and localhost PDO logins,
+temporary-table read/write and denied access to production users were verified.
+The demo database remains empty; no existing database/user was changed.
+
+Additional diagnosed blocker, not changed without separate scope: demo Nginx points
+to php8.5-sensecms.sock (official-site pool, user sensecms), but demo web/public are
+root:root0755 and storage root:root0700. PHP cannot safely prepare that installation.
+Asked whether to configure a separate demo pool and scoped ownership; no permission,
+pool, Nginx, installed runtime, or application database migration changes made.
+Temporary provisioning script and local transfer/SSH helpers removed after verification.
+
+## 2026-09-10 — Fresh-install homepage routing (both live installations)
+
+User reported /en/home returning Facility not found after completing demo setup.
+Verified real installed demo: no active theme, zero facilities/pages; root sent302
+to /en/home and the Workspace handler returned404. A clean Core must not require
+seeded facility/content merely to open its homepage. No sample data was inserted.
+
+Three Core files deployed to www.sensecms.com and demo.sensecms.com:
+- public/index.php serves a theme-independent Core start page at / when no active
+  theme exists; configured site name escaped, sign-in link, noindex, security headers,
+  enforced licence, no administration session. Enabled locale home aliases redirect
+  once to /. Other missing URLs stay404 and public POST stays405; HEAD is bodyless.
+- app/Views/public-home.php reuses existing Core stylesheet/logo/controls for the
+  unconfigured homepage and404 state. No dependency on the official site's theme.
+- PublicController::show validates the locale and redirects missing-primary-facility
+  requests to /, where an installed theme can render its normal homepage.
+Existing public theme rendering and saved content/routes remain unchanged.
+
+Source hashes: public/index.php29b7ec293a3490ccf49cfaf099c6aa1e747b5839745fa3c61a46c8060e13f4ae;
+PublicController.php7670f45c688a4108be2cfa2bc4ea3fb9ed438e6797a6c1bdabda96247947a390;
+public-home.php27e0ea0814d7197c36168c39887c1738a1a7d125baf4d424be55241cf79f1b05.
+
+Preflight/QA /root/sense-home-qb49jnGQ: real front-controller routing17 checks with
+explicit runtime/licence/repository doubles (no claim of real activation); isolated
+MariaDB Workspace112, security84, maintenance29, themes465, builder175, popup27.
+Local media18 and Core releases27 pass, plus PHP lint, Python syntax and diff checks.
+Live acceptance on both exact hosts verifies homepage200, correct theme/default
+presentation, login200 and closed installer404; demo's actual enabled en/pl aliases
+redirect to /, missing page404, HEAD200 and homepage CSS/logo200. Official owner
+HTTP regression suite passes signed update checks, CSRF, notifications and adjacent
+panel/public routes. Exact data/settings/permissions/facilities/pages/media/block
+snapshots preserved on both databases; runtime/theme/licence hashes unchanged.
+Browser verified old demo URL redirect to / and rendered page at1366/390 CSS pixels;
+no horizontal overflow, mobile body16px/heading32px/button45px. Temporary viewport
+override cleared. No credential entry or content save through the browser.
+
+Recovery: /root/sensecms-backups/20260910T104038Z-public-home includes separate full
+web/database archives for both hosts, originals, ownership/modes and deployment.json;
+local receipt .local/public-home-deployment.json. Only six PHP paths invalidated in
+the currently shared FPM pool; no restart, infrastructure change or DB migration.
+No fresh errors in either Nginx/PHP log and all four services active. Roll back only
+recorded source originals and remove the newly added view if reverting, then invalidate
+opcodes; do not replace current databases/private runtime with historical snapshots.
+
+User explicitly changed workflow: test deployed source before building an installer,
+and build only when explicitly told. Recorded in .info/README. Installer bootstrap
+430b7994516d88e82b71e910cbf9eb63be9bb9878fdbde991469fdcf188a4c17 and ZIP
+a9700aef1a922a591d0d51b0843f6c1551019903eed12b6828173e990ee682e1 remain untouched
+and intentionally do NOT yet include this Core fix. No Stable publication, commit/push
+or installer build. Demo PHP isolation remains a separate outstanding operation.
+Recovery archives0600: demo web8,705,097 bytes/DB117,806 bytes; official web18,351,348
+bytes/DB421,702 bytes. Service journal priority0–3 empty since10:40:38UTC.
+Temporary local SSH helper and source transfer tar removed; private recovery/QA retained.
+
+## 2026-09-10 — Separate demo read-only account, existing Owner preserved
+
+User explicitly separated demo from official-site operations and requested a second
+demo@sensecms.com account with32-character password and read-only access. Verified
+demo has one active non-demo Owner(id1). Used demo's own installed runtime/database;
+no official-site accounts, source or configuration changed. Documented target separation
+in .info. Original owner identity, password hash, active status and Owner access preserved.
+
+Created Demo User(id2), separate demo-read-only role with eight explicit permissions:
+console.access, content.pages.view, content.posts.view, content.workflow.view,
+facilities.view, forms.view, surveys.view, chat.view; is_demo=1 and active=1. No owner,
+system/user management, export or edit grants. Current facilities are empty; future
+facility visibility follows explicit account assignments, not automatic global scope.
+Password generated from24 cryptographic random bytes encoded as32 URL-safe characters;
+Argon2id storage. Private credentials .cfg/Demo-user.txt, ignored by Git, Windows ACL
+current user and SYSTEM only; server private recovery copy0600. No password in notes.
+
+Acceptance exposed a Core defect: AccessControl::permissions returned ALL permissions
+for is_demo accounts, overriding the assigned role. Temporarily disabled only the new
+account, removed that escalation branch in source and deployed only to demo's
+app/Core/AccessControl.php, preserving existing POST/PUT/etc read-only enforcement.
+SHA-256af55ffb8184fc87fdb97cf294c5965798a597fb117549c2408807d838aa5e112.
+Official site's older AccessControl hash remains unchanged; do not mirror this deployment
+without an explicit official-site task. Local security regressions now check exact
+demo role grants and no implicit owner/system access:84 SQLite and88 isolated MariaDB
+checks pass. Demo opcode only invalidated via removed private FPM probe; no restart.
+
+Real Auth::attempt accepted new credentials; an operator-created test session then
+verified HTTPS read access to dashboard/pages/posts/facilities/settings;403 for privileged
+access/email/licence views;403 read-only for settings/password/content/facilities/media/
+access/update/notification mutation routes using a valid CSRF. Exact business/settings,
+password and role snapshots unchanged during probes; session logged out. This was
+an authenticated backend/HTTP acceptance, not a browser CAPTCHA login test.
+An initial test session was root-owned and not usable by FPM; corrected ownership of
+the explicitly generated test session to the runtime user before final passing probes.
+No production authentication/CAPTCHA policy was weakened.
+
+Recovery: /root/sensecms-backups/demo-user-KaZIQcpr/database-before.sql and original
+AccessControl.php, private0600. Account/role mutations use existing AccessControl APIs
+and audit events. If reverting access, disable only demo account first; never restore
+the entire DB over newer content. Private credentials/backup retained, temporary local
+and remote operator scripts removed. ZIP/bootstrap left untouched. Full demo system
+user/FPM isolation remains separate; application installation/accounts are independent.
+
+## 2026-09-11 — Full Demo preview and Owner-only account activation (both installations)
+
+User superseded the earlier limited-role Demo requirement: all backend sections must
+be visible, with no writes. Core now supplies Demo presentation permissions from the
+catalogue except system.owner and unrestricted facility visibility. The existing
+server-side non-read-method guard and browser warning toasts remain in force. Demo
+does not gain Owner authority. AccessControl::saveUser additionally restricts activation,
+deactivation and Demo-mode administration to Owner; non-Owners cannot create active
+accounts or modify existing Demo accounts. Users form disables those controls for
+non-Owners, preserves active status on permitted ordinary edits, and explains session
+revocation. Existing session_version invalidation and final writable Owner protection
+are preserved. No schema migration or permission-role mirroring was needed.
+
+Both hosts have Owner(id1,active,writable), and independent demo@sensecms.com(id2):
+demo active, official www disabled. Demo's existing password/role were not changed.
+Official site's independent32-character cryptographic password is Argon2id-hashed;
+private .cfg/Demo-user.www.txt and server recovery file0600, local ACL current user /
+SYSTEM only, Git ignored. No credentials or encryption keys copied between installs.
+
+Deployed app/Core/AccessControl.php SHA3101dd948e88b8a756675222a5832042864cb7ef2c387a2591c4365466a50760
+and app/Views/console-access-control.php SHA12931c144b5b4119dd04376eaca566dd8e443ee43c71c91aab71d70e4ce4b45a
+to both exact installed targets, atomically preserving ownership/modes. Targeted opcode
+refresh only; no restart. Recovery /root/sensecms-backups/20260911T021805Z-demo-access
+contains separate DB backups, original source/metadata and verified deployment receipt;
+initial pre-account DB backup is /root/sensecms-backups/20260911T021408Z-demo-access.
+If reverting, restore only recorded source and invalidate opcodes; disable the dedicated
+account through Owner if needed. Never restore old databases over new production data.
+
+Verification: local92 security checks, isolated MariaDB96 security +112 Workspace +29
+maintenance checks; PHP lint and git diff --check; tests/demo-mode.cjs exercises welcome,
+forms/fetch writes, repeated warning toasts, read/logout exceptions and writable Owner.
+tests/demo-access-http.py uses actual HTTPS login and only its own CAPTCHA session:
+official Owner accepted, official Demo rejected, active Demo accepted with welcome;
+12 privileged/content screens200, account checkbox disabled for Demo, nine actual
+mutation routes403 with read-only JSON/header and valid CSRF. Owner's official account
+switch enabled in rendered HTML. All successful authenticated QA sessions logged out.
+Session revocation and re-enable-not-reviving-session are verified in isolated Auth tests.
+This is not a fresh interactive browser/visual acceptance of every backend option.
+
+Three pre-acceptance attempts restored original source automatically: test assertions
+initially expected a different welcome phrase, selected hidden status input instead
+of checkbox, and treated legacy /account redirect as the current password-save route.
+Corrected test uses actual text/control and /settings/password; final acceptance passes.
+Owner credentials/status, settings/content snapshots and private runtime/themes/licences
+preserved. Both homepages200, services nginx/php8.5-fpm/mariadb/cron active, fresh logs
+and priority0-3 service journal clean. Receipt .local/demo-access-deployment.json.
+Bootstrap/ZIP hashes remain430b7994... and a9700aef... unchanged; no installer build,
+Stable release, commit or push. Dedicated demo PHP user/pool remains a separate task.
+Final resumed verification confirmed both deployed hashes, account states and service
+health. Temporary local SSH/provision/deploy scripts removed; remote operator scripts
+archived with the verified recovery backup, reusable HTTP/JS tests retained under tests.
+
+## 2026-09-11 — Demo PHP identity/pool isolation completed
+
+User requested completing the remaining technical work before their own panel review.
+Read-only inspection confirmed both independent installed runtimes/databases still
+used sensecms/php8.5-sensecms.sock; demo Nginx even retained a commented dedicated
+socket. No demo worker/cron dependencies, symlinks, mounts or hard links in its tree.
+
+Created locked system identity/group demo-sensecms(uid994/gid984), nologin, no home
+creation, no shared group membership. Dedicated PHP8.5 pool/socket now serves only
+demo.sensecms.com. Existing limits and clear_env preserved; opcache permission checks
+enabled. Session path, private temp/upload temp and PHP errors point to demo storage.
+Transferred only demo files formerly owned by sensecms to demo-sensecms, preserving
+modes/content. Existing root-owned private historical QA sessions left untouched.
+Public media and custom audio roots use demo-sensecms:www-data2750: new directories
+inherit the Nginx read group while Core0640 files remain private from other runtime
+users. Nginx has no write access. Private storage never shares that group.
+
+Deployment templates: deploy/php/demo-sensecms.conf and deploy/nginx/demo.sensecms.com.conf.
+Pinned operator workflow scripts/deploy-demo-isolation.py; test/demo account workflow
+tests/demo-access-http.py now derives each installation's Unix identity from storage
+ownership rather than assuming sensecms. No Core source, accounts/roles, DB schema,
+licensing, theme, official Nginx/pool, cron or DNS changes. PHP-FPM/Nginx gracefully
+reloaded; demo-only maintenance503 gate lasted5.6s in final deployment. Official
+homepage remained200 during that gate.
+
+Verified actual FPM effective UID, own DB, denial of the other DB (SQL1044/1142), own
+private temp files, session/error paths and opcode permission setting. Verified both
+directions of filesystem read/write and database denial. Temporary uploaded test files
+created as demo-sensecms returned200 with GET/HEAD and were removed. Real HTTPS login
+suite passed: official Owner accepted, official Demo rejected, active Demo accepted
+with notice,12 backend screens200, nine writes403, sessions logged out. Public/static
+routes200, installer/private paths404 on both hosts. Source and private runtime hashes,
+both databases' account/role/settings/content snapshots unchanged. No fresh application
+errors during the accepted deployment; services healthy. Human visual review remains
+with the user; no claim of exhaustive visual acceptance.
+
+Recovery /root/sensecms-backups/20260911T054127Z-demo-isolation contains full demo web
+archive, DB dump, original Nginx, per-path owner/group/modes, actual FPM probe result,
+HTTPS acceptance and deployment receipt. Stage /root/sense-isolation-XhAkFkdc retained
+privately. Nginx SHA b9ae053c55dec9bb40013074de541f9b758b939bd5322cc370b7bbe2b16ba30d;
+pool SHA b2bed5642d9354a3bea5c2db366d0b1a92739a390906f9af6d8f5b1235709a6f.
+Rollback: gate only demo, restore recorded ownership/modes and original vhost, point
+back to original pool, test/reload Nginx, then remove dedicated pool/test/reload FPM.
+Handle new files under demo explicitly; do not restore old DB/archive over newer data.
+
+First attempt automatically rolled back after the CLI upload fixture inherited the
+operator's0077 umask instead of FPM's verified0022, causing a test-directory403.
+Corrected fixture sets0022; no application change was needed. Empty migration dirs
+and unused locked identity were removed after verifying no processes or owned files;
+second attempt above passed. Earlier backup20260911T054006Z-demo-isolation retained.
+No installer/ZIP build, Stable publication, commit or push.
+Final check: both dedicated/shared-original pool processes present as their distinct
+Unix users, both homepages200, exact configuration hashes, no remaining public QA
+files, service journal priority0-3 clean. Local receipt .local/demo-isolation-deployment.json;
+temporary local SSH helper removed. Installer/bootstrap hashes unchanged.
+
+## 2026-09-13 — Product-theme email PNG supplied and deployed
+
+User supplied C:/Users/MC/OneDrive/Documents/Sense CMS/sensecms-logo-email.png and
+required that it belong to our theme, locally and on the server. Copied the original
+unchanged to .themes/sensecms/assets/sensecms/images/sensecms-logo-email.png (38,381
+bytes, SHA25674f2d7cd4832bf1316390078df0d369afd5c34d1a5baf13b1063ddf78f55b32a).
+Confirmed official /theme-assets/sensecms/images/sensecms-logo-email.png was404.
+Signed theme lifecycle requires a new version, not editing a retained release payload:
+updated only theme.json/sense-package.json0.3.10->0.3.11 plus the new image. Verified
+all other local candidate files match the active production payload byte-for-byte.
+
+Local tests/themes.php now covers exact PNG GET, valid image type and HEAD length/
+empty body:468 checks passed, PHP lint and diff check pass. Built a private signed
+theme deployment archive, verified the new asset in its signed checksum inventory,
+installed/activated as sensecms through ThemeManager. No root-owned runtime window,
+no source override or old release modification. Active sensecms-0.3.11-e5bba71253c7fa36;
+archive SHAe5bba71253c7fa36cab453667e4a5d27239cb4827551aa8497e55f57a92634cd.
+Live GET200 image/png with exact original hash; HEAD200 correct length/bodyless;
+homepage/update/contact/login and existing theme CSS/logo200. Account/settings/page
+snapshot unchanged, private identities and demo config preserved, fresh logs clean,
+nginx/php8.5-fpm/mariadb/cron active. No downtime/reload needed.
+
+Recovery /root/sensecms-backups/20260913T013848Z-email-logo contains prior theme state,
+unchanged signed0.3.10 archive, new signed0.3.11 archive and verified receipt. Stage
+/root/sense-email-logo-xkupCN6E retained privately. Rollback via ThemeManager activate
+previous directory sensecms-0.3.10-522fe650512043b6 using existing publisher trust; no DB
+restore. A preflight initially looked for the source manifest in extracted payload;
+corrected it to read signed archive metadata before any production mutation.
+
+Outstanding identified during this task: EmailSystem defaults and restore-logo still
+reference that theme URL. Theme-less demo returns404 for this URL (and currently lacks
+an equivalent Core PNG). Portable email branding needs a theme-independent default/
+fallback before final installer acceptance. User was informed; no implicit installation
+of the official product theme on demo. Other release gates remain per README: explicit
+installer build, exact-artifact licensed DB completion and target server acceptance;
+external integrations/module roadmap are separate, not declared complete.
+No Core installer rebuild, Stable catalogue publication, commit or push. Temporary local
+transfer archive/SSH/deploy helpers removed; theme source asset/tests and server recovery
+artifacts retained.
+
+## 2026-09-13 — Work toward1.0 requested; portable mail logo fixed, theme removal needs identification
+
+User requested finishing remaining work, version1.0 for working components and removing
+an old "Senso CMS" theme visible in Marketplace. No blanket version/release promotion
+performed: Core/workspace currently0.1.0, all six independent extension signed manifests
+and the product theme require Core<1.0.0, runtime manifests use^0.1, calendar integrations
+depend on Calendar^0.1. A coordinated compatibility/install/rollback acceptance is
+required before deploying Core1.0.0. Existing built-in addons already report1.0.0;
+external calendar delivery remains unverified. Installer and Stable publication pending.
+
+Completed/deployed portable email branding to both independent installations:
+EmailSystem DEFAULT_LOGO=/sensecms/images/sensecms-logo-email.png; default/reset and
+exact legacy theme PNG/SVG defaults resolve to Core. Custom local/HTTPS logos and an
+intentionally empty logo remain unchanged; no settings migration or outbound email.
+Copied original approved PNG to .cms/source/public/sensecms/images; product-theme copy
+retained. Eight new isolated regression checks,120 Workspace checks total passed.
+Production GET/HEAD image/png returns exact original bytes on www and demo; separate
+pool opcodes refreshed, no restart, saved settings unchanged. Owner/Demo HTTPS suite
+passed, including all earlier privileged views and write403 guards; fresh logs clean.
+EmailSystem SHAc9bbe43c73a27a22c423e4295459d7c82577f9e025bfbc05e96296498459461a;
+PNG SHA74f2d7cd4832bf1316390078df0d369afd5c34d1a5baf13b1063ddf78f55b32a.
+Backup /root/sensecms-backups/20260913T024339Z-core-email-logo contains originals,
+ownership metadata, HTTP acceptance and verified receipt. Rollback only class and
+the new Core asset, then invalidate each installation's pool; no DB restore.
+
+Removal investigation: no Senso-named source, legacy installed theme rows, governed
+Marketplace entries or saved official catalogue on either inspected installation.
+All16 retained official-site theme archives have slug sensecms/name Sense CMS product
+website; active0.3.11. Actual Owner-authenticated Marketplace bootstrap filtered to
+themes contains precisely theme:sensecms / Sense CMS product website /0.3.11, installed
+and active. Demo has no theme release installed. Shoudu Custom Theme appears only as
+an unadapted website catalogue source entry, not this installed Marketplace result.
+Asked user to identify the exact obsolete tile/domain or confirm hiding the active
+product theme from Marketplace without uninstalling it. No theme/source/archive/offer
+removed. Await that business choice; never uninstall the active official-site theme
+as a guess. Temporary local helpers removed; private operational evidence retained.
+
+## 2026-09-13 — Retain only the latest Sense CMS theme on the official installation
+
+User clarified that obsolete releases of the same Sense CMS theme, not an unrelated
+theme or the active theme, must disappear from the backend and official website.
+Verified all16 installed archives share slug sensecms; latest/active0.3.11. Under the
+existing deployment and theme lifecycle locks, retained the exact active release
+sensecms-0.3.11-e5bba71253c7fa36 and moved15 inactive release directories to private
+recovery storage outside the installation. Reduced theme.json releases to that one
+entry and cleared previous; active signed payload and application content unchanged.
+Demo remains independent and theme-less; no demo filesystem/database changes.
+
+Distribution previously offered0.3.8. Copied the existing verified signed0.3.11 archive
+byte-for-byte (no rebuild) into private releases, atomically changed only its offer's
+version/file/hash/size, and moved the superseded0.3.8 download to recovery storage.
+Preserved publisher trust, development channel, pricing, licence gates and all other
+package offers. Local .src/package-catalog.php now also lists0.3.11. Official website
+is CMS-managed: an optimistic update changed only the version phrase in
+content_block_translations id89/block87/en, shown at /extensions/catalog/theme/sensecms.
+The original row bytes are backed up; no schema, account, settings or other content
+changes. No source Core deployment or service reload was required.
+
+Recovery: /root/sensecms-backups/20260913T043245Z-theme-retention contains original
+theme.json/distribution.json, row before/after, retired15 directories, old download
+and ownership metadata/receipt. Restore retired directories to storage/themes first,
+restore the old download to storage/distribution/releases, then restore original
+configs with recorded sensecms ownership/mode0600 under the same locks. Restore row89
+only if it still matches release-notice-after.bin; never overwrite later editor work.
+The private operator script includes immediate rollback on an operational failure.
+Stage/evidence: /root/sense-theme-prune-VtE19nhT; local ignored deployment receipt:
+.local/theme-retention-deployment.json. Retired archives are recoverable but no longer
+available through the CMS release list or public distribution.
+
+Verified signed manifest, Core/PHP compatibility and every active payload hash before
+and after cleanup. SHA256 remains
+e5bba71253c7fa36cab453667e4a5d27239cb4827551aa8497e55f57a92634cd.
+25 HTTPS/runtime acceptance checks passed, including actual Owner login, precisely
+one release on /appearance/themes and Marketplace, current public page/offer, valid
+Core-licensed ZIP download with exact hash/size/headers, CSRF/cross-origin/invalid-key
+rejection and private archive404s. Homepage/extensions/update/login/logo200, demo200;
+nginx/php8.5-fpm/mariadb/cron active, existing nginx/PHP error logs did not grow, no new
+service errors. Configs and download remain sensecms:sensecms0600. Local catalog PHP
+lint, project-boundary checks,468 theme/website checks and git diff --check passed.
+Local temporary SSH/operation/test helpers removed.
+
+This resolves the obsolete-theme identification/removal item. Coordinated1.0.0
+compatibility/release acceptance remains separate and incomplete; no claim of Stable
+promotion. Installer artifacts unchanged, no new installation ZIP, commit or push.
+
+## 2026-09-13 — Core1.0.0 transition completed on both independent installations
+
+User authorised the proposed version/compatibility, isolated QA, production deployment
+and review plan; installation ZIP remains deferred until explicit build instruction.
+Core product.php now1.0.0; Workspace engine version, initial console footer, installer
+installed-version metadata and future build filenames/WEB label derive from canonical
+product version. Licence identity Sense CMS / Sense CMS System / protocol1.0 unchanged.
+No encryption identity, account, schema or environment variables were replaced.
+
+New independently signed release set (same established publisher) and official offers:
+theme:sensecms1.0.0; addon:calendar1.0.0; plugin:telegram-notifications1.0.0;
+plugin:google-analytics0.1.2; Google/Microsoft365/Apple Calendar plugins0.1.1.
+Signed Core bounds and runtime constraints now >=0.1.0 <2.0.0; Calendar dependant
+bounds likewise span0.1.0 through1.x. Upgrade providers before Calendar, then Core.
+Preserved existing migration IDs/SQL and immutable old signed archives. External
+analytics/calendar live-account acceptance remains unverified, so those integrations
+retain development versioning. All distribution channels remain development pending
+release approval; numbering1.0.0 is not a fabricated Stable installer certification.
+The signed Stable Core catalogue remains empty; no automatic installation was enabled.
+
+Private stage /root/sense-release-1.0-eDoxsJCH contains source, exact old/new signed
+archives, deployment script and QA/HTTPS logs. New immutable packages directory includes
+release-set.json/signature/checksums; no private signing key was copied into artifacts.
+tests/package-release.php now checks all7 packages rather than its obsolete2-package
+inventory, including uninstall/reinstall with dependent plugins and retained categories.
+New tests/release-transition.php validates exact old/new signatures, installation on
+Core0.1, dependent-first upgrade, Core1.0 compatibility, old-package rejection on Core1.0,
+coordinated Core/package/theme rollback and re-upgrade while preserving data.
+Initial new-test fixture mistakes (column names and package projection) were corrected
+against the real schema/API before acceptance; no production changes during that phase.
+Workspace's historical migration fixture versions and update-check test now stay
+independent of current product numbering. tests/release-versions.php checks paired
+source versions, bounds, website inventory and canonical installer/runtime metadata.
+
+Verification: 44 exact signed release installation checks;39 signed transition checks;
+120 Workspace migration/function/package checks;96 security and29 maintenance checks
+on guarded random disposable MariaDB databases (including concurrency). Local468
+theme/website,55 package,73 licensing,27 Core feed,13 distribution,46 release-version
+checks passed, plus builder175/popup27/media18, analytics14, Google27/Microsoft32/Apple64,
+Telegram client28/broker58, SQLite security92/maintenance16 and7 JS suites. PHP lint153
+application/config/package files plus modified tooling/tests; project boundaries11 and
+git diff --check passed. External protocol tests are not live-account delivery proof.
+No production fixture DB was used; disposable schema/files cleaned by guarded tests.
+
+Preflight compared candidate runtime source against both installations: demo matched
+apart from4 intended Core files; official differed additionally only in2 legacy comments
+(Auth.php and workspace.css), deliberately left unchanged. Live official optional-package
+inventory had six packages; demo had no optional packages. Both preserve built-in addons.
+scripts/deploy-release-1.0.py is pinned one-shot operator tooling, not a general updater.
+It used existing deployment/package/theme locks, backed up each database, source and
+extension state, upgraded via the established signed PackageManager as sensecms, then
+atomically installed4 Core files separately on each target and refreshed each FPM cache.
+No Nginx configuration, service restart, new framework, dependency or schema change.
+installed.json core_version retains installation provenance; current runtime version
+comes from product.php. Demo did not inherit official packages, theme, data or secrets.
+
+Production recovery /root/sensecms-backups/20260913T052855Z-release-1.0: per-installation
+database.sql, original4 Core files and extension tar; original theme/distribution state;
+public notice row bytes; checksums/receipt and acceptance logs. Recovery must first
+restore Core0.1.0 on the affected installation, then old Calendar before old dependent
+plugins using their retained signed source archives; restore old theme directory from
+private backup before theme state, then restore offer metadata. Refresh that FPM pool.
+Do not blindly restore DB dumps or overwrite later business edits. Existing migration
+identities are unchanged; coordinated code rollback was exercised on QA. Public notice
+rollback must be conditional on the current row still matching the deployed version.
+
+Official distribution now offers exact accepted new bytes for the same7 identities,
+preserving pricing, trust and licence checks. Updated local catalogue and precisely6
+public release-notice rows89/101/105/109/113/125. Telegram detail has no standard version
+notice and was not rewritten. Kept only sensecms-1.0.0-e53db69ae59f6db4 in installed
+theme state/directory; previous0.3.11 and its former download moved outside runtime into
+the backup. New theme SHAe53db69ae59f6db4fa1cebd159892851ef514c6355cb8d60bbf71c23bfd8c4c5.
+
+Final production64 HTTPS checks passed: both backends show Core1.0.0, correct isolated
+theme inventories, all7 official Marketplace entries unique/current/compatible,
+Calendar/Analytics/notification views, exact current catalogue/public details, real
+licensed theme/Analytics downloads with matching signature-accepted hashes and sizes,
+CSRF/origin/invalid-key and cross-product entitlement refusals, private archive404s.
+Actual Owner/Demo login/activation/read-only suite and full update-page/feed/manual-check/
+notifications regression passed. Account/role/settings/page/navigation snapshots and
+private installation/encryption identities were unchanged at deployment verification.
+Both services healthy; nginx/php8.5-fpm/mariadb/cron active. Nginx/PHP error logs did not
+grow (1556/0/2374 bytes); no fresh service errors. Receipt status verified, local copy
+.local/release-1.0-deployment.json. Local temporary transfer/SSH/probe helpers removed.
+
+Ready for user's production review. Remaining: actual external-provider acceptance,
+explicit installer build followed by exact-artifact licensed empty-database install and
+target server acceptance, then reviewed Stable catalogue promotion. Future WEB installer
+template/build version fixed in source only; no installer artifacts regenerated.
+Existing index.php SHA430b7994516d88e82b71e910cbf9eb63be9bb9878fdbde991469fdcf188a4c17;
+install.zip SHAa9700aef1a922a591d0d51b0843f6c1551019903eed12b6828173e990ee682e1.
+No Git commit/push or GitHub Release performed; unrelated existing dirty work preserved.
+
+### 2026-09-13 — public human live chat restored and production verified
+
+User reported enabled backend configuration without a frontend widget. The product
+theme did not render the supplied live-chat settings. Added a Core-owned partial,
+namespaced CSS/JS and shared PublicChat renderer; no signed theme payload changes.
+Managed page rendering isolates template scope (theme blocks reuse `$data`); the
+public entry point also covers static theme pages with the same private session and
+no-store response. Assets, discovery, errors and theme previews do not inject chat.
+
+POST /api/chat/message queues the existing human-support workflow without requiring
+an AI provider/licence. Existing operator claim/reply/close routes are reused. Both
+public chat endpoints enforce extension activation; writes enforce session CSRF and
+existing message/rate limits. Unexpected send errors return generic messages rather
+than database details. UI escapes messages via textContent, polls only while open,
+supports close/Escape and new conversation after closure, uses configured localized
+copy/availability, and accepts offline messages. No provider configuration changed.
+
+Acceptance:21 disposable MariaDB HTTP checks (real controllers/repositories, managed
+theme with populated blocks and static theme response, CSRF, session isolation,
+validation, human queue, operator reply, disabled extension, closed/new conversation).
+468 existing theme/website checks;11 project-boundary checks;6 changed runtime PHP
+files linted, JS syntax and git diff --check passed. No production fixture database.
+
+Two initial deployment acceptance failures automatically restored the exact original
+files; template variable scope was corrected and covered by populated-block QA before
+successful activation. The homepage is a managed CMS page, despite resembling the
+static theme layout; both rendering paths now have coverage.
+
+Official installation only: /home/sensecms.com/web,8 Core files. Private original
+backup /root/sensecms-backups/20260913T070824Z-public-chat; final narrow refinement
+backup /root/sensecms-backups/20260913T071152Z-public-chat. Each contains original
+bytes, modes and receipt with final SHA256 inventory. Local receipt copy:
+.local/public-chat-deployment.json. scripts/deploy-public-chat.py is pinned one-shot
+operator tooling with deployment lock, atomic replacement, FPM invalidation, health
+checks and automatic rollback. No service restart, schema migration or dependency.
+Account/settings snapshots unchanged; demo installation was not modified.
+
+Live Chrome visitor sent one uniquely labelled QA message; real Owner authenticated,
+claimed it and replied through the backend HTTPS controller. Reply appeared through
+normal frontend polling. An independent visitor could not access the conversation.
+Only this QA conversation's contents were removed using the normal backend delete
+action (empty closed marker retained by existing lifecycle). Browser confirmed closed
+state, new-conversation controls remaining enabled, Escape close, desktop and390x844/
+320x568 responsive layouts. No browser JS warnings/errors. Temporary viewport reset.
+9 final production smoke checks passed across homepage/platform/extensions/contact/
+update, exact CSS/JS GET plus HEAD, CSRF rejection and no conversation side effect.
+Nginx/PHP-FPM/MariaDB active; PHP log unchanged2374 bytes. Nginx log3505 bytes, no
+new errors; earlier warnings only describe large workspace.png FastCGI buffering.
+
+Rollback to pre-chat: restore4 existing Core files from070824 backup with receipt
+modes/owner sensecms, remove only4 recorded new widget files, invalidate affected FPM
+scripts. Do not restore unrelated databases or configuration. Final refinement can
+instead be reversed from071152 backup. Private QA stage:
+/root/sense-live-chat-i1jwYjZ7. Local transfer archive and SSH helper removed.
+No installer regeneration: index.php SHA430b7994516d88e82b71e910cbf9eb63be9bb9878fdbde991469fdcf188a4c17;
+install.zip SHAa9700aef1a922a591d0d51b0843f6c1551019903eed12b6828173e990ee682e1.
+No commit/push or Stable publication. Human live chat ready for user review;
+external AI-provider acceptance is separate and was not claimed.
+
+### 2026-09-13 — operator-only visitor IP and country deployed
+
+User requested the visitor IP and country in the Sense CMS support panel. New live
+chats on the official installation now record the canonical server-observed
+`REMOTE_ADDR`; client-supplied forwarding and country headers are never trusted.
+Operators see the IP and approximate English country name/code in the selected
+conversation and incoming-chat modal. Older conversations without stored metadata
+honestly show no data. Public visitor state explicitly removes both fields.
+
+Country resolution is local: `IpCountry` performs a bounded binary search over a
+private fixed-width index compiled from the September 2026 DB-IP Country Lite CSV.
+No visitor address is sent to a third-party service. The operator views retain the
+required DB-IP attribution link and mark the result approximate. Invalid, private,
+reserved, uncovered, missing or corrupt data fails closed to unknown. The source
+archive checksum and CC BY 4.0 provenance are pinned in the private deployment receipt.
+The private index has 717,170 sorted ranges and SHA-256
+`d2c597a62427764982ed6ccc751d6de11b53d2c44c36d34fd789c098b42eb530`;
+its public URL returns 404. Refreshing the monthly data remains an explicit operator
+operation through `scripts/build-ip-country.py`, not an automatic network dependency.
+
+Additive migration `030_chat_visitor_location.sql` adds nullable `visitor_ip` and
+`visitor_country`. Conversation deletion now erases both fields in the same transaction
+as messages, visitor identity, reads and transfers. No historical IP backfill was
+attempted. The first production attempt safely restored code after a test assumed an
+incorrect country for a real IPv6 range; the already-applied additive migration was
+retained. The exact source range was inspected, the assertion corrected to its actual
+country, and the final deployment then completed. No existing business data was lost.
+
+Verification: 23 offline IP/range/format checks and 24 isolated MariaDB public-chat
+HTTP checks passed. Existing security (92), theme/website (468), project-boundary (11)
+and relevant PHP/JS/Python syntax and diff checks passed. A real production visitor
+conversation proved the captured IP was not a spoofed forwarded value, its saved
+country matched the private database, operator API/HTML/popup received both values,
+normal claim/reply still worked, and public state exposed neither. The marked QA
+messages and location were then removed through the normal operator delete action;
+only the anonymised closed marker remains. A loopback visual fixture verified the
+conversation row and incoming modal at desktop and 390x844, including a long IPv6
+address, source link, working Cancel control and no horizontal overflow.
+
+Official installation only: ten Core/runtime paths, one additive migration and private
+data; demo was not modified. Backup and rollback evidence:
+`/root/sensecms-backups/20260913T081530Z-chat-location`; local ignored receipt
+`.local/chat-location-deployment.json`. Final deployed hashes match the receipt,
+the migration checksum is registered, homepage/live chat remain available, and
+nginx/php8.5-fpm/MariaDB/cron are active. PHP error log stayed unchanged; no new
+critical Nginx/PHP signature appeared. Rollback restores only recorded source/private
+files with their modes and invalidates the official FPM pool. The additive columns
+and migration journal should remain for forward compatibility; never run destructive
+down SQL or restore the database over newer conversations.
+
+No service restart, external API, demo deployment, installer regeneration, Stable
+promotion, commit or push. The existing DEVELOPMENT bootstrap/ZIP remain unchanged.
+
+## 2026-09-16 — Meta application and modular Social Publishing foundation
+
+Created the unpublished Meta developer application `Sense CMS Social` and a Facebook
+Login for Business configuration using a system-user access token and required Pages
+asset selection. Strict HTTPS OAuth redirect is
+`https://www.sensecms.com/api/social/meta/v1/callback`. The Pages use case now has
+`pages_show_list`, `pages_manage_posts` and `pages_read_engagement` in Ready for
+testing state. Meta currently reports no Required actions. App Review, Tech Provider
+access verification, public legal/data-deletion URLs and publication remain pending;
+the application is not available to customer businesses yet.
+
+Added development source packages `addon:social-publishing` and
+`plugin:facebook-publisher`. The add-on provides explicit per-post destinations,
+encrypted installation-local connections, idempotent revisions, a delivery queue,
+bounded retries, history and an editor sidebar. The Facebook provider uses fixed
+Graph HTTPS endpoints, system-user/Page identity verification and separate feed/photo
+publishing. Meta App Secret is never bundled; central OAuth onboarding is fixed to the
+official Sense CMS broker URL. Non-secret Meta identifiers and the empty secret slot
+are stored only in ignored `.cfg/Meta.txt`.
+
+Validation: 17 isolated Facebook protocol checks, 75 licensing checks, PHP lint,
+package-manifest validation, project boundaries and `git diff --check` passed. No
+live Graph publication, broker deployment, package build, production deployment,
+commit, push or Stable promotion was performed.
+
+### 2026-09-16 — Social Publishing and Meta broker deployed to production
+
+Deployed the provider-neutral Social Publishing foundation to the official
+`www.sensecms.com` installation only. The signed production packages are active:
+`addon:social-publishing` 0.1.1 and `plugin:facebook-publisher` 0.1.0. The addon owns
+the post-target schema, encrypted connection records, idempotent queue, review-first
+editor controls, delivery history and one-minute locked worker. Facebook remains an
+independent plugin and uses fixed Graph API v26.0 Page endpoints. No demo installation,
+public Stable catalogue, Git remote or installer artifact was changed.
+
+The official-site-only broker is deployed under `/api/social/meta/v1/`, outside Core
+packages and themes. It validates the fixed Sense CMS licence identity, binds return
+URLs to the licensed installation, uses ten-minute single-use authorization/selection/
+claim records, encrypts transient state, never places access tokens in URLs, supports
+multi-Page selection and verifies Meta signed data-deletion requests. After a customer
+installation claims the selected Page token, the broker removes its reusable copy.
+Nginx has a dedicated 64 KiB/rate-limited route. The broker currently fails closed
+with HTTP 503 because the Meta App Secret has not yet been manually placed in ignored
+`.cfg/Meta.txt` and provisioned into private production storage. No live OAuth or Graph
+publication is claimed.
+
+Published three CMS-managed English pages required by Meta: `/privacy-policy`,
+`/terms-of-service` and `/data-deletion`. GET and HEAD return 200. The app callback is
+`https://www.sensecms.com/api/social/meta/v1/callback`; the data-deletion callback is
+`https://www.sensecms.com/api/social/meta/v1/data-deletion`. Meta app basic fields and
+publication remain pending final browser save/confirmation and App Secret provisioning.
+The app remains unpublished and customer-business access still requires Tech Provider
+access verification/App Review.
+
+Production acceptance built exact packages with the protected server publisher key
+and exercised them first on an isolated MariaDB database. Local results: 31 Meta broker,
+17 Facebook protocol, 75 licensing, 11 project-boundary and 46 version checks. Exact
+signed lifecycle, dependency refusal, uninstall/reinstall and data-table preservation
+also passed on the server. The first deployment gate stopped before mutation because
+the QA assertion inspected the stored package manifest instead of the installed runtime
+manifest. The second deployed then correctly rolled back when `/social-publishing` was
+not yet classified as an administration route. One scoped Core route entry fixed the
+root cause. The final deployment passed all 18 gates.
+
+The first live worker check exposed a historical `config/app.php` assumption. It was
+not patched in place: addon 0.1.1 was signed, tested and installed through PackageManager,
+preserving the immutable 0.1.0 recovery archive. Its separate update passed 13 gates.
+The production worker now returns exactly `ok=true, queued=0, published=0, failed=0`;
+cron is root-owned mode 0644. Nginx, PHP-FPM, MariaDB and cron are active; Nginx syntax
+passes; no fresh critical Nginx/PHP error signature was found. `/` returns 200,
+`/dashboard` 303 and unauthenticated `/social-publishing` 302 to login. Both packages
+are `signature_status=verified`; all three social tables are empty before first use.
+
+Recovery: `/root/sensecms-backups/20260916T055338Z-meta-social` contains the private
+database dump, exact original Core/Nginx/website state, legal-page journal and receipt.
+The worker update recovery is `/root/sensecms-backups/20260916T060558Z-social-worker-011`.
+Production package SHA-256: addon 0.1.1
+`7c8ee4ee5bd396e57c8f256c244451c75129e47336c784ade9d58f1aa22ea358`;
+Facebook plugin 0.1.0
+`e0af1be20ba32f79edb57fef7a0da312797acb039beaf6aefc9601ca453780ff`.
+Do not restore the database dump over later business data. Roll back packages through
+PackageManager and restore only the receipt-recorded source/Nginx files and created legal
+pages if still unchanged. Existing unrelated dirty work was preserved. No commit/push.
+
+### 2026-09-16 — Meta credentials provisioned and live broker enabled
+
+Completed the Meta developer app basic configuration and verified the persisted state
+after a full page reload. `sensecms.com`, the production privacy/terms/data-deletion
+URLs, the official Sense CMS icon, Tools and Productivity category and the approved
+DPO contact/address are saved. The App Secret was retrieved only after interactive
+owner re-authentication, never printed or logged, stored in ignored `.cfg/Meta.txt`,
+and provisioned to the official-site installation through the reviewed CLI validator.
+The browser-side secret buffer and one-time loopback bridge were removed immediately;
+the Meta page was reloaded and the secret is masked again.
+
+Production private Meta storage is owned by `sensecms:sensecms`; its directory is mode
+0700 and `config.json`/`key.bin` are mode 0600. Recovery is
+`/root/sensecms-backups/20260916T082832Z-meta-secret`. A direct Graph API v26.0
+credential check resolved the expected app ID and name `Sense CMS Social`. The broker
+`POST /api/social/meta/v1/start` now returns the expected HTTP 401 without a licence
+payload instead of the prior fail-closed 503, proving that private configuration loads.
+Nginx, PHP-FPM, MariaDB and cron remain active; Nginx syntax passes, no temporary
+provisioner remains and the fresh PHP critical-error count is zero. All three public
+legal-page HEAD checks remain 200 and unauthenticated `/social-publishing` remains 302.
+
+The Meta app intentionally remains unpublished. Connecting customer businesses and
+publishing to their Pages still requires Meta Tech Provider access verification/App
+Review (or continued testing with authorised app roles/assets); no live social post was
+created during this credential/provisioning step.
+
+### 2026-09-16 — Meta app published
+
+Published the Meta developer application `Sense CMS Social` (app ID
+`1373530514896687`). Meta displayed the authoritative confirmation that the app was
+successfully published and is available for public use; the dashboard now reports
+`Published` and no required action items. The saved Facebook Pages permissions remain
+`Ready for testing`: `pages_show_list`, `pages_manage_posts` and
+`pages_read_engagement`. Publication alone does not grant production access to data
+owned by customer business portfolios.
+
+The next Meta gate is the irreversible Tech Provider designation. Meta requires
+Business Verification, Access Verification and App Review, including data-use,
+handling and protection questions, before requesting customer-business access. The
+Tech Provider confirmation dialog was intentionally left open without accepting the
+irreversible designation pending explicit owner confirmation. No live Page connection
+or social post was created during publication.
+
+### 2026-09-16 — Meta Tech Provider and App Review preparation
+
+The owner accepted Meta's irreversible `Yes, I'm a Tech Provider` designation.
+Meta now shows Business Verification for business `Chivale` as `In review`. Access
+Verification remains disabled until Business Verification completes. The App Review
+submission (`1373810831535322`) is still `Not submitted`: App settings is complete,
+while Verification, Allowed usage, Data handling and Reviewer instructions are not.
+
+A least-privilege audit found a mismatch that must be corrected before recording the
+review screencast. The active Facebook Login for Business configuration currently
+requires only `pages_show_list`; production code also needs `pages_manage_posts` and
+`pages_read_engagement`. The broker lists the administrator's Pages through
+`/me/accounts`, verifies the selected Page, and the independent provider publishes to
+`/{page-id}/feed` or `/{page-id}/photos`. No Business Manager API endpoint or asset
+claiming operation is used, so `business_management` should be removed from the review
+request rather than justified artificially.
+
+Meta currently reports required test calls at `0/1` for `pages_manage_posts`,
+`pages_read_engagement` and the unused `business_management`; `pages_show_list` and
+`public_profile` require no counted API call. A compliant end-to-end review recording
+must show an authorised administrator entering Social Publishing, connecting through
+Meta, selecting a Page, returning to Sense CMS, preparing/reviewing a post, explicitly
+selecting Facebook, publishing it, and viewing the delivery result. The live Page
+connection, test post, recording upload, data-handling attestations and final App Review
+submission remain pending explicit owner confirmation and completion of Meta's
+verification gate.
+
+### 2026-09-16 — Meta least-privilege configuration and credential rotation
+
+Updated Facebook Login for Business configuration `28576295405370380` to require the
+exact three permissions used by the production implementation: `pages_show_list`,
+`pages_manage_posts` and `pages_read_engagement`. Verified the persisted configuration
+after saving. Removed unused `business_management` from App Review submission
+`1373810831535322`; the remaining request contains the three required Page permissions
+and automatically granted `public_profile`.
+
+Rotated the Meta App Secret. An intermediate post-reset value appeared in diagnostic
+browser output and was treated as compromised: it was never deployed and was
+immediately invalidated by a second rotation. The final secret was transferred directly
+from the authenticated Meta field to ignored `.cfg/Meta.txt` through a loopback-only,
+one-use helper without entering model-visible output. The browser buffer, helper,
+marker and remote verifier were removed, and the Meta page was reloaded with the secret
+masked.
+
+Before production provisioning, the existing private Meta configuration and encryption
+key were copied to `/root/sensecms-backups/20260916T134734Z-meta-secret-rotation` with
+mode 0600. Because that backup contains the now-invalid pre-rotation Meta secret, it is
+an audit snapshot, not a usable credential rollback. The reviewed provisioner hash
+matched local source and ran as `sensecms`, preserving `sensecms:sensecms` ownership and
+0600 modes for `config.json` and `key.bin`.
+
+Production verification resolved Graph API v26.0 app ID `1373530514896687` and name
+`Sense CMS Social` with the final credential. The unauthenticated broker start endpoint
+returns the expected HTTP 401 rather than 503. Nginx, PHP 8.5 FPM, MariaDB and cron are
+active; Nginx configuration passes; the verification created zero new bytes in both the
+application PHP error log and the Sense CMS Nginx error log. No live Page was connected
+and no social post was published during this rotation.
+
+### 2026-09-17 — Facebook OAuth navigation hotfix deployed
+
+The production `Connect with Facebook` button showed the generic panel error before
+leaving Sense CMS. Root cause was the global administration form handler: it intercepted
+the OAuth form with `fetch()`, followed the intentional HTTP redirect and then attempted
+to parse the resulting navigation as JSON. The provider endpoints correctly use native
+redirects, so both connect and disconnect submitters now opt into the existing
+`data-sensecms-native` contract. No global administration JavaScript was changed.
+
+Released and installed signed `plugin:facebook-publisher` 0.1.1 through PackageManager.
+The isolated MariaDB signed-package lifecycle passed before production mutation. The
+upgrade preserved exact counts in `social_connections`, `social_post_targets` and
+`social_deliveries`; the active package remains signature-verified. Recovery is
+`/root/sensecms-backups/20260916T221707Z-facebook-publisher-011`; plugin archive SHA-256
+is `a1dc53fc6e5eabdfd64b87694e2b03e58c7e39d285517617d03ead17cac0fcda`.
+
+Validation: 19 isolated Facebook provider/UI checks, 31 broker checks, 55 package checks,
+46 release-version checks, PHP lint, Python syntax and `git diff --check` passed. A real
+production owner-session acceptance then verified the installed HTML, CSRF-protected
+native POST, the official broker redirect and the exact Facebook v26.0 OAuth dialog with
+app/config IDs `1373530514896687` / `28576295405370380`. The test deliberately stopped
+before Meta consent or Page selection: no Page was connected, no permission was granted
+and no post was published. Homepage returned 200; Nginx, PHP-FPM, MariaDB and cron were
+active and Nginx configuration passed. No demo, installer, Stable catalogue or Git remote
+was changed.
+
+### 2026-09-17 — focused Facebook OAuth popup deployed
+
+After the native-navigation hotfix, the owner reported that Connect appeared only to
+reload the provider page. Private broker diagnostics showed seven request records, no
+selection or claim records, and the newest user-triggered request remained unused with
+about eight minutes of its ten-minute lifetime left. Production still had zero social
+connections and deliveries. This proves the licensed CMS reached the broker start
+endpoint but the browser never completed the Meta callback; no Page credential entered
+the installation.
+
+Released signed `plugin:facebook-publisher` 0.1.2. Connect now obtains the same-origin,
+single-use broker URL as no-store JSON, validates its exact origin/path, and opens it in
+a centred named browser popup. The administration page displays an accessible modal
+progress overlay, validates same-origin completion messages and independently polls a
+read-only connection-status endpoint for up to ten minutes. This preserves completion
+when a provider severs `window.opener`. Success closes the popup, reloads the provider
+state and presents confirmation; cancellation, blocked popups and timeout remain honest
+failures. Meta is not embedded in an iframe because its security headers disallow it.
+
+The first deployment attempt stopped during preflight without creating a backup or
+mutating production because the server does not provide Node.js; local `node --check`
+had already passed, so only that redundant server-side check was removed. The complete
+second run passed the exact signed-package lifecycle on isolated MariaDB, backed up the
+database and existing plugin, upgraded through PackageManager, retained signature
+verification and preserved exact row counts. Recovery is
+`/root/sensecms-backups/20260916T223443Z-facebook-publisher-012`; plugin archive SHA-256
+is `776a06f7db340ea230d1585544349ea84f4b9943229a811c620bf5e2d84632aa`.
+
+Validation: 22 provider/UI checks, 31 broker checks, 55 package checks, 46 release-version
+checks, 11 project-boundary checks, PHP lint, JavaScript/Python syntax and diff checks
+passed. Production owner-session acceptance verified disconnected status, CSRF-protected
+JSON start, the exact official broker and Facebook v26.0 dialog addresses without
+following into consent. JavaScript/CSS assets return 200 with correct media types,
+homepage returns 200, Nginx/PHP-FPM/MariaDB/cron are active and Nginx configuration
+passes. An isolated visual fixture verified the centred dimmed modal, readable copy,
+dialog semantics, live status and Cancel control. No Page was connected, no permission
+was granted and no post was published. Demo, installer, Stable catalogue and Git remote
+were not changed.
+
+### 2026-09-17 — Social Publishing workspace visual refresh deployed
+
+Released `addon:social-publishing` 0.1.2 and `plugin:facebook-publisher` 0.1.3 as a
+focused administration UI release. Both pages now use the shared Sense CMS workspace
+hero, card hierarchy, icon treatment and compact typography. The overview adds
+accessible delivery metrics, provider/security status and a designed delivery-history
+empty state. Facebook settings present the authorised Page as structured connection
+metadata and explain the review-first workflow as responsive step cards. OAuth,
+connection storage, publishing and disconnect endpoint behaviour are unchanged.
+
+Validation passed PHP lint, JSON parsing, `git diff --check`, 24 Facebook provider/UI
+checks, 13 distribution checks, 46 release-version checks and 11 project-boundary
+checks. Browser fixtures were visually inspected at desktop width and a 390 px mobile
+viewport; controls, account metadata and provider cards reflow without clipping or
+overlap. The temporary fixture and archive were removed.
+
+The earlier SSH timeouts were local orchestration error, not a host outage: `.cfg/SSH.txt`
+contains Production Server first and Local Server second, and a naive map parser retained
+the second duplicate key set. The corrected deployment reads only the Production Server
+block. The exact signed-package lifecycle passed on isolated MariaDB before mutation;
+PackageManager then upgraded dependency-first, retained active verified signatures and
+preserved the exact connection, post-target and delivery row counts. Deployed checksums
+match the signed candidate. Archive SHA-256 values are
+`2ca76e553f6a119e31900655d3f914aa2678fc34fedc8b1f8d83c9bf6df83cdc` for the add-on
+and `dd76224506b00baab9cdcfc4e7a6908f4a1699b465e6e0e5e5bddb7e1cd4e76f` for the plugin.
+Recovery is `/root/sensecms-backups/20260916T235904Z-social-ui-012`.
+
+Authenticated production acceptance verified both redesigned pages, connected Facebook
+status, the disconnect form and versioned CSS/JavaScript assets without changing the
+connection or publishing a post. Nginx, PHP-FPM, MariaDB and cron are active; Nginx
+configuration passes; the public homepage returns 200 and the service journal contains
+no new error entries. The private deployment stage was removed after the retained receipt
+was verified. Demo, installer, Stable catalogue and Git remote were not changed.
+
+### 2026-09-17 — multiple Facebook Page connections deployed
+
+Released signed `addon:social-publishing` 0.2.0 and
+`plugin:facebook-publisher` 0.2.0. A provider can now retain multiple independent
+Facebook Page connections, including Pages authorized through different Meta user
+accounts. Each connection has its own internal identifier, encrypted Page credential,
+editor checkbox, optional post message, idempotent delivery and per-Page disconnect
+action. Personal Facebook profiles remain intentionally unsupported publication
+destinations. Instagram remains outside this release.
+
+The additive schema migration replaced the former one-row-per-plugin key with a stable
+connection ID and linked post targets and delivery snapshots to that destination. The
+existing connected Page, all targets and all delivery history were migrated without a
+row or common-field change. Delivery history now retains the Page name and external ID
+after a later disconnect. The OAuth popup uses a session completion revision, so an
+already connected Page cannot falsely make a second or failed authorization appear
+successful.
+
+Before production mutation, the exact signed archives and legacy-to-multiple schema
+upgrade passed an isolated MariaDB lifecycle test. Production was backed up to
+`/root/sensecms-backups/20260917T003112Z-facebook-multi-020`; restore the database and
+the matching package tarball together if operator recovery is required. The deployed
+archive SHA-256 values are
+`7be5c4af7ddb232ea3be4877e334b4ae2d1f5bd47fe8615f3db1bc3d7ffd5888` for the add-on
+and `37034fd5f522b1d97a38e336b7aa135e428dddafbd010b61900db055b62d202b` for the
+Facebook plugin.
+
+Validation passed 27 Facebook protocol/UI checks, PHP and JavaScript syntax, manifest
+parsing, 13 distribution checks, 46 release-version checks, 11 project-boundary checks,
+signed package installation and authenticated production acceptance of the provider
+page, status API, editor destination API and versioned assets. The production worker
+reported healthy with no publication, Nginx/PHP-FPM/MariaDB/cron are active, Nginx
+configuration passes and fresh PHP/application error counts are zero. The private
+deployment stage was removed. No social post, Instagram code, demo installation,
+installer, Stable catalogue or Git remote was changed.
+
+### 2026-09-17 — free Facebook Publisher marketplace preview published
+
+Published `Facebook Publisher` 0.2.0 as one free Plugin product across the managed
+`/extensions`, `/extensions/catalog` and `/extensions/catalog/plugin` collections,
+with its detail page at `/extensions/catalog/plugin/facebook-publisher`. The technical
+`Sense CMS Social Publishing` addon remains an installed dependency rather than a
+second marketplace product. Instagram remains outside this publication.
+
+The detail page accurately records the current release boundary: production acceptance
+has passed for an authorised Meta app account, but Meta Business Verification is still
+In review, Access Verification is unavailable until that completes, and Meta App Review
+is not complete. Consequently the catalogue identifies this as a Development Preview.
+No `plugin:facebook-publisher` entry was added to Distribution, so public download and
+the licence form remain unavailable. The page documents multiple Facebook Pages and
+Meta accounts, explicit per-post destination selection, encrypted installation tokens,
+the central App Secret boundary and the exclusion of personal profiles.
+
+Recovery is `/root/sensecms-backups/20260917T014950Z-facebook-extension`, containing
+the pre-change database dump, exact content journal, operator publication script,
+catalogue source, HTTP acceptance test and SHA-256 inventory. The scoped rollback is
+`publish-facebook-extension.php <production-root> --rollback <backup>`; it restores
+the three original listing documents, archives the new detail page and detaches then
+archives only the Facebook shared section. Two earlier attempts stopped before content
+mutation during backup preparation; their temporary stages and incomplete backups,
+including transient database option files, were removed.
+
+Validation passed PHP lint, `git diff --check`, all 468 local theme/website checks and
+20 production marketplace GET/HEAD routes. Production contains 14 marketplace products,
+six free tiers and nine Plugin cards, with exactly one Facebook card in each intended
+collection. Direct checks confirm the Facebook Distribution offer is absent. Desktop
+and 390 px browser QA showed the published detail and marketplace card without horizontal
+overflow; the mobile document width remained within the viewport. Nginx configuration
+passes, Nginx/PHP-FPM/MariaDB/cron are active, and fresh application and priority 0..3
+service errors are zero. No Core/schema/package, social connection, post, Instagram,
+demo, installer or Git remote was changed.

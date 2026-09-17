@@ -1,18 +1,81 @@
 # Package contract v1
 
+## Core release checks and the Update page
+
+The official `/update` page displays only Stable Core releases and notes directly
+below its hero. No Stable release is currently approved;
+the reviewed website-only inventory `.src/core-releases.json` is deliberately empty.
+Adding a row is an explicit release-promotion operation and requires completed release
+gates, an immutable accepted artifact and reviewed notes. This feature does not
+publish archives, bypass download licensing or implement automatic Core installation.
+
+`GET /api/updates/v1/catalog` serves a bounded Ed25519 envelope with schema 1,
+product `Sense CMS`, channel `stable`, integer issued/expiry times and at most 50
+release rows. Each row has an exact three-component version, release timestamp,
+minimum PHP version, plain-text notes and the fixed official `/update` URL.
+Unknown row fields, duplicate/prerelease versions, expired/future metadata, wrong
+product/channel/key and invalid signatures fail closed. Clients reject older signed
+issuance than their retained catalogue. TLS, fixed host/path, public DNS pinning,
+disabled proxy/redirects, 64 KiB response limit and timeouts constrain transport.
+Requests contain no installation key, account, domain or content. Public metadata
+does not grant download entitlement.
+
+Provision `<installation>/storage/update-trust.json` with `{"public_key":"<base64
+Ed25519 public key>"}` through the operator's independent trust channel. Verify its
+fingerprint against the official publisher out of band; do not take trust from an
+archive, response envelope or another project's runtime. No signing secret is copied
+to customer Core, the theme, public webroot or installer. The official site uses its
+existing independently verified publisher key; its private signing key stays root-only.
+
+`php scripts/check-updates.php` runs as the installation's PHP user, with a valid
+local Core licence, canonical runtime and provisioned public trust. Schedule it
+hourly using installation-specific paths; the supplied production cron is only for
+www.sensecms.com. Successful checks are due every six hours, failed checks back off
+one hour, manual checks have a one-minute cooldown and a nonblocking per-installation
+lock prevents duplicate work. The administration notification endpoint provides the
+same due-check fallback when cron is unavailable. A failed/expired check never means
+"up to date" and suppresses unverified update notifications. Newer verified Stable
+versions appear in the existing notifications dropdown for `system.manage` users;
+no email, Telegram message, subscription or automatic installation is triggered.
+
+The official root cron refreshes the signature/24-hour validity of the **same reviewed
+inventory** every six hours with `scripts/publish-core-releases.php`. PHP-FPM can read
+the signed envelope but cannot read the publisher secret. Watch worker exit status
+and `/system/update` for failures. Source recovery must preserve newer business data;
+stop the relevant cron before removing a feature's files and restore previous Nginx,
+theme pointer and exact source from the deployment backup when required.
+
+The website does not connect to customer installations or receive their versions.
+The former popup, cross-window sharing and login-return bridge were removed at the
+user's request. Manual checks remain inside each installation's `/system/update`
+panel, protected by `system.manage` and CSRF; automatic checks/notifications remain.
+
+Tests: `tests/core-releases.php`, `tests/system-update.cjs`,
+`tests/update-website.cjs`, plus guarded MariaDB maintenance/Workspace and theme suites.
+`tests/update-http.py` is an operator-only acceptance check for the exact official
+production installation; it authenticates the existing owner without outputting
+credentials, checks public/panel/API behavior, never installs Core, and logs out.
+
 ## Prepared development packages
 
-The current complete source inventory contains `addon:calendar` 0.1.0,
-`theme:sensecms` 0.3.8, `plugin:google-analytics` 0.1.1 and
-`plugin:google-calendar` 0.1.0, `plugin:microsoft-365-calendar` 0.1.0 and
-`plugin:apple-calendar` 0.1.0.
+The current source and official distribution inventory contains `addon:calendar` 1.0.0,
+`theme:sensecms` 1.0.0, `plugin:telegram-notifications` 1.0.0,
+`plugin:google-analytics` 0.1.2 and `plugin:google-calendar`,
+`plugin:microsoft-365-calendar`, `plugin:apple-calendar` 0.1.1.
+All seven signed packages support Core >=0.1.0 <2.0.0. Calendar integrations likewise
+support Calendar >=0.1.0 <2.0.0, allowing dependency-safe transition before Core changes.
+Version numbers do not by themselves promote the development channel to Stable.
+External analytics/calendar delivery remains unverified on real provider accounts.
 No standalone module implementation is ready to release yet.
 Signed ZIPs are prepared privately in `.cms/releases/packages-20260907/`, including
 an independently signed `release-set.json`, `release-set.sig` and `SHA256SUMS`.
 These are development artifacts, not a public Stable release or anonymous downloads.
 Free/paid assignments follow the approved Eduvixo catalogue mapping described below.
 The original private release set contains theme 0.3.2; it is retained unchanged.
-The current distribution archive is separately signed from theme 0.3.8 source.
+The accepted 2026-09-13 set is retained privately at
+`/root/sense-release-1.0-eDoxsJCH/packages`. Official downloads point to those exact
+accepted bytes. Only theme 1.0.0 is retained in the installed theme list; older signed
+themes remain outside runtime in operator recovery backups, not public offers.
 
 To prepare all implemented packages, set `SENSE_PACKAGE_SIGNING_KEY_FILE` to the
 protected publisher key and run `php scripts/build-packages.php <new-directory>`.
@@ -24,9 +87,16 @@ This operator tool does not enable distribution or modify an installed website.
 
 `tests/package-release.php <release-directory> <trusted-public-keys.json>` runs on
 private Linux/MariaDB QA, verifies the actual signed artifacts and installs both
-into a disposable database/application directory. It checks custom calendar
+into a disposable database/application directory. It checks all seven packages, custom calendar
 categories, data-preserving uninstall/reinstall, theme activation and public rendering.
 The generated QA database and application directory are removed afterward.
+`tests/release-transition.php <old-archives> <new-set> <independent-trust.json>` tests
+the exact old/new signed packages on another disposable database, preserves fixture
+data, upgrades dependent plugins before Calendar, then moves Core to 1.0.0. Recovery
+first restores Core 0.1.0, then Calendar before its older dependants, and restores
+the old theme. Directly rolling back an incompatible old archive on Core 1.0 fails
+closed. The verified production operation is pinned in `scripts/deploy-release-1.0.py`;
+it is a historical one-shot, not an updater to rerun on an already upgraded site.
 `tests/workspace-migration.php` separately covers update, rollback and migration
 failure recovery; its theme test versions follow the actual source version.
 
@@ -269,10 +339,20 @@ the prospective complete dependency graph, including existing dependants, detect
 cycles and returns dependency-first identities. Reinstalling the same version and
 downgrading are rejected; explicit rollback is a separate future lifecycle action.
 
-The archive verification and planning layers are implemented. Theme-only staging,
-activation and rollback are also implemented below. General module/plugin lifecycle,
-database migration ownership, uninstall and the admin package-management UI remain
-subsequent layers and are not claimed complete by this contract.
+Archive verification/planning and theme staging, activation and rollback are
+implemented. PackageManager also implements plugin/add-on installation, activation,
+rollback and uninstall, with the migration/data-preservation constraints described
+above. General independently installable **module** runtime/lifecycle is not yet
+implemented; manifest support alone does not constitute runtime support.
+
+The administration's Core sections tab lists built-in page-builder components, not
+installable module packages. Themes limit their supported sections; the official
+product theme supports text, custom HTML and contact forms. Builder presets use
+generic EN/KM/ZH starter copy and no old theme-specific images. Legacy component
+keys such as `admissions` and `programs` remain stable while their visible names are
+Process steps and Services. Blank required media is permitted in starter presets,
+but normal save validation still requires users to supply it. Saved content and
+third-party component identities are never rewritten to match new defaults.
 
 ## Theme lifecycle
 

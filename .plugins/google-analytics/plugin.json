@@ -1,11 +1,11 @@
 {
   "name": "Google Analytics",
   "slug": "google-analytics",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Opt-in GA4 analytics for published CMS pages, with visitor consent and configuration inside the Sense CMS panel.",
-  "compatible_engine_version": "^0.1",
+  "compatible_engine_version": ">=0.1.0 <2.0.0",
   "dependencies": [],
   "permissions": [],
   "icon": "chart-line",

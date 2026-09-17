@@ -15,7 +15,7 @@
     <section class="sensecms-login-brand">
         <img src="/assets/logo.svg" alt="SenseCMS">
         <h1>Secure foundations for every learning community.</h1>
-        <p>Activate this installation to open the SenseCMS workspace and publish your school experience.</p>
+        <p>Activate this installation to open the SenseCMS workspace and publish your website.</p>
         <small>Education CMS · Licensed distribution</small>
     </section>
     <section class="sensecms-login-panel">

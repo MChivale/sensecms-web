@@ -24,7 +24,12 @@ final class AiRepository
         return array_column($statement->fetchAll(), 'content');
     }
 
-    public function conversation(string $id, string $locale): void { $statement = $this->db->prepare('INSERT IGNORE INTO ai_conversations (id,locale,channel,status,created_at,updated_at) VALUES (?, ?, "ai", "open", NOW(), NOW())'); $statement->execute([$id, $locale]); }
+    public function conversation(string $id, string $locale, ?string $ip = null): void
+    {
+        $ip = IpCountry::ip($ip);
+        $statement = $this->db->prepare('INSERT IGNORE INTO ai_conversations (id,locale,visitor_ip,visitor_country,channel,status,created_at,updated_at) VALUES (?, ?, ?, ?, "ai", "open", NOW(), NOW())');
+        $statement->execute([$id, $locale, $ip, IpCountry::lookup($ip)]);
+    }
     public function setVisitorName(string $conversation, string $name): void { $this->db->prepare('UPDATE ai_conversations SET visitor_name = ? WHERE id = ? AND (visitor_name IS NULL OR visitor_name = "")')->execute([$name, $conversation]); }
     public function message(string $conversation, string $role, string $content, ?string $provider = null): void { $statement = $this->db->prepare('INSERT INTO ai_messages (conversation_id,role,content,provider_slug,created_at) VALUES (?,?,?,?,NOW())'); $statement->execute([$conversation, $role, $content, $provider]); $this->db->prepare('UPDATE ai_conversations SET updated_at = NOW() WHERE id = ?')->execute([$conversation]); }
 
@@ -67,6 +72,7 @@ final class AiRepository
         $statement->execute($parameters);
         $conversation = $statement->fetch();
         if (!$conversation) return null;
+        if ($userId === null) unset($conversation['visitor_ip'], $conversation['visitor_country']);
         $messages = $this->db->prepare("SELECT m.id, m.role, m.content, m.created_at, COALESCE(mu.name, IF(m.role = 'agent', u.name, NULL)) AS agent_name FROM ai_messages m LEFT JOIN users mu ON mu.id = m.user_id LEFT JOIN users u ON u.id = ? WHERE m.conversation_id = ? ORDER BY m.id");
         $messages->execute([$conversation['assigned_user_id'], $id]);
         $conversation['messages'] = $messages->fetchAll();
@@ -75,7 +81,7 @@ final class AiRepository
 
     public function queuedConversations(int $userId): array
     {
-        $statement = $this->db->prepare("SELECT c.id, c.locale, c.visitor_name, c.visitor_email, c.assigned_team_id, c.assigned_user_id, c.created_at, c.updated_at, t.name AS team_name, (SELECT m.content FROM ai_messages m WHERE m.conversation_id = c.id AND m.role = 'visitor' ORDER BY m.id DESC LIMIT 1) AS preview FROM ai_conversations c LEFT JOIN live_chat_teams t ON t.id = c.assigned_team_id WHERE c.status = 'queued' AND " . $this->accessSql('c') . ' ORDER BY c.updated_at ASC LIMIT 20');
+        $statement = $this->db->prepare("SELECT c.id, c.locale, c.visitor_name, c.visitor_email, c.visitor_ip, c.visitor_country, c.assigned_team_id, c.assigned_user_id, c.created_at, c.updated_at, t.name AS team_name, (SELECT m.content FROM ai_messages m WHERE m.conversation_id = c.id AND m.role = 'visitor' ORDER BY m.id DESC LIMIT 1) AS preview FROM ai_conversations c LEFT JOIN live_chat_teams t ON t.id = c.assigned_team_id WHERE c.status = 'queued' AND " . $this->accessSql('c') . ' ORDER BY c.updated_at ASC LIMIT 20');
         $statement->execute([$userId, $userId]);
         return $statement->fetchAll();
     }
@@ -237,7 +243,7 @@ final class AiRepository
             $this->db->prepare('DELETE FROM live_chat_reads WHERE conversation_id = ?')->execute([$conversation]);
             $this->db->prepare('DELETE FROM live_chat_transfers WHERE conversation_id = ?')->execute([$conversation]);
             $this->db->prepare('DELETE FROM ai_messages WHERE conversation_id = ?')->execute([$conversation]);
-            $statement = $this->db->prepare("UPDATE ai_conversations SET visitor_name = NULL, visitor_email = NULL, channel = 'human', status = 'closed', assigned_user_id = NULL, assigned_team_id = NULL, updated_at = NOW() WHERE id = ?");
+            $statement = $this->db->prepare("UPDATE ai_conversations SET visitor_name = NULL, visitor_email = NULL, visitor_ip = NULL, visitor_country = NULL, channel = 'human', status = 'closed', assigned_user_id = NULL, assigned_team_id = NULL, updated_at = NOW() WHERE id = ?");
             $statement->execute([$conversation]);
             $this->db->commit();
             return true;

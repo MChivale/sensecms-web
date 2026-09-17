@@ -10,11 +10,11 @@ final class AiChatService
 {
     public function __construct(private readonly AiRepository $repository, private readonly Secrets $secrets, private readonly ?CmsRepository $cms = null) {}
 
-    public function reply(string $message, string $locale, string $conversation, string $visitorName = '', bool $forceHuman = false): array
+    public function reply(string $message, string $locale, string $conversation, string $visitorName = '', bool $forceHuman = false, ?string $visitorIp = null): array
     {
         $message = trim($message);
         if ($message === '' || mb_strlen($message) > 2000) throw new RuntimeException('Please enter a message up to 2,000 characters.');
-        $this->repository->conversation($conversation, $locale);
+        $this->repository->conversation($conversation, $locale, $visitorIp);
         $state = $this->repository->conversationStatus($conversation);
         if (($state['status'] ?? '') === 'closed') throw new RuntimeException('This conversation has ended. Start a new chat to continue.');
         $visitorName = trim($visitorName);
@@ -57,8 +57,8 @@ final class AiChatService
     }
     private function openAi(array $provider, string $key, string $message, array $context): string
     {
-        $knowledge = $context ? "\n\nUse only this school knowledge when it helps. If it does not answer the question, say so briefly and offer a human handoff:\n" . implode("\n---\n", $context) : '';
-        $payload = json_encode(['model' => $provider['default_model'], 'messages' => [['role' => 'system', 'content' => 'You are a helpful, concise school assistant. Never invent facts, fees, policies, dates, or admissions availability.' . $knowledge], ['role' => 'user', 'content' => $message]], 'temperature' => 0.2, 'max_tokens' => 400], JSON_THROW_ON_ERROR);
+        $knowledge = $context ? "\n\nUse only this website knowledge when it helps. If it does not answer the question, say so briefly and offer a human handoff:\n" . implode("\n---\n", $context) : '';
+        $payload = json_encode(['model' => $provider['default_model'], 'messages' => [['role' => 'system', 'content' => 'You are a helpful, concise website assistant. Never invent facts, fees, policies, dates, or service availability.' . $knowledge], ['role' => 'user', 'content' => $message]], 'temperature' => 0.2, 'max_tokens' => 400], JSON_THROW_ON_ERROR);
         $context = stream_context_create(['http' => ['method' => 'POST', 'header' => "Content-Type: application/json\r\nAuthorization: Bearer {$key}\r\n", 'content' => $payload, 'timeout' => 20, 'ignore_errors' => true]]);
         $raw = @file_get_contents(rtrim((string) $provider['base_url'], '/') . '/chat/completions', false, $context);
         $json = is_string($raw) ? json_decode($raw, true) : null;

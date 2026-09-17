@@ -17,7 +17,7 @@ $definitions = array_replace([
             ['key'=>'primary_label','type'=>'text','label'=>'Primary action label','max'=>100], ['key'=>'primary_url','type'=>'url','label'=>'Primary action URL'],
             ['key'=>'secondary_label','type'=>'text','label'=>'Secondary action label','max'=>100], ['key'=>'secondary_url','type'=>'url','label'=>'Secondary action URL'],
         ],
-        'defaults' => ['media_type'=>'image','image'=>'/theme-assets/sensecms/images/sensecms-hero.webp','mobile_image'=>'','video'=>'','poster'=>'/theme-assets/sensecms/images/sensecms-hero.webp','focus_x'=>'center','focus_y'=>'center','image_alt'=>'Our school community','eyebrow'=>'Our learning community','title'=>'A confident start for every learner.','text'=>'A welcoming trilingual school community where children grow with curiosity, character and purpose.','primary_label'=>'Discover our school','primary_url'=>'#programs','secondary_label'=>'Book a visit','secondary_url'=>'#contact'],
+        'defaults' => ['media_type'=>'image','image'=>'','mobile_image'=>'','video'=>'','poster'=>'','focus_x'=>'center','focus_y'=>'center','image_alt'=>'','eyebrow'=>'Welcome','title'=>'Introduce your work.','text'=>'Describe who you are, what you do and how visitors can get in touch.','primary_label'=>'Learn more','primary_url'=>'#programs','secondary_label'=>'Book a visit','secondary_url'=>'#contact'],
     ],
     'hero-slider' => [
         'label' => 'Hero Slider', 'description' => 'A multilingual image and video sequence with accessible controls.', 'icon' => 'gallery-horizontal-end', 'group' => 'SenseCMS essentials', 'singleton' => true,
@@ -37,30 +37,30 @@ $definitions = array_replace([
                 ['key'=>'secondary_label','type'=>'text','label'=>'Secondary action label','max'=>100], ['key'=>'secondary_url','type'=>'url','label'=>'Secondary action URL'],
             ],
         ]],
-        'defaults' => ['slides'=>[['media_type'=>'image','image'=>'/theme-assets/sensecms/images/sensecms-hero.webp','mobile_image'=>'','video'=>'','poster'=>'','focus_x'=>'center','focus_y'=>'center','alt'=>'Our school community','eyebrow'=>'Our learning community','title'=>'A confident start for every learner.','text'=>'A welcoming trilingual school community where children grow with curiosity, character and purpose.','primary_label'=>'Discover our school','primary_url'=>'#programs','secondary_label'=>'Book a visit','secondary_url'=>'#contact']]],
+        'defaults' => ['slides'=>[['media_type'=>'image','image'=>'','mobile_image'=>'','video'=>'','poster'=>'','focus_x'=>'center','focus_y'=>'center','alt'=>'','eyebrow'=>'Welcome','title'=>'Introduce your work.','text'=>'Describe who you are, what you do and how visitors can get in touch.','primary_label'=>'Learn more','primary_url'=>'#programs','secondary_label'=>'Book a visit','secondary_url'=>'#contact']]],
     ],
     'gallery' => [
-        'label'=>'Gallery','description'=>'A responsive image gallery for stories, facilities and school life.','icon'=>'images','group'=>'SenseCMS essentials',
+        'label'=>'Gallery','description'=>'A responsive image gallery for projects, places and team activities.','icon'=>'images','group'=>'SenseCMS essentials',
         'fields'=>[
             ['key'=>'eyebrow','type'=>'text','label'=>'Eyebrow','max'=>180], ['key'=>'title','type'=>'text','label'=>'Headline','required'=>true,'max'=>240,'wide'=>true], ['key'=>'text','type'=>'textarea','label'=>'Introduction','max'=>900,'wide'=>true],
             ['key'=>'items','type'=>'repeater','label'=>'Gallery images','item_label'=>'Image','min'=>1,'max'=>10,'fields'=>[['key'=>'image','type'=>'image','label'=>'Image','required'=>true,'wide'=>true],['key'=>'focus_x','type'=>'select','label'=>'Horizontal focal point','options'=>['center'=>'Center','left'=>'Left','right'=>'Right']],['key'=>'focus_y','type'=>'select','label'=>'Vertical focal point','options'=>['center'=>'Center','top'=>'Top','bottom'=>'Bottom']],['key'=>'alt','type'=>'text','label'=>'Alternative text','max'=>240,'wide'=>true],['key'=>'eyebrow','type'=>'text','label'=>'Caption eyebrow','max'=>100],['key'=>'title','type'=>'text','label'=>'Caption title','max'=>160]]],
         ],
-        'defaults'=>['eyebrow'=>'Life at our school','title'=>'Learning is active, shared and full of possibility.','text'=>'From discovery to teamwork, every day invites children to move, make friends and find confidence.','items'=>[
-            ['image'=>'/theme-assets/sensecms/images/sensecms-studio.webp','focus_x'=>'center','focus_y'=>'center','alt'=>'Students learning through play','eyebrow'=>'School life','title'=>'Joy in every day'],
-            ['image'=>'/theme-assets/sensecms/images/sensecms-facility.webp','focus_x'=>'center','focus_y'=>'center','alt'=>'Students taking part in an outdoor activity','eyebrow'=>'Discovery','title'=>'Time to explore'],
-            ['image'=>'/theme-assets/sensecms/images/sensecms-hero.webp','focus_x'=>'center','focus_y'=>'center','alt'=>'Our school learning community','eyebrow'=>'Community','title'=>'Better together'],
-            ['image'=>'/theme-assets/sensecms/images/sensecms-movement.webp','focus_x'=>'center','focus_y'=>'center','alt'=>'Students practising balance and movement outdoors','eyebrow'=>'Movement','title'=>'Energy and balance'],
-            ['image'=>'/theme-assets/sensecms/images/sensecms-creative-learning.webp','focus_x'=>'center','focus_y'=>'center','alt'=>'Students and a teacher creating a project together','eyebrow'=>'Creativity','title'=>'Ideas come to life'],
+        'defaults'=>['eyebrow'=>'Our gallery','title'=>'A closer look at our work.','text'=>'Choose images from your media library and add accurate captions.','items'=>[
+            ['image'=>'','focus_x'=>'center','focus_y'=>'center','alt'=>'','eyebrow'=>'Our work','title'=>'Joy in every day'],
+            ['image'=>'','focus_x'=>'center','focus_y'=>'center','alt'=>'','eyebrow'=>'Discovery','title'=>'Time to explore'],
+            ['image'=>'','focus_x'=>'center','focus_y'=>'center','alt'=>'','eyebrow'=>'Community','title'=>'Better together'],
+            ['image'=>'','focus_x'=>'center','focus_y'=>'center','alt'=>'','eyebrow'=>'Movement','title'=>'Energy and balance'],
+            ['image'=>'','focus_x'=>'center','focus_y'=>'center','alt'=>'','eyebrow'=>'Creativity','title'=>'Ideas come to life'],
         ]],
     ],
     'admissions' => [
-        'label'=>'Admissions','description'=>'A step-by-step admissions journey with a primary action.','icon'=>'route','group'=>'SenseCMS essentials','singleton'=>true,
+        'label'=>'Process steps','description'=>'A step-by-step process with a primary action.','icon'=>'route','group'=>'SenseCMS essentials','singleton'=>true,
         'fields'=>[
             ['key'=>'eyebrow','type'=>'text','label'=>'Eyebrow','max'=>180], ['key'=>'title','type'=>'text','label'=>'Headline','required'=>true,'max'=>240,'wide'=>true], ['key'=>'text','type'=>'textarea','label'=>'Introduction','max'=>1000,'wide'=>true],
-            ['key'=>'steps','type'=>'repeater','label'=>'Admissions steps','item_label'=>'Step','min'=>1,'max'=>6,'fields'=>[['key'=>'title','type'=>'text','label'=>'Title','required'=>true,'max'=>120],['key'=>'text','type'=>'textarea','label'=>'Description','max'=>700,'wide'=>true],['key'=>'label','type'=>'text','label'=>'Action label','max'=>80],['key'=>'url','type'=>'url','label'=>'Action URL']]],
+            ['key'=>'steps','type'=>'repeater','label'=>'Process steps','item_label'=>'Step','min'=>1,'max'=>6,'fields'=>[['key'=>'title','type'=>'text','label'=>'Title','required'=>true,'max'=>120],['key'=>'text','type'=>'textarea','label'=>'Description','max'=>700,'wide'=>true],['key'=>'label','type'=>'text','label'=>'Action label','max'=>80],['key'=>'url','type'=>'url','label'=>'Action URL']]],
             ['key'=>'cta_label','type'=>'text','label'=>'Primary action label','max'=>100], ['key'=>'cta_url','type'=>'url','label'=>'Primary action URL'],
         ],
-        'defaults'=>['eyebrow'=>'Admissions at our school','title'=>'A clear path to your child’s next chapter.','text'=>'Start with a conversation, experience the facility, then join a community where every learner is known.','steps'=>[['title'=>'Discover','text'=>'Explore our learning approach and the life of our school community.','label'=>'Take this step','url'=>'#programs'],['title'=>'Visit','text'=>'Meet our team, see the facility and ask the questions that matter to your family.','label'=>'Take this step','url'=>'#contact'],['title'=>'Join','text'=>'Take your next step with personalised guidance from our admissions team.','label'=>'Take this step','url'=>'#contact']],'cta_label'=>'Talk to admissions','cta_url'=>'#contact'],
+        'defaults'=>['eyebrow'=>'Getting started','title'=>'A clear path to your next step.','text'=>'Explain the steps visitors can take to work with your team.','steps'=>[['title'=>'Discover','text'=>'Explore our services and approach.','label'=>'Take this step','url'=>'#programs'],['title'=>'Visit','text'=>'Meet our team and discuss your questions.','label'=>'Take this step','url'=>'#contact'],['title'=>'Join','text'=>'Agree on the next steps with our team.','label'=>'Take this step','url'=>'#contact']],'cta_label'=>'Contact our team','cta_url'=>'#contact'],
     ],
     'contact-form' => [
         'label'=>'Contact Form','description'=>'A secure AJAX form with inbox storage, email notification and CAPTCHA.','icon'=>'mail-check','group'=>'Forms','singleton'=>false,

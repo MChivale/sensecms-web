@@ -189,7 +189,7 @@ final class PackageManager
     {
         $licenseKey=trim($licenseKey);LicenseClient::assertKey($licenseKey);
         $type=(string)($product['type']??'');$slug=(string)($product['slug']??'');$version=(string)($product['version']??'');$url=(string)($product['package_url']??'');$checksum=(string)($product['package_checksum']??'');
-        $this->assertIdentity($type,$slug);if(empty($product['installable'])||!$this->validVersion($version)||!preg_match('/^[a-f0-9]{64}$/D',$checksum))throw new RuntimeException('This official product is not installable in Base CMS.');
+        $this->assertIdentity($type,$slug);if(empty($product['installable'])||!$this->validVersion($version)||!preg_match('/^[a-f0-9]{64}$/D',$checksum))throw new RuntimeException('This official product is not installable in Sense CMS.');
         $base=rtrim((string)($this->marketplace['base_url']??''),'/');$installation=(string)($this->marketplace['installation_url']??'');if(!$this->validHttpsUrl($base)||!$this->validHttpsUrl($url)||!str_starts_with($url,$base.'/package/?id=')||!$this->validHttpsUrl($installation))throw new RuntimeException('Official Marketplace configuration is invalid.');
         $cms = require $this->root . '/config/product.php';
         $headers = Packages\Entitlement::headers($product, $licenseKey, $installation, $cms['license']);
@@ -359,7 +359,7 @@ final class PackageManager
     private function uninstallLocked(string$type,string$slug,int$userId):array
     {
         if ($type === 'theme') foreach ($this->themeManager()->releases() as $release) if ($release['slug'] === $slug) throw new RuntimeException('Signed theme releases are retained for recovery and cannot be removed through the legacy package lifecycle.');
-        $current=$this->package($type,$slug);if(!$current)throw new RuntimeException('Installed package was not found.');if(($current['source']??'')!=='package')throw new RuntimeException('Bundled Base CMS components cannot be uninstalled.');if($type==='theme'&&!empty($current['active']))throw new RuntimeException('Activate another presentation theme before uninstalling this one.');
+        $current=$this->package($type,$slug);if(!$current)throw new RuntimeException('Installed package was not found.');if(($current['source']??'')!=='package')throw new RuntimeException('Bundled Sense CMS components cannot be uninstalled.');if($type==='theme'&&!empty($current['active']))throw new RuntimeException('Activate another presentation theme before uninstalling this one.');
         foreach($this->packages()as$dependent){if($dependent['type']===$type&&$dependent['slug']===$slug)continue;foreach((array)($dependent['manifest']['dependencies']??[])as$dependency)if(($dependency['type']??'')===$type&&($dependency['slug']??'')===$slug)throw new RuntimeException($dependent['name'].' depends on this package and must be uninstalled first.');}
         $target=$this->target($type,$slug);if(!is_dir($target))throw new RuntimeException('Installed package files are unavailable.');$archive=$this->sourceArchive($current);$workRoot=$this->privateDirectory('work').'/'.bin2hex(random_bytes(12));if(!mkdir($workRoot,0700,true))throw new RuntimeException('Package removal workspace could not be created.');$oldPath=$workRoot.'/current';if(!rename($target,$oldPath))throw new RuntimeException('Package files could not be prepared for removal.');
         $committed = false;
@@ -382,12 +382,22 @@ final class PackageManager
 
     public function setActive(string $type, string $slug, bool $active, int $userId): void
     {
-        if ($type === 'theme') throw new RuntimeException('Themes are activated from the Themes workspace.');
-        $package = $this->package($type, $slug);
-        if (!$package) throw new RuntimeException('Installed package was not found.');
-        $this->syncRuntimeState($type, $slug, (string) $package['version'], $active);
-        $this->db->prepare('UPDATE extension_packages SET active=?,updated_at=NOW() WHERE type=? AND slug=?')->execute([$active ? 1 : 0, $type, $slug]);
-        $this->audit($userId, $active ? 'package.enabled' : 'package.disabled', 'package', $type . ':' . $slug, []);
+        $this->locked(function () use ($type, $slug, $active, $userId): array {
+            if ($type === 'theme') throw new RuntimeException('Themes are activated from the Themes workspace.');
+            $package = $this->package($type, $slug);
+            if (!$package) throw new RuntimeException('Installed package was not found.');
+            $this->db->beginTransaction();
+            try {
+                $this->syncRuntimeState($type, $slug, (string) $package['version'], $active);
+                $this->db->prepare('UPDATE extension_packages SET active=?,updated_at=NOW() WHERE type=? AND slug=?')->execute([$active ? 1 : 0, $type, $slug]);
+                $this->audit($userId, $active ? 'package.enabled' : 'package.disabled', 'package', $type . ':' . $slug, []);
+                $this->db->commit();
+            } catch (Throwable $error) {
+                if ($this->db->inTransaction()) $this->db->rollBack();
+                throw $error;
+            }
+            return [];
+        });
     }
 
     public function markThemeActive(string $slug): void
@@ -696,7 +706,9 @@ final class PackageManager
     {
         if ($type === 'plugin') {
             $this->db->prepare('INSERT INTO installed_plugins (slug,version,active,settings,installed_at) VALUES (?,?,?,JSON_OBJECT(),NOW()) ON DUPLICATE KEY UPDATE version=VALUES(version),active=VALUES(active)')->execute([$slug, $version, $active ? 1 : 0]);
-        } elseif ($type === 'theme') {
+            if ($slug !== 'forms') return;
+        }
+        if ($type === 'theme') {
             $this->db->prepare('INSERT INTO installed_themes (slug,version,active,settings,installed_at) VALUES (?,?,?,JSON_OBJECT(),NOW()) ON DUPLICATE KEY UPDATE version=VALUES(version),active=VALUES(active)')->execute([$slug, $version, $active ? 1 : 0]);
         } else {
             $statement = $this->db->prepare("SELECT value FROM settings WHERE `key`='extension_states' LIMIT 1");

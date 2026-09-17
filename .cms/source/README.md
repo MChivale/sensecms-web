@@ -1,4 +1,4 @@
-# Sense CMS — development installer 0.1.0
+# Sense CMS — Core 1.0.0 installation source
 
 This development candidate includes licensing-first installation, the initial owner
 console, the general-purpose Workspace source and its migration files, translations
@@ -28,6 +28,14 @@ HTTPS, route missing public paths to `public/index.php`, and pass HTTPS status t
 PHP-FPM. Nginx does not read `.htaccess`. The included Apache rules require
 mod_rewrite and AllowOverride support; a `public` document root remains preferred.
 Only `public/index.php` should execute as a web PHP script.
+
+Media limits: 8 MiB images, 80 MiB MP4, 20 MiB MP3/PDF; up to 10 files and
+95 MiB of files per library upload. Configure PHP `upload_max_filesize=80M` and
+`post_max_size=96M`, and the administration web-server request limit to 96 MiB
+(including multipart overhead). Keep at least 20 PHP `max_file_uploads` so requests
+above the application's 10-file limit can be rejected instead of silently truncated.
+Keep public forms at their smaller request limits. The official site's Nginx/FPM
+templates show scoped limits; do not replace another installation's host configuration.
 
 As the PHP runtime user, run:
 

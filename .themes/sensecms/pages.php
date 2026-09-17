@@ -40,6 +40,7 @@ $pages = [
         ['Before production', 'Verify private-file denial, certificate renewal, database recovery and fresh installation in a separate environment. Current development builds are not stable production releases.'],
     ]],
     '/download' => ['title' => 'Start with a verified release.', 'description' => 'Sense CMS release availability and the checks required before a public stable distribution.', 'kind' => 'download'],
+    '/update' => ['title'=>'Stay current. Stay in control.', 'description'=>'Explore the latest Stable Sense CMS releases, release notes and requirements.', 'kind'=>'managed', 'sections'=>[]],
     '/contact' => ['title' => 'Let’s talk about your project.', 'description' => 'Contact Sense CMS about the platform, licensing or a technical question.', 'kind' => 'contact'],
 ];
 

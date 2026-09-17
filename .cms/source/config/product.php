@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return [
     'name' => 'Sense CMS',
-    'core_version' => '0.1.0',
+    'core_version' => '1.0.0',
     'license' => [
         'endpoint' => 'https://www.chivale.com/license/',
         'product_name' => 'Sense CMS',

@@ -33,7 +33,7 @@ foreach ($inventory['products'] as $entry) {
     $assert(App\Core\Packages\Manifest::identity($manifest) === $entry['identity'] && $manifest['version'] === $entry['version'], 'Signed identity: ' . $entry['identity']);
     $archives[$entry['identity']] = [$path, $manifest];
 }
-$assert(count($archives) === 2 && isset($archives['addon:calendar'], $archives['theme:sensecms']), 'Both real project packages included');
+$assert(count($archives) === 7 && isset($archives['addon:calendar'], $archives['theme:sensecms'], $archives['plugin:google-analytics'], $archives['plugin:google-calendar'], $archives['plugin:apple-calendar'], $archives['plugin:microsoft-365-calendar'], $archives['plugin:telegram-notifications']), 'All seven real project packages included');
 $dbName = 'sensepkg_' . bin2hex(random_bytes(6));
 $testRoot = sys_get_temp_dir() . '/sense-release-' . bin2hex(random_bytes(12));
 $db = new PDO('mysql:unix_socket=/run/mysqld/mysqld.sock;charset=utf8mb4', 'root', '', [PDO::ATTR_ERRMODE=>PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE=>PDO::FETCH_ASSOC]);
@@ -47,7 +47,7 @@ try {
     (new App\Installer\WorkspaceMigration($db, $root))->apply();
     mkdir($testRoot . '/config', 0700, true);
     copy($root . '/config/product.php', $testRoot . '/config/product.php');
-    $manager = new App\Core\PackageManager($db, $testRoot, '0.1.0');
+    $manager = new App\Core\PackageManager($db, $testRoot, (require $root . '/config/product.php')['core_version']);
     foreach ($archives as [$path, $manifest]) {
         $id = $manifest['publisher']['key_id'];
         $manager->trustPublisher($id, $manifest['publisher']['name'], '', $encoded[$id], 1);
@@ -64,11 +64,18 @@ try {
     $category = $calendar->saveCategory(['slug'=>'release-check','name'=>'Release check','color'=>'#145cde','active'=>true], 1);
     $assert($category['slug'] === 'release-check', 'Installed calendar creates custom category');
     $before = $db->query('SELECT * FROM calendar_categories ORDER BY id')->fetchAll();
+    $dependants = ['google-calendar', 'microsoft-365-calendar', 'apple-calendar'];
+    foreach ($dependants as $slug) $manager->uninstall('plugin', $slug, 1);
     $manager->uninstall('addon', 'calendar', 1);
     $assert(!is_dir($testRoot . '/addons/calendar') && $before === $db->query('SELECT * FROM calendar_categories ORDER BY id')->fetchAll(), 'Uninstall preserves category data');
     $stage = $manager->stageLocalFile($archives['addon:calendar'][0], 1);
     $manager->install($stage['token'], 1);
     $assert($before === $db->query('SELECT * FROM calendar_categories ORDER BY id')->fetchAll(), 'Reinstall preserves category identities');
+    foreach ($dependants as $slug) {
+        $stage = $manager->stageLocalFile($archives['plugin:' . $slug][0], 1);
+        $manager->install($stage['token'], 1);
+        $assert($manager->package('plugin', $slug)['version'] === $archives['plugin:' . $slug][1]['version'], 'Dependent plugin reinstalls against current Calendar: ' . $slug);
+    }
     $themes = $manager->themeManager();
     $assert($themes->active() === null, 'Theme upload does not silently switch the site');
     $theme = array_values($themes->releases())[0];

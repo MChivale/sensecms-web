@@ -32,6 +32,7 @@ final class HtmlSanitizer
             $tag = strtolower($node->tagName);
             if (!in_array($tag, self::ALLOWED, true)) {
                 if (in_array($tag, ['script','style','iframe','object','embed','form','input','button','textarea','select','link','meta'], true)) { $parent->removeChild($node); continue; }
+                self::cleanChildren($node);
                 while ($node->firstChild) $parent->insertBefore($node->firstChild, $node);
                 $parent->removeChild($node); continue;
             }

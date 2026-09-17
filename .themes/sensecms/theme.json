@@ -2,7 +2,7 @@
   "contract_version": 1,
   "slug": "sensecms",
   "name": "Sense CMS product website",
-    "version": "0.3.8",
+  "version": "1.0.0",
   "release_channel": "development",
   "description": "Sense CMS website with facility-scoped, multilingual managed pages.",
   "page_templates": [{"key": "default", "label": "Standard page", "description": "Text and safe HTML sections in the product website layout."}, {"key": "home", "label": "Product homepage", "description": "Homepage hero from theme settings, followed by editable content sections."}, {"key": "product", "label": "Platform presentation", "description": "Full-width hero, workspace preview and editable capability sections."}],

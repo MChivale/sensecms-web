@@ -1,11 +1,11 @@
 {
   "name": "Telegram Notifications",
   "slug": "telegram-notifications",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Private system notifications through the shared Sense CMS bot. Users connect their own accounts with a one-time link. Calendar is optional.",
-  "compatible_engine_version": "^0.1",
+  "compatible_engine_version": ">=0.1.0 <2.0.0",
   "dependencies": [],
   "permissions": [],
   "icon": "send",

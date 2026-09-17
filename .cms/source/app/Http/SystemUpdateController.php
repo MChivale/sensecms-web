@@ -12,7 +12,9 @@ final class SystemUpdateController
     public function handle(string $method): never
     {
         $c=$this->context;
-        if(!$c->auth->check()){header('Location: /login',true,302);exit;}
+        if(!$c->auth->check()){
+            header('Location: /login',true,302);exit;
+        }
         $c->access->assert('system.manage');
         $service=new SystemUpdate($c->db,$c->root,$c->config);
         header('Cache-Control: no-store');
@@ -26,8 +28,8 @@ final class SystemUpdateController
                 elseif(($_POST['action']??'')==='install'){$c->access->assert('extensions.manage');$service->requestInstall((string)($_POST['version']??''),(int)$c->auth->id());}
                 else throw new RuntimeException('Unknown update action.');
             }
-            $state=$service->status();unset($state['products']);echo json_encode(['ok'=>true,'data'=>$state,'message'=>$method==='POST'?'Request queued. The worker will process it within a minute.':'Update status loaded.']);
-        }catch(Throwable $error){$safe=$error instanceof RuntimeException&&!$error instanceof \PDOException;http_response_code(in_array($error->getCode(),[403,419],true)?$error->getCode():422);echo json_encode(['ok'=>false,'message'=>$safe?$error->getMessage():'Update service requires review.']);}
+            $state=$service->status();unset($state['products']);echo json_encode(['ok'=>true,'data'=>$state,'message'=>'Update status loaded.']);
+        }catch(Throwable $error){$safe=$error instanceof RuntimeException&&!$error instanceof \PDOException;http_response_code(in_array($error->getCode(),[403,419,429,503],true)?$error->getCode():422);echo json_encode(['ok'=>false,'message'=>$safe?$error->getMessage():'Update service requires review.']);}
         exit;
     }
 }

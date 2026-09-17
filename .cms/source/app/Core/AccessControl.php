@@ -33,7 +33,8 @@ final class AccessControl
         if ($this->permissionCache !== null) return $this->permissionCache;
         $id = $this->userId();
         if (!$id) return $this->permissionCache = [];
-        if ($this->isDemoUser()) return $this->permissionCache = array_values(array_map('strval', $this->db->query('SELECT slug FROM permissions ORDER BY slug')->fetchAll(PDO::FETCH_COLUMN)));
+        // Demo has full presentation access, but never the writable Owner capability.
+        if ($this->isDemoUser()) return $this->permissionCache = $this->db->query("SELECT slug FROM permissions WHERE slug<>'system.owner' ORDER BY slug")->fetchAll(PDO::FETCH_COLUMN);
         $statement = $this->db->prepare('SELECT DISTINCT p.slug FROM permissions p INNER JOIN role_permissions rp ON rp.permission_id=p.id INNER JOIN roles r ON r.id=rp.role_id AND r.active=1 INNER JOIN user_roles ur ON ur.role_id=r.id WHERE ur.user_id=? ORDER BY p.slug');
         $statement->execute([$id]);
         return $this->permissionCache = array_values(array_map('strval', $statement->fetchAll(PDO::FETCH_COLUMN)));
@@ -56,6 +57,7 @@ final class AccessControl
 
     public function facilityIds(): ?array
     {
+        if ($this->isDemoUser()) return null;
         if ($this->facilityCache !== false) return $this->facilityCache;
         if (in_array('system.owner', $this->permissions(), true)) return $this->facilityCache = null;
         $statement = $this->db->prepare('SELECT facility_id FROM user_facilities WHERE user_id=? UNION SELECT tc.facility_id FROM team_facilities tc INNER JOIN live_chat_team_users tu ON tu.team_id=tc.team_id INNER JOIN live_chat_teams t ON t.id=tu.team_id AND t.active=1 WHERE tu.user_id=? ORDER BY facility_id');
@@ -162,7 +164,14 @@ final class AccessControl
 
     public function saveUser(array $input, int $actorId): int
     {
+        return $this->writeLocked(fn(): int => $this->saveUserLocked($input, $actorId));
+    }
+
+    private function saveUserLocked(array $input, int $actorId): int
+    {
+        $this->clear();
         $this->assert('users.manage');
+        if ($this->isDemoUser()) throw new RuntimeException('Demo User mode is read-only.', 403);
         $id = max(0, (int)($input['id'] ?? 0));
         $name = trim((string)($input['name'] ?? ''));
         $email = mb_strtolower(trim((string)($input['email'] ?? '')));
@@ -170,12 +179,19 @@ final class AccessControl
         $active = !empty($input['active']);
         $isDemo = !empty($input['is_demo']);
         $password = (string)($input['password'] ?? '');
+        if (!$this->allows('system.owner')) {
+            $existing = null;
+            if ($id) { $statement = $this->db->prepare('SELECT active,is_demo FROM users WHERE id=?'); $statement->execute([$id]); $existing = $statement->fetch(); }
+            if ($isDemo || !empty($existing['is_demo']) || ($existing ? (bool)$existing['active'] !== $active : $active)) throw new RuntimeException('Only Owner can enable or disable accounts and manage Demo User access.', 403);
+        }
         $roleValues = array_key_exists('role_id', $input) ? [(int)$input['role_id']] : array_slice((array)($input['role_ids'] ?? []), 0, 1);
         $roleIds = $this->validIds($roleValues, 'roles');
         $facilityIds = $this->validIds((array)($input['facility_ids'] ?? []), 'facilities');
         if (mb_strlen($name) < 2 || mb_strlen($name) > 120) throw new RuntimeException('Display name must contain 2 to 120 characters.');
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 190) throw new RuntimeException('Enter a valid e-mail address.');
         if (!$roleIds) throw new RuntimeException('Assign at least one role.');
+        $this->assertRoleScope($roleIds);
+        if ($id) $this->assertRoleScope($this->ids('SELECT role_id FROM user_roles WHERE user_id=?', $id));
         if ($password !== '' && (strlen($password) < 14 || strlen($password) > 200 || str_contains($password, "\0"))) throw new RuntimeException('The password must contain 14 to 200 characters.');
         $ownerRole = (int)($this->db->query("SELECT id FROM roles WHERE slug='owner'")->fetchColumn() ?: 0);
         if ($id && $this->isLastOwner($id) && (!$active || $isDemo || !in_array($ownerRole, $roleIds, true))) throw new RuntimeException('The final active writable Owner cannot be disabled, converted to Demo User or stripped of the Owner role.');
@@ -201,18 +217,32 @@ final class AccessControl
 
     public function saveRole(array $input, int $actorId): int
     {
+        return $this->writeLocked(fn(): int => $this->saveRoleLocked($input, $actorId));
+    }
+
+    private function saveRoleLocked(array $input, int $actorId): int
+    {
+        $this->clear();
         $this->assert('roles.manage');
+        if ($this->isDemoUser()) throw new RuntimeException('Demo User mode is read-only.', 403);
         $id = max(0, (int)($input['id'] ?? 0));
         $existing = $id ? $this->role($id) : null;
         if ($id && !$existing) throw new RuntimeException('The role was not found.');
         if ($existing && (string)$existing['slug'] === 'owner') throw new RuntimeException('The Owner role is protected and cannot be changed.');
         $name = mb_substr(trim((string)($input['name'] ?? '')),0,100);
         $slug = $this->slug((string)($input['slug'] ?? $name));
+        if ($slug === 'owner') throw new RuntimeException('The Owner role is protected and cannot be changed.');
         $description = mb_substr(trim((string)($input['description'] ?? '')),0,500);
         $color = preg_match('/^#[0-9a-f]{6}$/i',(string)($input['color']??'')) ? strtolower((string)$input['color']) : '#2563eb';
         $permissionIds = $this->validIds((array)($input['permission_ids'] ?? []),'permissions');
         if (mb_strlen($name) < 2) throw new RuntimeException('Role name must contain at least two characters.');
         if (!$permissionIds) throw new RuntimeException('Choose at least one permission.');
+        if ($id) $this->assertRoleScope([$id]);
+        if (!$this->allows('system.owner')) {
+            $statement = $this->db->prepare('SELECT slug FROM permissions WHERE id IN ('.implode(',', array_fill(0, count($permissionIds), '?')).')');
+            $statement->execute($permissionIds);
+            if (array_diff($statement->fetchAll(PDO::FETCH_COLUMN), $this->permissions())) throw new RuntimeException('You cannot grant permissions beyond your own access.', 403);
+        }
         $this->db->beginTransaction();
         try {
             if ($id) $this->db->prepare('UPDATE roles SET name=?,slug=?,description=?,color=?,active=?,updated_at=NOW() WHERE id=?')->execute([$name,$slug,$description ?: null,$color,!empty($input['active'])?1:0,$id]);
@@ -234,6 +264,31 @@ final class AccessControl
     public function auditRows(int $limit = 100): array
     {
         $limit=max(10,min(250,$limit));$statement=$this->db->prepare('SELECT a.*,COALESCE(u.name,"System") actor_name FROM activity_log a LEFT JOIN users u ON u.id=a.user_id ORDER BY a.id DESC LIMIT ?');$statement->bindValue(1,$limit,PDO::PARAM_INT);$statement->execute();$rows=$statement->fetchAll();foreach($rows as&$row){$context=json_decode((string)($row['context']??''),true);$row['context']=is_array($context)?$context:[];}unset($row);return$rows;
+    }
+
+    /** Include inactive roles: reactivation must not bypass the grant boundary. */
+    private function assertRoleScope(array $ids): void
+    {
+        if (!$ids || $this->allows('system.owner')) return;
+        $statement = $this->db->prepare('SELECT r.slug,p.slug permission FROM roles r LEFT JOIN role_permissions rp ON rp.role_id=r.id LEFT JOIN permissions p ON p.id=rp.permission_id WHERE r.id IN ('.implode(',', array_fill(0, count($ids), '?')).')');
+        $statement->execute($ids);
+        foreach ($statement->fetchAll() as $role) {
+            if ($role['slug'] === 'owner' || ($role['permission'] !== null && !in_array($role['permission'], $this->permissions(), true))) throw new RuntimeException('You cannot manage users or roles beyond your own access.', 403);
+        }
+    }
+
+    /** Serialize role grants and user edits before checking authority or final Owner. */
+    private function writeLocked(callable $action): int
+    {
+        // SQLite is used only by isolated in-memory regression fixtures.
+        if ($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'sqlite') return $action();
+        $schema = (string)$this->db->query('SELECT DATABASE()')->fetchColumn();
+        if ($schema === '' || $this->db->inTransaction()) throw new RuntimeException('Access changes require a dedicated database operation.');
+        $lock = 'sense-access-' . substr(hash('sha256', $schema), 0, 40);
+        $statement = $this->db->prepare('SELECT GET_LOCK(?,0)'); $statement->execute([$lock]);
+        if ((int)$statement->fetchColumn() !== 1) throw new RuntimeException('Access settings are being changed. Try again shortly.', 409);
+        try { return $action(); }
+        finally { $this->db->prepare('SELECT RELEASE_LOCK(?)')->execute([$lock]); }
     }
 
     private function permissionFor(string $method,string $path):?string

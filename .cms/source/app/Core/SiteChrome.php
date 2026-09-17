@@ -29,36 +29,36 @@ final class SiteChrome
     public static function defaults(): array
     {
         $english = [
-            'utility_text' => 'A connected learning community',
+            'utility_text' => 'Stay connected with our team',
             'utility_contact_label' => 'Contact',
             'utility_contact_url' => 'mailto:{{email}}',
-            'header_cta_label' => 'Admissions',
+            'header_cta_label' => 'Contact us',
             'header_cta_url' => '#contact',
-            'footer_description' => 'A connected learning community where every learner is known, supported and encouraged to grow with confidence.',
+            'footer_description' => 'Discover our work, services and latest updates. Get in touch with our team.',
             'footer_directions_label' => 'Get directions',
             'footer_directions_url' => '{{map_url}}',
             'footer_explore_title' => 'Explore',
             'footer_connect_title' => 'Connect',
-            'copyright_line_1' => '© {{year}} {{school}}.',
+            'copyright_line_1' => '© {{year}} {{site_name}}.',
             'copyright_line_2' => 'All rights reserved.',
         ];
         return ['localized' => [
             'en' => $english,
             'km' => array_replace($english, [
-                'utility_text' => 'សហគមន៍សិក្សាដែលភ្ជាប់គ្នា',
+                'utility_text' => 'រក្សាទំនាក់ទំនងជាមួយក្រុមការងាររបស់យើង',
                 'utility_contact_label' => 'ទំនាក់ទំនង',
-                'header_cta_label' => 'ការចុះឈ្មោះ',
-                'footer_description' => 'សហគមន៍សិក្សាដែលសិស្សគ្រប់រូបត្រូវបានស្គាល់ គាំទ្រ និងលើកទឹកចិត្តឱ្យរីកចម្រើនដោយទំនុកចិត្ត។',
+                'header_cta_label' => 'ទំនាក់ទំនង',
+                'footer_description' => 'ស្វែងយល់អំពីការងារ សេវាកម្ម និងព័ត៌មានថ្មីៗរបស់យើង។ ទាក់ទងក្រុមការងាររបស់យើង។',
                 'footer_directions_label' => 'ទទួលទិសដៅ',
                 'footer_explore_title' => 'ស្វែងយល់',
                 'footer_connect_title' => 'ទំនាក់ទំនង',
                 'copyright_line_2' => 'រក្សាសិទ្ធិគ្រប់យ៉ាង។',
             ]),
             'zh' => array_replace($english, [
-                'utility_text' => '互联的学习社区',
+                'utility_text' => '与我们的团队保持联系',
                 'utility_contact_label' => '联系我们',
-                'header_cta_label' => '入学申请',
-                'footer_description' => '一个关注、支持并鼓励每位学习者自信成长的互联学习社区。',
+                'header_cta_label' => '联系我们',
+                'footer_description' => '了解我们的工作、服务和最新动态，欢迎联系我们的团队。',
                 'footer_directions_label' => '获取路线',
                 'footer_explore_title' => '探索',
                 'footer_connect_title' => '联系',
@@ -105,7 +105,8 @@ final class SiteChrome
         }
         $tokens = [
             '{{year}}' => date('Y'),
-            '{{school}}' => trim((string) ($profile['name'] ?? 'SenseCMS School')),
+            '{{school}}' => trim((string) ($profile['name'] ?? 'Sense CMS')), // Legacy saved templates.
+            '{{site_name}}' => trim((string) ($profile['name'] ?? 'Sense CMS')),
             '{{email}}' => trim((string) ($profile['email'] ?? '')),
             '{{map_url}}' => $mapUrl,
         ];

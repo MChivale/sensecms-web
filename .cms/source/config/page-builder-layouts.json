@@ -58,21 +58,21 @@
             }
         ],
         "defaults": {
-            "eyebrow": "A shared ambition",
-            "title": "Every learner belongs in the story.",
-            "text": "We bring together languages, cultures and thoughtful teaching so every child can grow with confidence.",
+            "eyebrow": "Our story",
+            "title": "Introduce the people behind your work.",
+            "text": "Describe your background, purpose and approach.",
             "cta_label": "Discover our approach",
             "cta_url": "#programs",
-            "statement": "Every learner. Every possibility.",
-            "stamp_title": "our school",
-            "stamp_text": "A place to grow boldly"
+            "statement": "A shared purpose.",
+            "stamp_title": "Our team",
+            "stamp_text": "Our approach"
         }
     },
     "values": {
         "label": "Values",
         "description": "Three-value editorial feature with supporting facility image.",
         "icon": "sparkles",
-        "group": "Learning",
+        "group": "Content",
         "singleton": true,
         "fields": [
             {
@@ -158,36 +158,36 @@
             }
         ],
         "defaults": {
-            "eyebrow": "What makes our school different",
-            "title": "A school day with purpose in every detail.",
-            "text": "Children are supported to learn deeply, connect generously and take their next step with confidence.",
+            "eyebrow": "Our values",
+            "title": "What matters in our work.",
+            "text": "Describe the principles that guide your team.",
             "cta_label": "Arrange a visit",
             "cta_url": "#contact",
-            "image": "/theme-assets/sensecms/images/sensecms-facility.webp",
-            "image_alt": "Students together at our school",
+            "image": "",
+            "image_alt": "",
             "focus_x": "center",
             "focus_y": "center",
             "items": [
                 {
-                    "title": "Curiosity",
-                    "text": "Questions are the beginning of meaningful learning."
+                    "title": "Purpose",
+                    "text": "Explain what your work aims to achieve."
+                },
+                {
+                    "title": "Collaboration",
+                    "text": "Describe how your team works together."
                 },
                 {
                     "title": "Care",
-                    "text": "Belonging, wellbeing and respectful relationships matter."
-                },
-                {
-                    "title": "Confidence",
-                    "text": "Every learner is seen, challenged and encouraged."
+                    "text": "Explain how you support the people you work with."
                 }
             ]
         }
     },
     "programs": {
-        "label": "Learning pathways",
-        "description": "Programme cards with an optional supporting editorial note.",
-        "icon": "graduation-cap",
-        "group": "Learning",
+        "label": "Services",
+        "description": "Service cards with an optional supporting editorial note.",
+        "icon": "briefcase-business",
+        "group": "Content",
         "fields": [
             {
                 "key": "eyebrow",
@@ -296,44 +296,44 @@
             }
         ],
         "defaults": {
-            "eyebrow": "Learning at our school",
-            "title": "Three languages. One shared ambition.",
-            "text": "Thoughtfully connected experiences help each learner find a way forward.",
+            "eyebrow": "What we offer",
+            "title": "Explore our services.",
+            "text": "Introduce the services or areas of work available to your visitors.",
             "items": [
                 {
-                    "title": "Early Years",
-                    "text": "Playful foundations for confident learning.",
-                    "label": "Explore",
+                    "title": "Service one",
+                    "text": "Describe this service and who it is for.",
+                    "label": "Learn more",
                     "url": "#contact"
                 },
                 {
-                    "title": "Primary",
-                    "text": "Connected knowledge, character and curiosity.",
-                    "label": "Explore",
+                    "title": "Service two",
+                    "text": "Describe this service and who it is for.",
+                    "label": "Learn more",
                     "url": "#contact"
                 },
                 {
-                    "title": "Languages",
-                    "text": "English, Chinese and Khmer in daily learning.",
-                    "label": "Explore",
+                    "title": "Service three",
+                    "text": "Describe this service and who it is for.",
+                    "label": "Learn more",
                     "url": "#contact"
                 }
             ],
-            "note_image": "/theme-assets/sensecms/images/sensecms-hero.webp",
+            "note_image": "",
             "note_focus_x": "center",
             "note_focus_y": "center",
-            "note_eyebrow": "A connected community",
-            "note_title": "Learning is more than a lesson.",
-            "note_text": "Our children are encouraged to ask, collaborate and discover who they can become.",
-            "note_label": "Meet our school",
+            "note_eyebrow": "Our approach",
+            "note_title": "Find the right next step.",
+            "note_text": "Explain how visitors can discuss their needs with your team.",
+            "note_label": "Meet our team",
             "note_url": "#contact"
         }
     },
     "statistics": {
         "label": "Highlights",
-        "description": "Image-led school highlights with concise value statements.",
+        "description": "Image-led highlights with concise facts or value statements.",
         "icon": "chart-no-axes-combined",
-        "group": "Learning",
+        "group": "Content",
         "fields": [
             {
                 "key": "eyebrow",
@@ -420,33 +420,33 @@
             }
         ],
         "defaults": {
-            "eyebrow": "Reasons to grow with our school",
-            "title": "Built around every learner.",
-            "text": "Our school community gives children space to explore, a sense of belonging and the confidence to move forward.",
-            "image": "/theme-assets/sensecms/images/sensecms-facility.webp",
-            "image_alt": "Students taking part in a school activity",
+            "eyebrow": "Highlights",
+            "title": "Share the facts that matter.",
+            "text": "Add verified figures or highlights about your work before publishing.",
+            "image": "",
+            "image_alt": "",
             "focus_x": "center",
             "focus_y": "center",
-            "stage_eyebrow": "A learning community",
-            "stage_title": "Every day opens a new possibility.",
+            "stage_eyebrow": "Our work",
+            "stage_title": "Progress in perspective.",
             "items": [
                 {
-                    "value": "3",
-                    "label": "languages woven through every school day"
+                    "value": "—",
+                    "label": "Add a verified figure"
                 },
                 {
-                    "value": "Every",
-                    "label": "learner known, supported and challenged"
+                    "value": "—",
+                    "label": "Add a verified figure"
                 },
                 {
-                    "value": "Together",
-                    "label": "one connected learning community"
+                    "value": "—",
+                    "label": "Add a verified figure"
                 }
             ]
         }
     },
     "motion": {
-        "label": "Facility in motion",
+        "label": "Video feature",
         "description": "Video-led editorial section with playback control.",
         "icon": "circle-play",
         "group": "Media",
@@ -510,14 +510,14 @@
             }
         ],
         "defaults": {
-            "eyebrow": "Facility in motion",
-            "title": "See a day at our school unfold.",
-            "text": "A short glimpse of the energy, connection and purposeful learning that shape our facility every day.",
+            "eyebrow": "In motion",
+            "title": "Show your work in action.",
+            "text": "Introduce a video about your team, projects or services.",
             "video": "",
-            "poster": "/theme-assets/sensecms/images/sensecms-facility.webp",
+            "poster": "",
             "poster_focus_x": "center",
             "poster_focus_y": "center",
-            "cta_label": "Explore school life",
+            "cta_label": "Explore our work",
             "cta_url": "#moments"
         }
     },
@@ -552,8 +552,8 @@
         ],
         "defaults": {
             "eyebrow": "What’s new",
-            "title": "Stories from our community.",
-            "text": "Read the latest news, learning moments and community updates from our school."
+            "title": "Latest stories and updates.",
+            "text": "Read our latest news, project stories and announcements."
         }
     },
     "cta": {
@@ -627,15 +627,15 @@
             }
         ],
         "defaults": {
-            "eyebrow": "Our learning community",
-            "title": "Begin your family’s school journey.",
-            "text": "Meet our team and experience the school in person.",
-            "cta_label": "Talk to admissions",
+            "eyebrow": "Get in touch",
+            "title": "Let’s discuss your next step.",
+            "text": "Contact our team to discuss your questions or project.",
+            "cta_label": "Contact our team",
             "cta_url": "#contact",
             "panel_eyebrow": "Your next step",
-            "panel_title": "Come and see our school in action.",
-            "panel_text": "Meet the people and places that make our school community feel like home.",
-            "panel_label": "Email admissions",
+            "panel_title": "Start a conversation.",
+            "panel_text": "Tell us what you need and how we can help.",
+            "panel_label": "Contact us",
             "panel_url": "#contact"
         }
     },
@@ -751,11 +751,11 @@
             }
         ],
         "defaults": {
-            "eyebrow": "Discover our school",
-            "title": "A place for every learner.",
+            "eyebrow": "Our work",
+            "title": "Tell your story.",
             "text": "Use this section to pair an important story with a strong visual.",
-            "image": "/theme-assets/sensecms/images/sensecms-facility.webp",
-            "image_alt": "Our school community",
+            "image": "",
+            "image_alt": "",
             "focus_x": "center",
             "focus_y": "center",
             "cta_label": "Learn more",

@@ -68,7 +68,7 @@ $publicSearch = new PublicSearchController($cms, $facilities, $config);
 $publicFacilities = new PublicFacilityController($facilities,$cms,$config);
 $aiRepository = new AiRepository($db);
 $dashboard = new DashboardController($auth, $access, $workflow, $media, $surveys, $cms, $facilities, $themes, $plugins, $addons, $packages, $marketplaceGovernance, $consoleSearch, $aiRepository, $license, new App\Core\SystemUpdate($db,$root,$config),$emailSystem);
-$aiChat = new AiChatController(new AiChatService($aiRepository, new Secrets($config['secrets_key']), $cms));
+$aiChat = new AiChatController(new AiChatService($aiRepository, new Secrets($config['secrets_key']), $cms), $cms);
 $liveChat = new LiveChatController($auth, $aiRepository);
 $login = new AuthController($auth, $cms, (string) $config['base_url'], (array) ($config['demo'] ?? []),$emailSystem);
 $licenseController = new LicenseController($auth, $license, $config, $cms);
@@ -85,7 +85,7 @@ if ($path==='/system/notifications' && in_array($method,['GET','POST'],true)) (n
 if ($path==='/api/telegram-connection' && in_array($method,['GET','POST'],true)) (new App\Http\TelegramConnectionController(new ExtensionContext($db,$auth,$access,$dashboard,$config,$root)))->handle($method);
 if ($path==='/api/web-push' && in_array($method,['GET','POST'],true)) (new App\Http\WebPushController(new ExtensionContext($db,$auth,$access,$dashboard,$config,$root)))->handle($method);
 $extensionRuntime = new ExtensionRuntime($db, $root);
-if ($extensionRuntime->dispatch($method, $path, new ExtensionContext($db, $auth, $access, $dashboard, $config, $root))) exit;
+if ($extensionRuntime->dispatch($method, $path, new ExtensionContext($db, $auth, $access, $dashboard, $config, $root, $events))) exit;
 
 if ($method === 'GET' && $path === '/dashboard') $dashboard->dashboard();
 if ($method === 'GET' && $path === '/profile') $dashboard->profile();
@@ -241,6 +241,7 @@ if ($method === 'POST' && preg_match('#^/api/operator/conversations/([a-f0-9-]{3
 if ($method === 'GET' && $path === '/license') $dashboard->license();
 if ($method === 'POST' && $path === '/license') $licenseController->upload();
 if ($method === 'POST' && $path === '/system/license/hosting-credit') $dashboard->saveHostingCredit();
+if ($method === 'POST' && $path === '/api/chat/message') $aiChat->reply(true);
 if ($method === 'POST' && $path === '/api/ai/chat') {
     $forceHuman = false;
     try { (new AiLicenseService('https://www.chivale.com/license/', $root . '/storage/license/ai-status.json'))->validate((string) getenv('AI_CHAT_LICENSE_KEY'), $config['base_url']); }

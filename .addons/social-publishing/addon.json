@@ -1,0 +1,38 @@
+{
+  "name": "Sense CMS Social Publishing",
+  "slug": "social-publishing",
+  "version": "0.2.0",
+  "author": "QUANT Software House Limited",
+  "type": "addon",
+  "description": "Review-first publishing of Sense CMS posts through independently installed social network connectors, with an idempotent queue, retries and delivery history.",
+  "compatible_engine_version": ">=1.0.0 <2.0.0",
+  "dependencies": [],
+  "permissions": ["social.view", "social.publish", "social.settings.manage"],
+  "runtime": "runtime.php",
+  "navigation": {
+    "label": "Social Publishing",
+    "url": "/social-publishing",
+    "icon": "send",
+    "permission": "social.view"
+  },
+  "config_url": "/social-publishing",
+  "icon": "send",
+  "group": "Content distribution",
+  "release_channel": "development",
+  "changelog": [
+    {"version": "0.2.0", "summary": "Support multiple independently selected social destinations per provider, post and delivery history."},
+    {"version": "0.1.2", "summary": "Align the Social Publishing workspace, delivery overview and provider cards with the Sense CMS administration design system."},
+    {"version": "0.1.1", "summary": "Run the delivery worker through the canonical installation runtime and private workspace configuration."},
+    {"version": "0.1.0", "summary": "Provider-neutral post targets, encrypted connections, idempotent delivery queue, editor controls and worker."}
+  ],
+  "routes": [
+    "/social-publishing",
+    "/api/social-publishing/editor",
+    "/api/social-publishing/deliveries",
+    "/api/social-publishing/deliveries/{id}/retry"
+  ],
+  "migrations": [
+    {"id": "social-publishing-0.1.0", "up": "migrations/up.sql", "down": "migrations/down.sql"},
+    {"id": "social-publishing-0.2.0-multi-connections", "up": "migrations/multi-connections-up.sql", "down": "migrations/multi-connections-down.sql"}
+  ]
+}
