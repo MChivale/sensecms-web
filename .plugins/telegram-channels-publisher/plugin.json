@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Telegram Channels Publisher",
   "slug": "telegram-channels-publisher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Publishes reviewed Sense CMS posts to connected Telegram channels through the official Sense CMS bot.",
@@ -34,6 +34,7 @@
     "/social-publishing/telegram-channels/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.1.1", "summary": "Fix channel verification by initializing the full Sense CMS workspace configuration context."},
     {"version": "0.1.0", "summary": "Connect multiple Telegram channels through the official Sense CMS bot and publish reviewed posts with broker-side idempotency."}
   ]
 }

@@ -3935,3 +3935,33 @@ versioned CSS, editor contract, unauthenticated broker rejection, the public Ext
 listing/detail page, real separate-licence download and cross-product refusals all
 passed. Nginx/PHP-FPM/MariaDB/cron, Nginx syntax, desktop visual review and fresh-error
 checks passed. No Telegram channel was connected and no Telegram post was published.
+
+### 2026-09-18 — Telegram Channels Publisher 0.1.1 connection hotfix
+
+The first real channel connection attempt exposed a provider bootstrap defect rather
+than a Telegram permission failure. Production warnings showed that `provider.php`
+required `config/workspace.php` without the `$installed`, `$root` and `$baseUrl`
+variables expected by that configuration contract, so execution stopped before the
+broker asked Telegram about the channel. Version 0.1.1 now initializes the same full
+workspace context used by the established social providers. The console flash renderer
+also gives `flash_type=error` its danger colour and icon instead of presenting the same
+error text in a contradictory green success banner.
+
+The exact signed 0.1.1 ZIP SHA-256 is
+`a3841fb2b7db858aeb14fadb9f988a0a91b9d1594f842134c17d25cdc9a81050`;
+the 0.1.0 artifact remains immutable. The first guarded attempt passed the package,
+data-preservation and production provider-initialization checks, then rolled back
+completely because the private test stage omitted `.src/package-catalog.php`. Its
+receipt is retained under
+`/root/sensecms-backups/20260918T071036Z-telegram-channels-publisher-011`.
+The corrected deployment recovery set is
+`/root/sensecms-backups/20260918T071158Z-telegram-channels-publisher-011`.
+
+Production now has signed Telegram Channels Publisher 0.1.1 active and offers the
+same separately licensed USD 15/year package. Existing social connection, target and
+delivery fingerprints were unchanged. Exact deployed source hashes match locally;
+provider construction using the live workspace configuration, the authenticated panel,
+versioned asset, worker, marketplace routes, separate paid download, cross-product
+refusals, service health, Nginx syntax and fresh-error checks passed. No Telegram post
+was sent. A real channel must be resubmitted by the logged-in owner to complete the
+external Telegram permission acceptance after this fix.

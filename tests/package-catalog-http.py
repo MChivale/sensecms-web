@@ -79,7 +79,7 @@ assert 'Sense CMS Mastodon Publisher Plugin' in mastodon and 'Mastodon Publisher
 assert 'start date and expiry date' in mastodon and 'Multiple accounts and servers' in mastodon
 assert '<code>read:accounts</code>' in mastodon and '<code>write:statuses</code>' in mastodon
 telegram = bodies['/extensions/catalog/plugin/telegram-channels-publisher']
-assert 'USD 15 / year' in telegram and 'Development Preview 0.1.0' in telegram
+assert 'USD 15 / year' in telegram and 'Development Preview 0.1.1' in telegram
 assert 'Sense CMS Telegram Channels Plugin' in telegram and 'Telegram Channels Plugin' in telegram
 assert 'start date and expiry date' in telegram and 'Multiple channels' in telegram
 assert '@SenseCMSBot' in telegram and '<code>post_messages</code>' in telegram

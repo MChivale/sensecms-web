@@ -4,6 +4,7 @@ $active = match ($screen) { 'dashboard' => '/dashboard', 'profile' => '/profile'
 $escape = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
 $can = static fn(string $permission): bool => in_array('system.owner',$accessPermissions??[],true)||in_array($permission,$accessPermissions??[],true);
 $statusClass = static fn(string $status): string => match ($status) { 'published', 'assigned' => 'bg-success/10 text-success', 'queued' => 'bg-warning/10 text-warning', 'draft', 'open' => 'bg-primary/10 text-primary', default => 'bg-default-150 text-default-600' };
+$flashStyle = match ($flashType ?? 'success') { 'error' => ['bg-danger/10 text-danger', 'circle-x'], 'warning' => ['bg-warning/10 text-warning', 'triangle-alert'], default => ['bg-success/10 text-success', 'circle-check'] };
 ?>
 <!doctype html>
 <html lang="en" data-theme="light" data-sidenav-color="light" data-sidenav-size="default">
@@ -103,7 +104,7 @@ $statusClass = static fn(string $status): string => match ($status) { 'published
         <main id="sensecms-main" tabindex="-1">
             <?php if ($isDemoUser ?? false): ?><aside class="sensecms-demo-notice" role="status"><span><i data-lucide="shield-check"></i></span><div><strong>Demo User - read-only session</strong><p>You can explore every area of SenseCMS. Changes, uploads, messages and other write operations are securely blocked.</p></div><i data-lucide="lock-keyhole"></i></aside><?php endif; ?>
             <div class="flex items-center md:justify-between flex-wrap gap-2 mb-4 print:hidden"><h4 class="text-default-900 text-lg font-semibold"><?= $escape($title) ?></h4><div class="md:flex hidden items-center gap-2 text-sm font-semibold"><a href="/dashboard" class="text-sm font-medium text-default-700">SenseCMS</a><i class="iconify tabler--chevron-right text-sm flex-shrink-0 text-default-500"></i><span class="text-sm font-medium text-default-700">Workspace</span><i class="iconify tabler--chevron-right text-sm flex-shrink-0 text-default-500"></i><span class="text-sm font-medium text-default-700" aria-current="page"><?= $escape($title) ?></span></div></div>
-            <?php if ($flash): ?><div class="mb-5 flex items-center gap-3 rounded-lg <?= ($flashType??'success')==='warning'?'bg-warning/10 text-warning':'bg-success/10 text-success' ?> px-4 py-3 text-sm"><i data-lucide="<?= ($flashType??'success')==='warning'?'triangle-alert':'circle-check' ?>" class="size-5"></i><?= $escape($flash) ?></div><?php endif; ?>
+            <?php if ($flash): ?><div class="mb-5 flex items-center gap-3 rounded-lg <?= $flashStyle[0] ?> px-4 py-3 text-sm"><i data-lucide="<?= $flashStyle[1] ?>" class="size-5"></i><?= $escape($flash) ?></div><?php endif; ?>
 
             <?php if ($screen === 'access-control'): ?>
                 <?php require __DIR__ . '/console-access-control.php'; ?>

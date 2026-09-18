@@ -18,9 +18,9 @@ status,body,_=request('/login');assert status==200;csrf=re.search(rb'name="csrf"
 try:
     status,overview,_=request('/social-publishing');assert status==200 and b'Telegram channel' in overview and b'0.2.2' in overview
     status,page,_=request('/social-publishing/telegram-channels');assert status==200;csrf=re.search(rb'name="csrf" value="([a-f0-9]{64})"',page)[1].decode()
-    for marker in (b'social-telegram-channels-page',b'name="channel"',b'https://t.me/SenseCMSBot?startchannel&amp;admin=post_messages',b'0.1.0'):assert marker in page,marker
+    for marker in (b'social-telegram-channels-page',b'name="channel"',b'https://t.me/SenseCMSBot?startchannel&amp;admin=post_messages',b'0.1.1'):assert marker in page,marker
     assert b'type="password"' not in page and b'bot token' in page.lower()
     status,body,_=request('/api/social-publishing/editor?post_id=0');provider=next(item for item in json.loads(body)['data']['providers'] if item['slug']=='telegram-channels-publisher');assert provider['max_message_length']==3800
-    status,css,headers=request('/extension-assets/plugin/telegram-channels-publisher/telegram-channels.css?v=0.1.0');assert status==200 and b'.telegram-bot-notice' in css and 'text/css' in headers.get_content_type()
+    status,css,headers=request('/extension-assets/plugin/telegram-channels-publisher/telegram-channels.css?v=0.1.1');assert status==200 and b'.telegram-bot-notice' in css and 'text/css' in headers.get_content_type()
 finally:request('/logout',{'csrf':csrf})
 print('PASS Production Telegram Channels workspace, assets and editor contract are healthy.')
