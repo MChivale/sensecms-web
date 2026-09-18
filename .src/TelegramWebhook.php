@@ -17,6 +17,8 @@ final class TelegramWebhook
                 '/api/telegram/v1/connect/disconnect'=>'disconnect',
                 '/api/telegram/v1/recipients'=>'recipients',
                 '/api/telegram/v1/deliver'=>'deliver',
+                '/api/telegram/v1/channels/verify'=>'channel-verify',
+                '/api/telegram/v1/channels/publish'=>'channel-publish',
                 default=>null,
             };
             if ($action===null) return [404,['ok'=>false]];

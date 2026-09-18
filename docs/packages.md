@@ -466,3 +466,25 @@ the canonical Sense CMS URL and a deterministic Mastodon `Idempotency-Key`. Vers
 0.1.1 pre-fills the editable server field with `mastodon.social` and deliberately
 targets public statuses within the standard 500-character limit;
 media upload, polls and non-public visibility are outside this release.
+
+## Telegram Channels Publisher 0.1.0 (development)
+
+The paid plugin is offered for **USD 15/year** and has an independent entitlement:
+ProductName `Sense CMS Telegram Channels Plugin`, ProductModel
+`Telegram Channels Plugin`, and fixed protocol ProductVersion `1.0`. Core and other
+extension keys do not authorize it; domain binding and licence validity dates remain
+independent of the signed package version.
+
+The plugin supports multiple public or private channels through the centrally managed
+`@SenseCMSBot`. Customers do not receive or store the bot token. An administrator adds
+the bot to each destination with only Telegram's `post_messages` channel permission,
+then connects the public `@username`/`t.me` address or numeric `-100...` channel ID.
+The central broker verifies the channel identity, bot membership and posting right
+before a connection is stored and again before each publication.
+
+Every delivery contains the reviewed message and canonical HTTPS post URL. Social
+Publishing 0.2.2 adds a stable key derived from provider, connection, post and target
+revision. The broker retains an encrypted delivery tombstone: exact retries return the
+original Telegram message identity, changed content is rejected and an ambiguous send
+is never repeated automatically. This initial release supports text and links only;
+media albums, polls, discussions and paid high-throughput broadcasts are out of scope.

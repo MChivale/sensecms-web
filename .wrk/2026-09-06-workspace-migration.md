@@ -3896,3 +3896,42 @@ Authenticated workspace/assets and SSRF rejection passed; the paid licence downl
 the exact 0.1.1 ZIP while Core and Bluesky keys remained rejected. The Extensions
 listing/detail page, 23 marketplace GET/HEAD routes, service health, Nginx syntax and
 fresh-error checks passed. No Mastodon post was published by deployment or validation.
+
+### 2026-09-18 — Telegram Channels Publisher 0.1.0 licensed and deployed
+
+Implemented `plugin:telegram-channels-publisher` 0.1.0 as a USD 15/year provider with
+the independent ProductName `Sense CMS Telegram Channels Plugin`, ProductModel
+`Telegram Channels Plugin` and fixed protocol ProductVersion `1.0`. It connects
+multiple public or private channels through the centrally managed `@SenseCMSBot`.
+Customers store no bot token; the broker verifies that the bot is a channel
+administrator with `post_messages` before saving and before publishing.
+
+Social Publishing 0.2.2 adds a deterministic delivery key bound to provider,
+connection, post and target revision. The central Telegram broker keeps encrypted
+sent/ambiguous tombstones, returns the original identity for an exact retry, rejects
+changed content and never repeats an ambiguous send automatically. The initial plugin
+publishes reviewed text plus the canonical HTTPS post link; media and paid Telegram
+high-throughput modes are not enabled.
+
+The exact signed SHA-256 values are
+`1841c826df1ad337b5168187427fede4b5015f1249cda5672cd2d14e115f5efa`
+for `addon:social-publishing` 0.2.2 and
+`def0f4abd1eb5bb34eb8c0304c32d036830a1878ff538fd0bf72b124cf6a62c0`
+for `plugin:telegram-channels-publisher` 0.1.0. Exact signed installation,
+dependency ordering, multiple-channel persistence and data-preserving removal/reinstall
+passed on an isolated MariaDB database.
+
+The first run stopped before production mutation because a Linux-only fixture correctly
+rejected broad test-file modes. A later attempt reached publication but could not
+traverse the private root staging path as the PHP runtime user; its automatic rollback
+restored broker, addon 0.2.1, Distribution and package absence. The successful guarded
+deployment recovery set is
+`/root/sensecms-backups/20260918T051443Z-telegram-channels-publisher-010`.
+
+Production now runs signed Social Publishing 0.2.2 and Telegram Channels Publisher
+0.1.0. Existing social connection, target and delivery fingerprints were preserved,
+there were zero due publications and the worker sent nothing. Authenticated workspace,
+versioned CSS, editor contract, unauthenticated broker rejection, the public Extensions
+listing/detail page, real separate-licence download and cross-product refusals all
+passed. Nginx/PHP-FPM/MariaDB/cron, Nginx syntax, desktop visual review and fresh-error
+checks passed. No Telegram channel was connected and no Telegram post was published.

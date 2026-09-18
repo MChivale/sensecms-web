@@ -34,7 +34,7 @@ final class TelegramBrokerService
 
     public function handle(string $action, #[\SensitiveParameter] array $server, array $input): array
     {
-        if (!in_array($action,['start','status','recipients','disconnect','deliver','webhook'],true)) throw new RuntimeException('Unknown Telegram action.',404);
+        if (!in_array($action,['start','status','recipients','disconnect','deliver','webhook','channel-verify','channel-publish'],true)) throw new RuntimeException('Unknown Telegram action.',404);
         if (strlen(json_encode($input,JSON_THROW_ON_ERROR))>65536) throw new RuntimeException('Telegram request is too large.',413);
         if (!$this->ready()) throw new RuntimeException('The Sense CMS Telegram bot is not configured.',503);
         // A single non-blocking operator lock serializes binding changes with delivery.
@@ -47,6 +47,7 @@ final class TelegramBrokerService
             if ($action==='webhook') return $this->webhook($server,$input);
             $domain = $this->authenticate($server);
             $this->rate($domain,120,60);
+            if ($action==='channel-verify'||$action==='channel-publish') return $this->channel($action,$domain,$input);
             if ($action==='recipients') return ['user_ids'=>array_map('intval',array_keys($this->read('bindings',$domain)['users']??[]))];
             $user = $this->user($input['user_id']??null);
             $subject = $domain . "\0" . $user;
@@ -143,6 +144,39 @@ final class TelegramBrokerService
             $record['status']='sent'; $this->write('deliveries',$identity,$record);
         } catch (\Throwable) { $record['status']='unknown'; $this->write('deliveries',$identity,$record); throw new RuntimeException('Telegram delivery requires review.',502); }
         return ['sent'=>true,'duplicate'=>false];
+    }
+
+    private function channel(string $action,string $domain,array $input): array
+    {
+        $reference=$this->channelReference($action==='channel-verify'?($input['channel']??null):($input['channel_id']??null));
+        $chat=$this->telegram('getChat',['chat_id'=>$reference]);$id=(string)($chat['id']??'');$title=trim((string)($chat['title']??''));$username=(string)($chat['username']??'');
+        if(($chat['type']??'')!=='channel'||!preg_match('/^-100[0-9]{6,16}$/D',$id)||$title===''||mb_strlen($title)>180||($username!==''&&!preg_match('/^[A-Za-z0-9_]{5,32}$/D',$username)))throw new RuntimeException('Telegram did not return a valid channel.',422);
+        if(str_starts_with($reference,'@')&&strcasecmp(substr($reference,1),$username)!==0)throw new RuntimeException('Telegram returned a different channel.',422);
+        $bot=(int)explode(':',(string)$this->config['bot_token'],2)[0];$member=$this->telegram('getChatMember',['chat_id'=>$id,'user_id'=>$bot]);
+        if((int)($member['user']['id']??0)!==$bot||($member['user']['is_bot']??null)!==true||($member['status']??'')!=='administrator'||($member['can_post_messages']??null)!==true)throw new RuntimeException('Add @'.$this->config['bot_username'].' as a channel administrator with permission to post messages.',422);
+        $result=['channel_id'=>$id,'title'=>$title,'username'=>$username,'bot_username'=>(string)$this->config['bot_username']];
+        if($action==='channel-verify')return$result;
+        $event=(string)($input['event_key']??'');$text=(string)($input['text']??'');
+        if(!preg_match('/^[a-f0-9]{64}$/D',$event)||trim($text)===''||mb_strlen($text)>4096||!mb_check_encoding($text,'UTF-8'))throw new RuntimeException('Invalid Telegram channel publication.',422);
+        $subject="channel\0".$domain."\0".$id."\0".$event;$digest=hash('sha256',$text);$prior=$this->read('deliveries',$subject);
+        if($prior){if(($prior['digest']??'')!==$digest)throw new RuntimeException('Publication identity has different content.',409);if(($prior['status']??'')==='sent')return$result+['message_id'=>(int)$prior['message_id'],'duplicate'=>true];throw new RuntimeException('Publication outcome requires review before retry.',409);}
+        $record=['status'=>'processing','digest'=>$digest,'created_at'=>time()];$this->write('deliveries',$subject,$record);
+        try{$message=$this->telegram('sendMessage',['chat_id'=>$id,'text'=>$text]);$messageId=$message['message_id']??null;if(!is_int($messageId)||$messageId<1||($message['chat']['type']??'')!=='channel'||(string)($message['chat']['id']??'')!==$id)throw new RuntimeException('Telegram did not confirm channel publication.',502);$record['status']='sent';$record['message_id']=$messageId;$this->write('deliveries',$subject,$record);}
+        catch(\Throwable){$record['status']='unknown';$this->write('deliveries',$subject,$record);throw new RuntimeException('Telegram channel publication requires review.',502);}
+        return$result+['message_id'=>$messageId,'duplicate'=>false];
+    }
+
+    private function channelReference(mixed $value): string
+    {
+        if(!is_string($value)&&!is_int($value))throw new RuntimeException('Enter a public channel username or numeric channel ID.',422);$value=trim((string)$value);
+        if(str_starts_with(strtolower($value),'https://t.me/')){$parts=parse_url($value);if(!is_array($parts)||strtolower((string)($parts['scheme']??''))!=='https'||strcasecmp((string)($parts['host']??''),'t.me')!==0||isset($parts['user'])||isset($parts['pass'])||isset($parts['port'])||isset($parts['query'])||isset($parts['fragment']))throw new RuntimeException('The Telegram channel address is invalid.',422);$value=ltrim((string)($parts['path']??''),'/');}
+        if(preg_match('/^-100[0-9]{6,16}$/D',$value))return$value;$value=ltrim($value,'@');if(!preg_match('/^[A-Za-z0-9_]{5,32}$/D',$value))throw new RuntimeException('Enter a public channel username, for example @sensecms.',422);return'@'.$value;
+    }
+
+    private function telegram(string $method,array $payload): array
+    {
+        if(!in_array($method,['getChat','getChatMember','sendMessage'],true))throw new RuntimeException('Unsupported Telegram operation.',503);[$status,$body]=($this->http)('https://api.telegram.org/bot'.$this->config['bot_token'].'/'.$method,['Content-Type: application/json','Accept: application/json'],json_encode($payload,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));$data=json_decode($body,true);$result=$data['result']??null;
+        if($status!==200||($data['ok']??null)!==true||!is_array($result))throw new RuntimeException($status===429?'Telegram temporarily limited channel operations.':'Telegram rejected the channel operation.',$status===429?429:502);return$result;
     }
 
     private function read(string $type,string $subject): array

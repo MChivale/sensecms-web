@@ -16,7 +16,7 @@ products = json.loads(subprocess.check_output([
     php, '-r', 'echo json_encode(require $argv[1]);',
     str(root / '.src/package-catalog.php'),
 ]))
-assert len(products) == 18 and sum(p['usd_year'] == 0 for p in products) == 8
+assert len(products) == 19 and sum(p['usd_year'] == 0 for p in products) == 8
 paths = ['/extensions/catalog']
 paths += ['/extensions/catalog/' + p['type'] + '/' + p['slug'] for p in products]
 paths += ['/extensions/catalog/' + t for t in ('theme', 'plugin', 'addon', 'module')]
@@ -33,10 +33,10 @@ for path in paths:
         assert res.status == 200 and not res.read(), path
 index = bodies[paths[0]]
 entry = bodies['/extensions']
-assert entry.count('data-market-item ') == 18 and 'marketplace-hero' in entry
+assert entry.count('data-market-item ') == 19 and 'marketplace-hero' in entry
 assert 'data-market-category="plugin"' in entry
 assert 'Browse packages →' not in entry
-assert index.count('data-market-item ') == 18
+assert index.count('data-market-item ') == 19
 assert 'data-market-filters hidden' in index and 'data-market-count' in index
 assert 'data-market-empty hidden' in index
 assert index.count('data-pricing="free"') == 8
@@ -78,7 +78,12 @@ assert 'USD 15 / year' in mastodon and 'Development Preview 0.1.1' in mastodon
 assert 'Sense CMS Mastodon Publisher Plugin' in mastodon and 'Mastodon Publisher Plugin' in mastodon
 assert 'start date and expiry date' in mastodon and 'Multiple accounts and servers' in mastodon
 assert '<code>read:accounts</code>' in mastodon and '<code>write:statuses</code>' in mastodon
+telegram = bodies['/extensions/catalog/plugin/telegram-channels-publisher']
+assert 'USD 15 / year' in telegram and 'Development Preview 0.1.0' in telegram
+assert 'Sense CMS Telegram Channels Plugin' in telegram and 'Telegram Channels Plugin' in telegram
+assert 'start date and expiry date' in telegram and 'Multiple channels' in telegram
+assert '@SenseCMSBot' in telegram and '<code>post_messages</code>' in telegram
 for path in ('/extensions', '/extensions/themes', '/extensions/plugins', '/extensions/addons', '/extensions/modules', '/download'):
     with urllib.request.urlopen(base + path, timeout=20) as res:
         assert 'href="/extensions/catalog' in res.read().decode(), path
-print('Passed: 23 marketplace GET/HEAD routes, direct /extensions catalogue, 18 product prices/licence policies and 6 entry links.')
+print('Passed: managed marketplace routes, direct /extensions catalogue, 19 product prices/licence policies and entry links.')

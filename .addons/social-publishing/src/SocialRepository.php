@@ -98,6 +98,7 @@ final class SocialRepository
         foreach ($statement->fetchAll() as $target) {
             $item = $payload;
             $item['message'] = trim((string)$target['message']) ?: $this->defaultMessage($payload);
+            $item['delivery_key'] = hash('sha256',(string)$target['plugin_slug']."\0".(string)$target['connection_id']."\0".$postId."\0".(string)$target['revision']);
             $json = json_encode($item, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
             $this->db->beginTransaction();
             try {
