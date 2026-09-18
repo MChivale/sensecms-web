@@ -488,3 +488,25 @@ revision. The broker retains an encrypted delivery tombstone: exact retries retu
 original Telegram message identity, changed content is rejected and an ambiguous send
 is never repeated automatically. This initial release supports text and links only;
 media albums, polls, discussions and paid high-throughput broadcasts are out of scope.
+
+## Pinterest Publisher 0.1.0 (development, access pending)
+
+The paid plugin is prepared for **USD 15/year** with an independent entitlement:
+ProductName `Sense CMS Pinterest Publisher Plugin`, ProductModel
+`Pinterest Publisher Plugin`, and fixed protocol ProductVersion `1.0`. Core and other
+extension keys do not authorize it; the canonical domain and licence validity dates
+are checked independently of the signed package version.
+
+The provider supports multiple Pinterest accounts and boards. The official Sense CMS
+broker requests only `boards:read`, `pins:read`, `pins:write` and
+`user_accounts:read`; the app secret remains on the official service. Installation
+access and rotating refresh credentials are encrypted inside each customer
+installation. An editor must explicitly select every board and may customize the
+description before publication.
+
+Version 0.1.0 creates standard image Pins from a public HTTPS featured image, title,
+reviewed description and canonical Sense CMS URL. Video Pins, shopping catalogues and
+advertising workflows are outside this release. The signed plugin is installed on the
+official site and the broker route fails closed while Pinterest Trial access remains
+pending. Public paid download and account connection stay closed until Pinterest
+approves the application and its secret is privately provisioned.

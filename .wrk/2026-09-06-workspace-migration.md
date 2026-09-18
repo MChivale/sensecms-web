@@ -3965,3 +3965,39 @@ versioned asset, worker, marketplace routes, separate paid download, cross-produ
 refusals, service health, Nginx syntax and fresh-error checks passed. No Telegram post
 was sent. A real channel must be resubmitted by the logged-in owner to complete the
 external Telegram permission acceptance after this fix.
+
+### 2026-09-18 — Pinterest Publisher 0.1.0 prepared and deployed pending access
+
+Implemented `plugin:pinterest-publisher` 0.1.0 as a separately licensed Social
+Publishing provider for USD 15/year. Its fixed licence identity is ProductName
+`Sense CMS Pinterest Publisher Plugin`, ProductModel `Pinterest Publisher Plugin`
+and protocol ProductVersion `1.0`. The supplied key was accepted live for
+`https://www.sensecms.com` with UTC validity from 2026-01-01 00:00:00 through
+2026-12-31 23:59:00. It remains only in ignored `.cfg/License.Pinterest.txt`.
+
+The provider connects multiple Pinterest accounts and boards through the official
+Sense CMS OAuth broker using `boards:read`, `pins:read`, `pins:write` and
+`user_accounts:read`. Continuous authorization uses rotating refresh credentials;
+the app secret remains on the official service and tenant credentials are encrypted
+inside each installation. Publishing requires a reviewed description, canonical
+HTTPS link and public HTTPS featured image. Video, catalogue and advertising flows
+are intentionally outside the initial release.
+
+Pinterest accepted the developer connect request for app ID 1613166 and reports
+`Trial access pending`. While review is pending it disables the app secret and
+Redirect URI controls. The private ignored `.cfg/Pinterest.txt` records the app ID,
+callback, scopes and pending state without inventing a secret. Production therefore
+returns a deliberate 503 from the broker; the paid distribution download and account
+connection remain closed until approval and private provisioning.
+
+The exact signed plugin ZIP SHA-256 is
+`39063393fcbadac39b07eab8ab809c95e24789e67ec3123a68d6057194ead534`.
+Broker and provider protocol suites passed 25 and 17 checks; the exact signed package
+lifecycle passed on isolated MariaDB. Production PackageManager installed the verified
+plugin while preserving exact connection, target and delivery fingerprints. Recovery
+is `/root/sensecms-backups/20260918T143656Z-pinterest-publisher-010`.
+
+Authenticated workspace/assets, public marketplace GET/HEAD, 20 product prices and
+licence policies, worker no-op, Nginx syntax and Nginx/PHP-FPM/MariaDB/cron health
+passed. Fresh service error count is zero; Pinterest has zero connections and zero due
+publications. No Pinterest account was connected and no social post was published.
