@@ -36,3 +36,4 @@ ALTER TABLE social_deliveries
     DROP INDEX social_delivery_revision,
     ADD UNIQUE KEY social_delivery_destination_revision (post_id, connection_id, target_revision),
     ADD INDEX social_delivery_connection (connection_id, created_at);
+

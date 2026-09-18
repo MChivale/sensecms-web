@@ -1,0 +1,42 @@
+{
+  "name": "Sense CMS Mastodon Publisher",
+  "slug": "mastodon-publisher",
+  "version": "0.1.1",
+  "author": "QUANT Software House Limited",
+  "type": "plugin",
+  "description": "Publishes reviewed Sense CMS posts to connected accounts on independent Mastodon servers.",
+  "compatible_engine_version": ">=1.0.0 <2.0.0",
+  "dependencies": [{"type": "addon", "slug": "social-publishing", "version": ">=0.2.1 <1.0.0"}],
+  "permissions": [],
+  "runtime": "runtime.php",
+  "config_url": "/social-publishing/mastodon",
+  "icon": "messages-square",
+  "group": "Content distribution",
+  "release_channel": "development",
+  "license": {
+    "model": "commercial-subscription",
+    "billing_period": "year",
+    "price": 15,
+    "currency": "USD",
+    "product_name": "Sense CMS Mastodon Publisher Plugin",
+    "product_model": "Mastodon Publisher Plugin",
+    "product_version": "1.0"
+  },
+  "social_publisher": {
+    "platform": "mastodon",
+    "label": "Mastodon account",
+    "handler": "src/provider.php",
+    "max_message_length": 400
+  },
+  "routes": [
+    "/social-publishing/mastodon",
+    "/social-publishing/mastodon/status",
+    "/social-publishing/mastodon/connect",
+    "/social-publishing/mastodon/callback",
+    "/social-publishing/mastodon/connections/{id}/disconnect"
+  ],
+  "changelog": [
+    {"version": "0.1.1", "summary": "Prefill mastodon.social as the default server while keeping the field editable for every public Mastodon instance."},
+    {"version": "0.1.0", "summary": "Connect multiple accounts across public Mastodon servers and publish reviewed link statuses through minimal-scope OAuth."}
+  ]
+}

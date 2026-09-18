@@ -63,7 +63,7 @@ $stats = [
                 </article>
             <?php endforeach; ?>
         </div>
-        <footer class="social-panel-footer"><i data-lucide="info"></i>Account tokens stay encrypted in this installation. The Meta App Secret remains on the official Sense CMS service.</footer>
+        <footer class="social-panel-footer"><i data-lucide="info"></i>Account tokens stay encrypted in this installation. Provider application secrets remain on the official Sense CMS service.</footer>
     </section>
 
     <section class="card social-panel social-history">

@@ -1,0 +1,33 @@
+{
+  "name": "Sense CMS X Publisher",
+  "slug": "x-publisher",
+  "version": "0.1.1",
+  "author": "QUANT Software House Limited",
+  "type": "plugin",
+  "description": "Publishes reviewed Sense CMS posts to connected X accounts through the X API v2.",
+  "compatible_engine_version": ">=1.0.0 <2.0.0",
+  "dependencies": [{"type": "addon", "slug": "social-publishing", "version": ">=0.2.1 <1.0.0"}],
+  "permissions": [],
+  "runtime": "runtime.php",
+  "config_url": "/social-publishing/x",
+  "icon": "twitter",
+  "group": "Content distribution",
+  "release_channel": "development",
+  "social_publisher": {
+    "platform": "x",
+    "label": "X account",
+    "handler": "src/provider.php",
+    "max_message_length": 250
+  },
+  "routes": [
+    "/social-publishing/x",
+    "/social-publishing/x/status",
+    "/social-publishing/x/connect",
+    "/social-publishing/x/callback",
+    "/social-publishing/x/connections/{id}/disconnect"
+  ],
+  "changelog": [
+    {"version": "0.1.1", "summary": "Close the OAuth window after return even when the provider has isolated it from the opener."},
+    {"version": "0.1.0", "summary": "Connect multiple X accounts with OAuth 2.0 PKCE and publish reviewed link posts through X API v2."}
+  ]
+}

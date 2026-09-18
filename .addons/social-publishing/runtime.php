@@ -26,8 +26,8 @@ return static function (string $method,string $path,ExtensionContext $context):b
     }
     if ($method==='GET' && preg_match('#^/content/posts(?:/\d+/edit|/new)?$#D',$path) && $context->auth->check() && $context->access->allows('social.publish')) {
         ob_start(static function(string $html):string {
-            $head='<link rel="stylesheet" href="/extension-assets/addon/social-publishing/social.css?v=0.2.0">';
-            $body='<script src="/extension-assets/addon/social-publishing/editor.js?v=0.2.0" defer></script>';
+            $head='<link rel="stylesheet" href="/extension-assets/addon/social-publishing/social.css?v=0.2.1">';
+            $body='<script src="/extension-assets/addon/social-publishing/editor.js?v=0.2.1" defer></script>';
             $html=str_replace('</head>',$head.'</head>',$html);
             return str_replace('</body>',$body.'</body>',$html);
         });

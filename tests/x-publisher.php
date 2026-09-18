@@ -1,0 +1,27 @@
+<?php
+declare(strict_types=1);
+
+namespace SenseCMS\X {
+    function curl_init(string$url):object{return(object)['url'=>$url,'options'=>[],'status'=>0];}
+    function curl_setopt_array(object$curl,array$options):bool{$curl->options=$options;return true;}
+    function curl_exec(object$curl):bool{$GLOBALS['x_requests'][]=$curl;$next=array_shift($GLOBALS['x_responses']);if(!$next)throw new \RuntimeException('Unexpected X request.');$curl->status=$next[0];$body=is_array($next[1])?json_encode($next[1]):$next[1];return($curl->options[CURLOPT_WRITEFUNCTION])($curl,$body)===strlen($body);}
+    function curl_error(object$curl):string{return'';}
+    function curl_getinfo(object$curl,int$kind):int{return$curl->status;}
+    function curl_close(object$curl):void{}
+}
+namespace {
+    $provider=require dirname(__DIR__).'/.plugins/x-publisher/src/provider.php';$checks=0;
+    function xCheck(bool$ok,string$label):void{global$checks;if(!$ok)throw new RuntimeException($label);$checks++;echo"PASS $label\n";}
+    function xRejects(callable$fn,string$label,?int$code=null):void{try{$fn();}catch(RuntimeException$error){xCheck($code===null||$error->getCode()===$code,$label);return;}throw new RuntimeException($label);}
+    function xResponses(array$items):void{$GLOBALS['x_responses']=$items;$GLOBALS['x_requests']=[];}
+    $render=static function(array$provider):string{$xProvider=$provider;$xOAuthRevision=3;$xOAuthOutcome='success';$csrf='fixture-csrf';ob_start();require dirname(__DIR__).'/.plugins/x-publisher/views/x.php';return(string)ob_get_clean();};
+    $disconnected=$render([]);xCheck(str_contains($disconnected,'action="/social-publishing/x/connect"')&&str_contains($disconnected,'data-x-connect'),'X OAuth connect exposes focused popup hook');xCheck(str_contains($disconnected,'data-x-oauth-modal')&&str_contains($disconnected,'aria-live="polite"'),'X OAuth progress dialog is accessible');
+    $connected=$render(['connections'=>[['id'=>7,'enabled'=>true,'display_name'=>'@SenseCMS','external_account_id'=>'123456789012345','last_verified_at'=>'now'],['id'=>8,'enabled'=>true,'display_name'=>'@Second','external_account_id'=>'987654321','last_verified_at'=>'later']]]);xCheck(str_contains($connected,'/social-publishing/x/connections/7/disconnect')&&str_contains($connected,'/social-publishing/x/connections/8/disconnect'),'each X account has an independent disconnect action');xCheck(substr_count($connected,'class="social-account-card"')===2&&str_contains($connected,'Add X account'),'X settings list multiple accounts and retain add action');
+    $popup=(string)file_get_contents(dirname(__DIR__).'/.plugins/x-publisher/assets/x.js');xCheck(str_contains($popup,"window.open('about:blank',popupName")&&str_contains($popup,"event.origin!==location.origin")&&str_contains($popup,"url.pathname!=='/api/social/x/v1/authorize'"),'X OAuth popup validates message origin and broker destination');xCheck(str_contains($popup,"if(window.name!==popupName)return false")&&str_contains($popup,'if(window.opener&&!window.opener.closed)')&&str_contains($popup,'window.close()'),'X OAuth popup closes after a provider-isolated return without requiring its opener');
+    $credentials=['user_id'=>'123456789012345','username'=>'SenseCMS','name'=>'Sense CMS','access_token'=>'access-'.str_repeat('a',40),'refresh_token'=>'refresh-'.str_repeat('r',40),'expires_at'=>time()+3600];$payload=['message'=>'A reviewed story','url'=>'https://example.test/en/posts/story','image_url'=>null];
+    xResponses([[200,['data'=>['id'=>'123456789012345','name'=>'Sense CMS','username'=>'SenseCMS']]]]);$verified=$provider->verify($credentials);xCheck($verified['external_id']==='123456789012345'&&$verified['display_name']==='@SenseCMS','X account identity verified');$request=$GLOBALS['x_requests'][0];xCheck($request->url==='https://api.x.com/2/users/me?user.fields=name%2Cusername'&&in_array('Authorization: Bearer '.$credentials['access_token'],$request->options[CURLOPT_HTTPHEADER],true),'X identity uses fixed endpoint and bearer token');
+    xResponses([[200,['data'=>['id'=>'1987654321098765','text'=>'A reviewed story']]]]);$published=$provider->publish($credentials,$payload);xCheck($published['external_id']==='1987654321098765'&&$published['external_url']==='https://x.com/SenseCMS/status/1987654321098765','X publication identity and canonical URL accepted');$request=$GLOBALS['x_requests'][0];$body=json_decode((string)$request->options[CURLOPT_POSTFIELDS],true);xCheck($request->url==='https://api.x.com/2/tweets'&&$body['text']==="A reviewed story\n\nhttps://example.test/en/posts/story",'X post contains reviewed message and canonical URL');
+    xResponses([]);xRejects(fn()=>$provider->publish(array_replace($credentials,['user_id'=>'bad']),$payload),'invalid X credentials rejected before network');xCheck(!$GLOBALS['x_requests'],'invalid X credentials send no request');xRejects(fn()=>$provider->publish($credentials,array_replace($payload,['url'=>'http://example.test/story'])),'non-HTTPS X destination rejected');
+    xResponses([[429,['title'=>'Too Many Requests']]]);xRejects(fn()=>$provider->publish($credentials,$payload),'X rate limit remains a failure',429);xResponses([[200,'not json']]);xRejects(fn()=>$provider->publish($credentials,$payload),'malformed X response rejected',502);xResponses([[200,['data'=>['id'=>'unsafe/id']]]]);xRejects(fn()=>$provider->publish($credentials,$payload),'unexpected X publication identity rejected');
+    echo"$checks X Publisher protocol checks passed; no live X requests.\n";
+}

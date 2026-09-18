@@ -110,14 +110,16 @@ foreach (require dirname(__DIR__) . '/.src/package-catalog.php' as $product) {
     $marketBlocks[] = ['type'=>'text','payload'=>['title'=>$product['name'],'text'=>'<p><strong>' . ($product['usd_year']===0?'Free':'USD '.$product['usd_year'].' / year') . '</strong></p><p>'.$product['description'].'</p><p>Not available yet</p>','cta_url'=>'/extensions/catalog/'.$product['type'].'/'.$product['slug'],'cta_label'=>'View package']];
 }
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog','blocks'=>$marketBlocks]);
-$assert(substr_count($market, 'data-market-item ')===14, 'marketplace presents all CMS products as cards');
+$assert(substr_count($market, 'data-market-item ')===18, 'marketplace presents all CMS products as cards');
 $entryMarket=$managed(['title'=>'Marketplace','public_path'=>'/extensions','blocks'=>$marketBlocks]);
-$assert(substr_count($entryMarket,'data-market-item ')===14 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
+$assert(substr_count($entryMarket,'data-market-item ')===18 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
 $assert(str_contains($entryMarket,'data-market-category="plugin"') && str_contains($entryMarket,'data-market-price="free"'), 'primary marketplace contains category and price chips');
 $assert(substr_count($entryMarket,'data-market-dialog ')===1 && str_contains($entryMarket,'aria-labelledby="market-dialog-title"'), 'marketplace provides one accessible inline details dialog');
-$assert(substr_count($entryMarket,'data-market-open href=')===28 && substr_count($entryMarket,'data-market-status hidden')===14, 'all product actions support dialogs with real no-JS detail links');
+$assert(substr_count($entryMarket,'data-market-open href=')===36 && substr_count($entryMarket,'data-market-status hidden')===18, 'all product actions support dialogs with real no-JS detail links');
 $assert(str_contains($entryMarket,'disabled>Download unavailable') && str_contains($entryMarket,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
-$assert(substr_count($market, 'data-pricing="free"')===6, 'marketplace retains six free product tiers');
+$assert(substr_count($market, 'data-pricing="free"')===8, 'marketplace retains eight free product tiers');
+$catalogProducts=require dirname(__DIR__) . '/.src/package-catalog.php';$bluesky=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='bluesky-publisher'))[0]??[];$assert(($bluesky['usd_year']??null)===15&&($bluesky['license']['product_name']??'')==='Sense CMS Bluesky Publisher Plugin'&&($bluesky['license']['product_model']??'')==='Bluesky Publisher Plugin','Bluesky marketplace entry keeps separate paid licence identity');
+$mastodon=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='mastodon-publisher'))[0]??[];$assert(($mastodon['usd_year']??null)===15&&($mastodon['license']['product_name']??'')==='Sense CMS Mastodon Publisher Plugin'&&($mastodon['license']['product_model']??'')==='Mastodon Publisher Plugin','Mastodon marketplace entry keeps separate paid licence identity');
 $assert(str_contains($market, 'data-market-filters hidden') && str_contains($market, 'data-market-count'), 'marketplace controls progressively enhance visible server-rendered cards');
 $assert(str_contains($market, 'USD 120 / year') && str_contains($market, 'Separate licence'), 'marketplace displays prices and entitlement labels');
 $marketBlocks[] = ['type'=>'text','payload'=>['title'=>'Editorial <unsafe>','text'=>'<p>Preserved editorial note</p><script>unsafe()</script>']];

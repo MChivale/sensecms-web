@@ -1,6 +1,7 @@
 """Read-only acceptance of the official website's managed package catalogue."""
 import json
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import urllib.request
@@ -9,11 +10,13 @@ base = sys.argv[1].rstrip('/')
 if base not in ('http://127.0.0.1:8873', 'https://www.sensecms.com'):
     raise SystemExit('Use the established QA or production website.')
 root = Path(__file__).resolve().parents[1]
+php = shutil.which('php8.5') or shutil.which('php')
+assert php, 'PHP CLI unavailable'
 products = json.loads(subprocess.check_output([
-    'php8.5', '-r', 'echo json_encode(require $argv[1]);',
+    php, '-r', 'echo json_encode(require $argv[1]);',
     str(root / '.src/package-catalog.php'),
 ]))
-assert len(products) == 14 and sum(p['usd_year'] == 0 for p in products) == 6
+assert len(products) == 18 and sum(p['usd_year'] == 0 for p in products) == 8
 paths = ['/extensions/catalog']
 paths += ['/extensions/catalog/' + p['type'] + '/' + p['slug'] for p in products]
 paths += ['/extensions/catalog/' + t for t in ('theme', 'plugin', 'addon', 'module')]
@@ -30,13 +33,13 @@ for path in paths:
         assert res.status == 200 and not res.read(), path
 index = bodies[paths[0]]
 entry = bodies['/extensions']
-assert entry.count('data-market-item ') == 14 and 'marketplace-hero' in entry
+assert entry.count('data-market-item ') == 18 and 'marketplace-hero' in entry
 assert 'data-market-category="plugin"' in entry
 assert 'Browse packages →' not in entry
-assert index.count('data-market-item ') == 14
+assert index.count('data-market-item ') == 18
 assert 'data-market-filters hidden' in index and 'data-market-count' in index
 assert 'data-market-empty hidden' in index
-assert index.count('data-pricing="free"') == 6
+assert index.count('data-pricing="free"') == 8
 for product in products:
     path = '/extensions/catalog/' + product['type'] + '/' + product['slug']
     assert 'href="' + path + '"' in index, path
@@ -45,7 +48,7 @@ for product in products:
     assert price in body, path
     if product['status'] == 'adaptation':
         assert 'not available' in body, path
-    elif product['slug'] == 'facebook-publisher':
+    elif product['slug'] in ('facebook-publisher', 'x-publisher', 'linkedin-publisher'):
         assert 'not open' in body, path
     else:
         assert 'available' in body or 'not open' in body, path
@@ -58,7 +61,24 @@ assert 'Development Preview' in facebook
 assert 'Meta Business Verification' in facebook and 'In review' in facebook
 assert 'Meta App Review' in facebook and 'not complete' in facebook
 assert 'Public package download is not open' in facebook
+x = bodies['/extensions/catalog/plugin/x-publisher']
+assert 'Development Preview' in x and 'OAuth 2.0' in x and 'PKCE' in x
+assert 'Public package download is not open' in x
+linkedin = bodies['/extensions/catalog/plugin/linkedin-publisher']
+assert 'Development Preview' in linkedin and 'member profiles' in linkedin
+assert 'Company Page publishing' in linkedin and 'Community Management API' in linkedin
+assert 'Public package download is not open' in linkedin
+bluesky = bodies['/extensions/catalog/plugin/bluesky-publisher']
+assert 'USD 15 / year' in bluesky and 'Development Preview 0.1.3' in bluesky
+assert 'Sense CMS Bluesky Publisher Plugin' in bluesky and 'Bluesky Publisher Plugin' in bluesky
+assert 'start date and expiry date' in bluesky and 'Multiple accounts' in bluesky
+assert 'create <code>app.bsky.feed.post</code>' in bluesky
+mastodon = bodies['/extensions/catalog/plugin/mastodon-publisher']
+assert 'USD 15 / year' in mastodon and 'Development Preview 0.1.1' in mastodon
+assert 'Sense CMS Mastodon Publisher Plugin' in mastodon and 'Mastodon Publisher Plugin' in mastodon
+assert 'start date and expiry date' in mastodon and 'Multiple accounts and servers' in mastodon
+assert '<code>read:accounts</code>' in mastodon and '<code>write:statuses</code>' in mastodon
 for path in ('/extensions', '/extensions/themes', '/extensions/plugins', '/extensions/addons', '/extensions/modules', '/download'):
     with urllib.request.urlopen(base + path, timeout=20) as res:
         assert 'href="/extensions/catalog' in res.read().decode(), path
-print('Passed: 20 marketplace GET/HEAD routes, direct /extensions catalogue, 14 product prices/licence policies and 6 entry links.')
+print('Passed: 23 marketplace GET/HEAD routes, direct /extensions catalogue, 18 product prices/licence policies and 6 entry links.')

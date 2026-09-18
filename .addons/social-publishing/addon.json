@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Social Publishing",
   "slug": "social-publishing",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "QUANT Software House Limited",
   "type": "addon",
   "description": "Review-first publishing of Sense CMS posts through independently installed social network connectors, with an idempotent queue, retries and delivery history.",
@@ -20,6 +20,7 @@
   "group": "Content distribution",
   "release_channel": "development",
   "changelog": [
+    {"version": "0.2.1", "summary": "Expose provider-specific message limits and safely persist rotated social credentials."},
     {"version": "0.2.0", "summary": "Support multiple independently selected social destinations per provider, post and delivery history."},
     {"version": "0.1.2", "summary": "Align the Social Publishing workspace, delivery overview and provider cards with the Sense CMS administration design system."},
     {"version": "0.1.1", "summary": "Run the delivery worker through the canonical installation runtime and private workspace configuration."},

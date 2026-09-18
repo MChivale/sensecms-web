@@ -39,12 +39,12 @@ assert status == 200 and json.loads(body)['ok']
 try:
     status, overview, _ = request('/social-publishing')
     assert status == 200
-    for marker in (b'sensecms-unified-workspace', b'social-publishing-stats', b'social-provider-identity', b'social-table-empty', b'0.2.0'):
+    for marker in (b'sensecms-unified-workspace', b'social-publishing-stats', b'social-provider-identity', b'social-table-empty', b'0.2.1'):
         assert marker in overview
     status, facebook, _ = request('/social-publishing/facebook')
     assert status == 200
     csrf = re.search(rb'name="csrf" value="([a-f0-9]{64})"', facebook)[1].decode()
-    for marker in (b'social-facebook-page', b'social-account-list', b'social-account-card', b'Add Facebook Page', b'social-steps', b'data-facebook-connected="1"', b'0.2.0'):
+    for marker in (b'social-facebook-page', b'social-account-list', b'social-account-card', b'Add Facebook Page', b'social-steps', b'data-facebook-connected="1"', b'0.2.1'):
         assert marker in facebook
     assert re.search(rb'action="/social-publishing/facebook/connections/\d+/disconnect"', facebook)
     status, body, _ = request('/social-publishing/facebook/status')
@@ -57,7 +57,7 @@ try:
     assert len(facebook_provider['connections']) == status_data['data']['connected_count']
     status, css, headers = request('/extension-assets/addon/social-publishing/social.css?v=0.2.0')
     assert status == 200 and b'.social-account-list' in css and 'text/css' in headers.get_content_type()
-    status, script, headers = request('/extension-assets/plugin/facebook-publisher/facebook.js?v=0.2.0')
+    status, script, headers = request('/extension-assets/plugin/facebook-publisher/facebook.js?v=0.2.1')
     assert status == 200 and b'facebookOauthRevision' in script and 'javascript' in headers.get_content_type()
 finally:
     request('/logout', {'csrf': csrf})

@@ -405,3 +405,64 @@ replay and ambiguous-send duplication. Cleanup shares the broker lock, skips sym
 and never sends messages. Binding removal uses explicit disconnect; tombstone retention
 must not be shortened without a reviewed replay policy. Back up private service state
 before maintenance changes. Source rollback does not require restoring old user data.
+
+## Bluesky Publisher 0.1.3 (development)
+
+The paid plugin is available through `/extensions` and `/packages/download` on the
+official site for **USD 15/year**. It requires its own product licence: ProductName
+`Sense CMS Bluesky Publisher Plugin`, ProductModel `Bluesky Publisher Plugin`, and
+fixed protocol ProductVersion `1.0`. The Core key and keys for other extensions are
+rejected. The 32-character product key, canonical installation domain, `valid_from`
+and `valid_until` are validated independently of package and Core compatibility.
+
+The plugin connects multiple Bluesky-hosted accounts through confidential AT Protocol
+OAuth. The official client requests only `atproto` and
+`repo:app.bsky.feed.post?action=create`. PKCE, PAR, ES256 client authentication and
+DPoP-bound rotating tokens are enforced. Customer access/refresh tokens and DPoP keys
+are encrypted inside the installation; the official client private key remains only
+in the private Sense CMS broker. Account passwords never enter Sense CMS.
+
+Facebook, X, LinkedIn and Bluesky open authorization in a named popup. Provider
+security headers may deliberately sever `window.opener` during the cross-origin
+round trip, so the returned same-origin page closes itself by popup name without
+requiring an opener reference. The parent also polls a bounded session revision as
+the completion fallback and reloads only after the connection is saved.
+
+The provider supports Bluesky-operated accounts whose DID document points to either
+`https://bsky.social` or an official `https://*.host.bsky.network` PDS cluster.
+The endpoint is resolved from the account DID and is restricted to HTTPS on port 443
+without user info, path, query or fragment. Arbitrary self-hosted PDS instances are
+deliberately not accepted until their discovery, SSRF and operational boundaries have
+separate review.
+Post text is limited to 300 characters and includes a reviewed external website card.
+No Bluesky post is sent unless an editor selects that destination.
+
+Signed installation, removal, dependency ordering and retained social data passed on
+isolated MariaDB. Production verified the exact signed ZIP, cross-product licence
+refusals, authenticated workspace/assets, live PAR start, Nginx/PHP-FPM/MariaDB/cron
+health and desktop/mobile public catalogue rendering. The owner then completed the
+live OAuth flow and connected `@chivale.bsky.social`; no Bluesky post was published.
+
+## Mastodon Publisher 0.1.1 (development)
+
+The paid plugin is available through `/extensions` and `/packages/download` for
+**USD 15/year**. It requires its own product licence: ProductName
+`Sense CMS Mastodon Publisher Plugin`, ProductModel `Mastodon Publisher Plugin`,
+and fixed protocol ProductVersion `1.0`. The Core key and keys for other extensions
+are rejected. The key, canonical installation domain, `valid_from` and `valid_until`
+are validated independently of the package release.
+
+Each public Mastodon server dynamically registers this installation as a confidential
+OAuth application, so there is no central developer-console credential. Connections
+request only `read:accounts` and `write:statuses`, use state and PKCE S256, and support
+multiple accounts across multiple servers. Access tokens and each server-specific
+client secret are encrypted inside the installation; account passwords never enter
+Sense CMS.
+
+Server input is restricted to a public HTTPS origin on port 443. DNS results are
+validated and pinned for each request, redirects are disabled and private/reserved
+addresses are rejected. Publishing uses the selected account, a reviewed message,
+the canonical Sense CMS URL and a deterministic Mastodon `Idempotency-Key`. Version
+0.1.1 pre-fills the editable server field with `mastodon.social` and deliberately
+targets public statuses within the standard 500-character limit;
+media upload, polls and non-public visibility are outside this release.

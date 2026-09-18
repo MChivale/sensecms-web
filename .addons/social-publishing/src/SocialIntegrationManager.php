@@ -35,6 +35,7 @@ final class SocialIntegrationManager
                     'label' => mb_substr((string) ($publisher['label'] ?? $manifest['name'] ?? $row['slug']), 0, 100),
                     'icon' => (string) ($manifest['icon'] ?? 'send'),
                     'config_url' => (string) ($manifest['config_url'] ?? ''),
+                    'max_message_length' => max(1,min(5000,(int)($publisher['max_message_length']??5000))),
                     'connected' => $connections !== [],
                     'connected_count' => count($connections),
                     'connections' => $connections,
@@ -65,6 +66,7 @@ final class SocialIntegrationManager
         if (is_array($verified)) {
             $externalId = trim((string) ($verified['external_id'] ?? $externalId));
             $displayName = trim((string) ($verified['display_name'] ?? $displayName));
+            if (is_array($verified['credentials'] ?? null)) $credentials=$verified['credentials'];
         }
         $encrypted = $this->secrets->encrypt(json_encode($credentials, JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR));
         $statement = $this->db->prepare('INSERT INTO social_connections (plugin_slug,external_account_id,display_name,encrypted_credentials,enabled,last_verified_at,last_error,created_at,updated_at) VALUES (?,?,?,?,1,NOW(),NULL,NOW(),NOW()) ON DUPLICATE KEY UPDATE display_name=VALUES(display_name),encrypted_credentials=VALUES(encrypted_credentials),enabled=1,last_verified_at=NOW(),last_error=NULL,updated_at=NOW()');
@@ -99,6 +101,14 @@ final class SocialIntegrationManager
         $connection = $this->connection($slug, $connectionId, true);
         if (!$connection || !$connection['enabled'] || !$connection['last_verified_at'] || $connection['last_error']) throw new RuntimeException('The selected social account is not connected.');
         return ['provider'=>$this->provider($manifest, $path),'credentials'=>$connection['credentials'],'connection'=>$connection];
+    }
+
+    public function updateCredentials(string $slug,int $connectionId,array $credentials): void
+    {
+        if($connectionId<1||!$credentials||strlen(json_encode($credentials,JSON_THROW_ON_ERROR))>32768)throw new RuntimeException('The social account credentials are invalid.');
+        $this->manifest($slug);$encrypted=$this->secrets->encrypt(json_encode($credentials,JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR));
+        $statement=$this->db->prepare('UPDATE social_connections SET encrypted_credentials=?,last_verified_at=NOW(),last_error=NULL,updated_at=NOW() WHERE id=? AND plugin_slug=? AND enabled=1');
+        $statement->execute([$encrypted,$connectionId,$slug]);if(!$statement->rowCount())throw new RuntimeException('The selected social account is unavailable.',404);
     }
 
     private function connections(string $slug): array
@@ -157,6 +167,7 @@ final class SocialIntegrationManager
         if (!$file || !str_starts_with(str_replace('\\', '/', $file), $normalizedPath)) throw new RuntimeException('The social publisher handler is unavailable.');
         $provider = require $file;
         if (!is_object($provider) || !method_exists($provider, 'publish')) throw new RuntimeException('The social publisher handler is invalid.');
+        if(method_exists($provider,'initialize'))$provider->initialize($this->root);
         return $provider;
     }
 

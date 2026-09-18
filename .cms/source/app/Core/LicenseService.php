@@ -47,7 +47,7 @@ final class LicenseService
     /** Export only to the fixed official social onboarding broker. */
     public function socialHeaders(string $domain, string $broker): array
     {
-        if ($broker!=='https://www.sensecms.com/api/social/meta/v1') throw new LicenseException('Unexpected social connection service.');
+        if (!in_array($broker,['https://www.sensecms.com/api/social/meta/v1','https://www.sensecms.com/api/social/x/v1','https://www.sensecms.com/api/social/linkedin/v1','https://www.sensecms.com/api/social/bluesky/v1'],true)) throw new LicenseException('Unexpected social connection service.');
         $record=$this->validated($domain);
         try { return ['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: '.$record['domain']]; }
         finally { sodium_memzero($record['key']); }

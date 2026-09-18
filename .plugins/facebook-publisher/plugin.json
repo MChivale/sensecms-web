@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Facebook Publisher",
   "slug": "facebook-publisher",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Publishes reviewed Sense CMS posts to a connected Facebook Page through the Meta Graph API.",
@@ -27,6 +27,7 @@
     "/social-publishing/facebook/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.2.1", "summary": "Close the OAuth window after return even when the provider has isolated it from the opener."},
     {"version": "0.2.0", "summary": "Connect and manage multiple Facebook Pages from one or more Meta accounts and publish to each independently."},
     {"version": "0.1.3", "summary": "Present the connected Page, provider status and publishing workflow in the unified Sense CMS workspace design."},
     {"version": "0.1.2", "summary": "Open Meta authorization in a focused popup and report completion in the CMS."},

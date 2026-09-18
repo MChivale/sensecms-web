@@ -3544,3 +3544,355 @@ overflow; the mobile document width remained within the viewport. Nginx configur
 passes, Nginx/PHP-FPM/MariaDB/cron are active, and fresh application and priority 0..3
 service errors are zero. No Core/schema/package, social connection, post, Instagram,
 demo, installer or Git remote was changed.
+
+### 2026-09-17 — X Publisher 0.1.0 deployed and broker provisioned
+
+Released signed `plugin:x-publisher` 0.1.0 with the dependency update
+`addon:social-publishing` 0.2.1. The provider supports multiple independent X accounts,
+OAuth 2.0 Authorization Code with PKCE, offline refresh credentials and reviewed X API
+v2 link-post delivery. Account tokens remain encrypted per installation; the official
+X client secret exists only in ignored local `.cfg` and the official-site private store.
+The existing Facebook Publisher 0.2.0 connection, post targets and delivery history were
+preserved exactly. After deployment, the owner completed OAuth and connected the first
+X destination as `@MarioChivale`. No social post was published.
+
+Two deployment attempts rolled back automatically after valid safety checks exposed
+acceptance-fixture defects: the first identified the immutable 0.2.0 migration's exact
+trailing newline, and the second identified an internal plugin slug incorrectly expected
+in user-facing HTML. Neither attempt retained a production mutation. The final run passed
+the signed legacy-upgrade lifecycle on isolated MariaDB, created a private database/files
+backup, upgraded dependency-first through PackageManager and verified deployed hashes.
+Recovery is `/root/sensecms-backups/20260917T140457Z-x-publisher-010`; signed archive
+SHA-256 values are `c8fd795ac6b3256caf42b2020b218d3a1fe4be728e027377c0f07e9cedba6d83`
+for Social Publishing and `33b9a665f3a8f2581862e6549c7fc796e62f105da6849a0320de8ceac5ea39c1`
+for X Publisher.
+
+The production OAuth broker is routed at `/api/social/x/v1`, rejects unsigned requests
+with 401, and stores its private configuration as owner-only `0700/0600` data. A real
+owner-session acceptance verified the X workspace, disconnected-state API, editor
+contract, CSS/JavaScript assets and exact PKCE consent URL for the configured X app,
+stopping before user authorization. The subsequent user-authorized flow completed and
+the provider's live identity verification stored one enabled, error-free X connection.
+Nginx, PHP-FPM, MariaDB and cron are active, Nginx configuration passes, deployed PHP
+files lint clean and fresh service error counts are zero. No X credit purchase or post
+publication was performed.
+
+### 2026-09-17 — LinkedIn Publisher 0.1.0 implementation staged
+
+Started LinkedIn as an independent `plugin:linkedin-publisher` provider rather than
+mixing it into Facebook, X or Instagram. The staged first release connects multiple
+LinkedIn member profiles through the official Sense CMS OAuth broker and prepares
+reviewed public article-link shares through LinkedIn's self-service OpenID Connect and
+Share on LinkedIn products. It requests only `openid`, `profile` and
+`w_member_social`; the LinkedIn Client Secret remains confined to the official-site
+private broker, while installation access tokens remain encrypted locally.
+
+Company Page publishing is deliberately not represented as available. LinkedIn gates
+`w_organization_social` and the organization discovery/authorization APIs behind the
+vetted Community Management API development and standard tiers. That capability will
+be added only after LinkedIn grants the corresponding product access; Instagram also
+remains deferred by owner direction.
+
+Local validation passed 16 provider/UI checks, 21 isolated broker checks, 77 licensing
+checks, 55 package checks, 46 release-version checks, 11 project-boundary checks, PHP
+and JavaScript syntax, manifest parsing and `git diff --check`. No live LinkedIn API
+call, credential creation, package build, production deployment, connection or social
+publication occurred. The remaining external gate is creating and configuring the
+LinkedIn developer application. The in-app Developer Portal recognizes the owner
+account but currently requires the owner to enter the account password before setup can
+continue.
+
+### 2026-09-17 — LinkedIn Publisher 0.1.0 deployed and broker provisioned
+
+Created the standalone Sense CMS LinkedIn developer application and enabled the two
+self-service products used by the implementation: Share on LinkedIn and Sign In with
+LinkedIn using OpenID Connect. The production callback is
+`https://www.sensecms.com/api/social/linkedin/v1/callback`; LinkedIn provisioned
+`openid`, `profile`, `email` and `w_member_social`, while the broker deliberately
+requests only `openid`, `profile` and `w_member_social`. Advertising, data-portability
+and vetted organization-management products were not requested.
+
+The existing Client Secret was copied from the authenticated portal directly into
+ignored `.cfg/LinkedIn.txt`, with no model-visible value or log output, and the
+clipboard was cleared immediately. Production provisioning received the credential on
+standard input rather than a command argument. The official-site private broker store
+is owned by `sensecms:sensecms`; its directory is mode 0700 and `config.json`/`key.bin`
+are mode 0600. The secret is not present in the CMS package or customer installation.
+
+Released signed `plugin:linkedin-publisher` 0.1.0 without changing the already active
+Social Publishing 0.2.1, Facebook Publisher 0.2.0 or X Publisher 0.1.0 packages. The
+exact signed LinkedIn archive SHA-256 is
+`0156db1b9c82979250dbc0141a376e6bba4ce6d3ba9cafad3d8b62d4abc6d696`; the rebuilt
+dependency acceptance archive retained SHA-256
+`c8fd795ac6b3256caf42b2020b218d3a1fe4be728e027377c0f07e9cedba6d83`.
+Recovery is `/root/sensecms-backups/20260917T154734Z-linkedin-publisher-010`.
+
+Before mutation, the exact signed dependency lifecycle passed on isolated MariaDB and
+a private database recovery dump was created. PackageManager installed the verified
+LinkedIn package, and exact fingerprints confirmed that all existing Facebook/X
+connections, post targets and delivery history were unchanged. Production acceptance
+verified the workspace, disconnected status, editor contract, assets, deployed hashes,
+worker health without publication, fixed broker route and the exact LinkedIn consent
+URL without submitting authorization. Nginx configuration passes and Nginx,
+PHP-FPM, MariaDB and cron are active. The private transfer stage and local transfer
+archive were removed. No LinkedIn permission was granted, no profile was connected and
+no social post was published; the interactive consent step remains for the owner.
+
+### 2026-09-17 — LinkedIn OAuth production acceptance completed
+
+The owner completed the live LinkedIn authorization and connected the first member
+destination as `Mario Chivale`. The initial callbacks reached the broker successfully,
+but the token response used a comma-delimited scope representation; the broker had
+validated only the space-delimited representation described for the authorization-code
+response and returned 502 after an otherwise successful token exchange. The parser now
+accepts both whitespace- and comma-delimited scope lists while still requiring exactly
+the requested `openid`, `profile` and `w_member_social` permissions. No token, code or
+Client Secret was written to this work log.
+
+The corrected broker passed all 21 isolated checks, including a comma-delimited token
+fixture, and was deployed atomically with a pre-change recovery copy under
+`/root/sensecms-backups/20260917T154734Z-linkedin-publisher-010`. The deployed broker
+SHA-256 is `54fcc7c6ee35cb20b9ad7844c9a9d625d715474b6f8fc8d361bb63c412bddc05`.
+Production evidence records `/callback` 302 followed by `/claim` 200; the authenticated
+workspace reports one connected LinkedIn member profile. No fresh application error was
+written after the fix, and Nginx, PHP-FPM, MariaDB and cron are active. No LinkedIn post
+was published.
+
+### 2026-09-17 — X and LinkedIn Publisher marketplace previews published
+
+Published `X Publisher` 0.1.0 and `LinkedIn Publisher` 0.1.0 as free Plugin
+Development Previews across `/extensions`, `/extensions/catalog` and
+`/extensions/catalog/plugin`, with detail routes at
+`/extensions/catalog/plugin/x-publisher` and
+`/extensions/catalog/plugin/linkedin-publisher`. The cards and detail pages disclose
+that public package download is not open and that a valid Sense CMS system licence
+will be required when free downloads open. Neither plugin was added to Distribution.
+
+The X page documents multiple accounts, reviewed per-destination publishing, OAuth 2.0
+Authorization Code with PKCE, encrypted installation credentials and provider access,
+quota and charge boundaries. The LinkedIn page documents multiple member profiles,
+the OpenID Connect and Share on LinkedIn boundary, encrypted installation credentials,
+and the explicit exclusion of Company Page publishing until LinkedIn grants Community
+Management API access. The shared Social Publishing addon remains a technical dependency
+rather than a separate marketplace product.
+
+The first production attempt published the intended records, but an outdated HTTP-test
+expectation still required 14 cards. Its automated rollback restored all three catalogue
+documents and archived only the two newly created detail pages and shared sections.
+Recovery evidence for that reversible attempt is retained at
+`/root/sensecms-backups/20260917T161325Z-social-publisher-extensions`. The corrected run
+reused the scoped archived detail records, created fresh shared sections and completed
+from `/root/sensecms-backups/20260917T161558Z-social-publisher-extensions`; the backup
+contains a private single-transaction database dump, original page journal, exact
+operator script, catalogue inventory, HTTP acceptance test and SHA-256 inventory.
+Rollback is `publish-social-publisher-extensions.php <production-root> --rollback
+<backup>` and restores the original catalogue documents while archiving the two new
+detail pages and shared sections.
+
+Validation passed PHP lint, `git diff --check`, 468 theme/website checks, 11 project
+boundary checks, 55 package checks and 46 release-version checks. Production acceptance
+passed 22 GET/HEAD marketplace routes, 16 product prices/licence policies, eight free
+tiers and all six legacy entry links. Direct checks confirm both Distribution offers are
+absent. Desktop and 390 px browser QA verified the catalogue and both detail pages; the
+mobile document width equalled the viewport for each detail page. Nginx configuration
+passes, Nginx/PHP-FPM/MariaDB/cron are active and fresh PHP errors are zero. Temporary
+transfer stages were removed. No social post, package archive, installer, demo site or
+Git remote was changed.
+
+### 2026-09-18 — Bluesky Publisher 0.1.0 licensed, deployed and published
+
+Implemented `plugin:bluesky-publisher` 0.1.0 as the fourth independent Social
+Publishing provider. It supports multiple account connections, reviewed per-target
+messages, 300-character posts with external website cards, encrypted rotating OAuth
+credentials and DPoP proof keys. The central confidential AT Protocol OAuth client
+uses PKCE, PAR, ES256 `private_key_jwt`, DPoP and the minimal
+`repo:app.bsky.feed.post?action=create` permission. This release accepts accounts
+hosted by `https://bsky.social`; no arbitrary PDS URL reaches the publishing client.
+
+The separately registered licence was validated live for the canonical production
+domain without logging its key. Exact identity is ProductName
+`Sense CMS Bluesky Publisher Plugin`, ProductModel `Bluesky Publisher Plugin`,
+protocol ProductVersion `1.0`; the accepted validity interval is
+2026-01-01 00:00:00 UTC through 2026-12-31 23:59:00 UTC. The key remains only in
+ignored `.cfg/License-Bluesky.txt`. Production download acceptance proved that the
+Core key cannot download Bluesky, the Bluesky key cannot download another product,
+and the Bluesky key returns the exact signed ZIP. Annual marketplace price is USD 15.
+
+PackageManager installed the verified package while preserving exact row fingerprints
+for all existing Facebook, X and LinkedIn connections, targets and deliveries. The
+signed ZIP SHA-256 is
+`ee8557cc04202ac8587c0f28fe6787e1455abec8a0d02f5aeab91ed70128a7fa` (13,789
+bytes). The shared Social Publishing acceptance archive remained
+`c8fd795ac6b3256caf42b2020b218d3a1fe4be728e027377c0f07e9cedba6d83`.
+Recovery is `/root/sensecms-backups/20260918T000753Z-bluesky-publisher-010`;
+the earlier `/root/sensecms-backups/20260918T000653Z-bluesky-publisher-010`
+records the automatically rolled-back first attempt, which reached provisioning from
+a root-only stage as the PHP user. Broker provisioning was corrected to generate as
+root and then assign the private directory to `sensecms:sensecms` without loosening
+0700/0600 modes.
+
+Live PAR initially identified two AT Protocol metadata requirements: `client_uri`
+must be a parent URL of `client_id`, and the authorization server could not retrieve
+the separate JWKS document. The final metadata uses the site root as `client_uri` and
+embeds the public JWK directly, as permitted by the AT Protocol OAuth specification.
+The isolated broker suite and live PAR start then passed. Operational errors retain a
+bounded sanitized reason without tokens, assertions or private key material.
+
+Distribution recovery is
+`/root/sensecms-backups/20260918T001655Z-bluesky-distribution-010`. The paid offer
+uses its exact registered identity and live signature/inventory validation. Published
+the Development Preview detail at
+`/extensions/catalog/plugin/bluesky-publisher` and cards across `/extensions`,
+`/extensions/catalog` and `/extensions/catalog/plugin`. The first content run was
+automatically rolled back because the HTTP acceptance required the exact phrase
+"its own product licence"; evidence is retained at
+`/root/sensecms-backups/20260918T002000Z-bluesky-marketplace-010`. The corrected run
+reused the archived detail safely and passed 22 GET/HEAD routes, 17 product prices and
+licence policies from
+`/root/sensecms-backups/20260918T002200Z-bluesky-marketplace-010`.
+
+Final acceptance passed 12 broker checks, 13 provider checks, 78 licensing checks,
+469 theme/website checks, 55 package checks, 46 release-version checks and 11 project
+boundary checks. Exact local/production hashes match for Core integration, Nginx,
+broker and installed plugin files. Nginx syntax passes; Nginx, PHP-FPM, MariaDB and
+cron are active; post-deployment PHP and Nginx error counts are zero. The public page
+has no horizontal overflow at 390 px. Temporary remote stages were removed and local
+archives were moved to a recoverable temporary cleanup directory. No Bluesky account
+was authorized and no social post was published.
+
+### 2026-09-18 — Bluesky Publisher official PDS cluster compatibility
+
+The first live account authorization exposed an incorrect 0.1.0 boundary: the broker
+accepted only a DID document whose PDS endpoint was literally `https://bsky.social`.
+Bluesky operates the entryway at that address but stores hosted accounts on canonical
+`https://<name>.<region>.host.bsky.network` PDS instances. The callback therefore
+rejected a valid Bluesky-hosted account before issuing the installation claim.
+
+The broker now resolves the first `#atproto_pds` / `AtprotoPersonalDataServer` entry
+from the authorised DID document and accepts only `bsky.social` or a proper subdomain
+of `.host.bsky.network`. HTTPS, port 443, a valid hostname, and the absence of user
+information, path, query and fragment are enforced. The publishing provider repeats
+the same validation before every resource request and signs DPoP for the resolved PDS,
+so a stored or tampered arbitrary endpoint cannot become an SSRF destination. Support
+for self-hosted PDS installations remains intentionally deferred.
+
+An isolated repeated-key test also exposed that OpenSSL can validly omit a leading zero
+byte from a P-256 public coordinate. The AT Protocol JWK encoder now rejects empty or
+oversized coordinates and left-pads valid short coordinates to the required 32 bytes.
+No private key material was logged or copied into the package.
+
+The immutable 0.1.1 compatibility package was deployed first. Final UI acceptance then
+found its CSS/JavaScript cache-busting URLs still labelled 0.1.0, so the signed archive
+was not modified in place. The corrected final release is `plugin:bluesky-publisher`
+0.1.2, with signed ZIP SHA-256
+`3f6a2dfb98af77aa36379d17d1f4c3d814b38477b2eb04fd9ccf4d991fce7201`.
+The paid USD 15/year distribution offer and managed marketplace copy now both identify
+0.1.2. Its separate product licence identity and fixed protocol version 1.0 are
+unchanged.
+
+Before each production mutation, the signed lifecycle passed on isolated MariaDB and a
+private database/files recovery set was created. The final recovery is
+`/root/sensecms-backups/20260918T005600Z-bluesky-publisher-012`; the preceding successful
+0.1.1 recovery is `/root/sensecms-backups/20260918T004845Z-bluesky-publisher-011`.
+PackageManager preserved exact social connection, target and delivery fingerprints.
+The production worker remained healthy and published zero items. Authenticated
+production acceptance passed for the workspace, versioned assets and a real PAR start;
+no authorization was submitted by the test and no post was published.
+
+### 2026-09-18 — Social OAuth popups close after provider isolation
+
+The owner completed the live Bluesky authorization and connected
+`@chivale.bsky.social`. The parent workspace detected the saved connection and
+reloaded, but the OAuth popup remained open. All four provider scripts had required
+both their expected named window and a non-null `window.opener` before executing the
+same-origin completion branch. A provider cross-origin round trip may sever the opener
+relationship through browser isolation, so the returned page skipped `window.close()`
+even though the installation had already saved the account.
+
+Facebook, X, LinkedIn and Bluesky now identify their returned popup by its controlled
+window name, post the completion message only when a live opener remains, and always
+attempt to close themselves. The parent retains bounded revision polling as the
+independent completion fallback. A Node VM regression test executes every production
+asset with `window.opener = null` and verifies that the popup closes; the existing
+origin, source and broker-destination checks remain unchanged.
+
+Released signed `plugin:facebook-publisher` 0.2.1,
+`plugin:x-publisher` 0.1.1, `plugin:linkedin-publisher` 0.1.1 and
+`plugin:bluesky-publisher` 0.1.3. Their signed ZIP SHA-256 values are respectively
+`6465c08588b538d47356a4d26b5ae6f5865438e2149b96611d595911253360b6`,
+`524557b3259158e11ae9e117f0dcf002569df2495b5c40d70f426fd513597fcb`,
+`0d17732ad79fa6f74e7c693e7f8e60cc5738be12725b3d47f5b495b8ce379c72`
+and `4bc55acc611e1e413a80e7df8bd772cce4dc186d4feb593078df030365888755`.
+Bluesky remains USD 15/year with the same independent product identity and protocol
+1.0. The exact 0.1.3 archive replaced the distribution pointer immutably; no other
+provider was added to Distribution.
+
+All four exact signed lifecycles passed isolated MariaDB acceptance. A first package
+mutation attempt encountered an operator-script path that the PHP runtime user could
+not traverse and automatically rolled all packages and Distribution back to their
+verified baselines before the corrected run. Final recovery is
+`/root/sensecms-backups/20260918T013036Z-social-oauth-popup`. The successful deployment
+preserved exact connection, target and delivery fingerprints. Production reports two
+Facebook Pages and one account/profile each for X, LinkedIn and Bluesky, with no due
+publication. Authenticated UI/assets checks passed for all four providers; the Bluesky
+live PAR start, paid licensed download, public Marketplace routes, Nginx syntax and
+service health passed. Fresh Nginx/PHP-FPM and application error counts are zero. No
+social post was published.
+
+### 2026-09-18 — Mastodon Publisher 0.1.0 licensed, deployed and published
+
+Implemented `plugin:mastodon-publisher` 0.1.0 as an independent paid Social
+Publishing provider for USD 15/year. It connects multiple accounts across multiple
+public Mastodon servers through per-instance dynamic app registration and OAuth with
+state, PKCE S256 and only `read:accounts write:statuses`. Tokens and server-specific
+client secrets are encrypted by the installation. Public-only pinned DNS, disabled
+redirects and strict HTTPS-origin validation prevent supplied instance names from
+reaching private or reserved networks. Status creation uses a deterministic
+`Idempotency-Key` and validates the returned identity and URL against the same server.
+
+The separate licence was accepted live for `https://www.sensecms.com` with ProductName
+`Sense CMS Mastodon Publisher Plugin`, ProductModel `Mastodon Publisher Plugin` and
+fixed protocol ProductVersion `1.0`. Its verified UTC validity interval is
+2026-01-01 00:00:00 through 2026-12-31 23:59:00; the key remains only in ignored
+`.cfg/License-Mastodon.txt`. The Core key and the Bluesky key were rejected for this
+offer, while the Mastodon key downloaded the exact signed archive.
+
+The exact signed plugin ZIP SHA-256 is
+`a8a272a327ff3034579c3013fa7f86bbf151778af220a00711e8ae3fbb0286e1`.
+Package installation, removal, dependency ordering and retained schema passed on an
+isolated MariaDB database. Production PackageManager installation preserved exact
+fingerprints for all existing social connections, post targets and deliveries. The
+private recovery backup is
+`/root/sensecms-backups/20260918T023856Z-mastodon-publisher-010`; an earlier validation
+attempt safely rolled back after its checksum assertion incorrectly expected the
+build-only `sense-package.json` inside runtime payload.
+
+Production acceptance verified the authenticated disconnected workspace, versioned
+assets, editor contract, localhost/SSRF rejection, healthy worker without publication,
+paid distribution metadata, 23 marketplace GET/HEAD routes, 18 prices/licence policies,
+Nginx/PHP-FPM/MariaDB/cron health and no fresh deployment errors. The paid Development
+Preview page is `/extensions/catalog/plugin/mastodon-publisher`. No Mastodon account
+was authorized and no social post was published.
+
+### 2026-09-18 — Mastodon Publisher 0.1.1 default server
+
+Released the immutable signed `plugin:mastodon-publisher` 0.1.1 package so the editable
+`Mastodon server` field is pre-filled with `mastodon.social`. The OAuth scopes, licence
+identity, USD 15/year price, multi-server support and publishing contract are unchanged.
+The exact signed ZIP SHA-256 is
+`43df2d237d956c0be7f6004c223baf88c22d34b7b6e1e9ecd29a19763d12a9f6`; the previous
+0.1.0 archive remains immutable.
+
+Two guarded deployment attempts rolled back completely during acceptance: the first
+test assumed a disconnected workspace although one Mastodon account had already been
+connected, and the second tested before PHP-FPM had discarded the cached 0.1.0 runtime.
+The final sequence accepts both connected and disconnected workspaces and reloads
+PHP-FPM before UI verification. Its private database, package and Distribution recovery
+set is `/root/sensecms-backups/20260918T043019Z-mastodon-publisher-011`.
+
+The successful PackageManager upgrade preserved exact connection, target and delivery
+fingerprints. Production retains one Mastodon connection and zero due publications.
+Authenticated workspace/assets and SSRF rejection passed; the paid licence downloaded
+the exact 0.1.1 ZIP while Core and Bluesky keys remained rejected. The Extensions
+listing/detail page, 23 marketplace GET/HEAD routes, service health, Nginx syntax and
+fresh-error checks passed. No Mastodon post was published by deployment or validation.
