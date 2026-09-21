@@ -41,7 +41,7 @@ def deploy(relative):
     uid,gid,mode=metadata[relative];temporary=target.with_name(target.name+'.deploy-'+token);shutil.copy2(source,temporary);os.chown(temporary,uid,gid);os.chmod(temporary,mode);os.replace(temporary,target);deployed.append(relative)
 def restore():
     global publisher_applied
-    if publisher_applied:
+    if publisher_applied and (backup/'site-ai-pages.json').is_file():
         run(['php8.5',str(stage/'scripts/publish-ai-product-pages.php'),str(web),'--rollback',str(backup)]);publisher_applied=False
         try:run(['sudo','-u','sensecms','php8.5',str(web/'scripts/ai-knowledge-sync.php'),'--reconcile'])
         except BaseException:pass
@@ -82,7 +82,7 @@ try:
     for relative in files+[migration]:check(sha(web/relative)==sha(stage/'.cms/source'/relative),'Deployed checksum '+relative)
     check(sha(cron)==sha(cron_source) and cron.stat().st_mode&0o777==0o644,'Root-owned Knowledge Base cron installed')
     run(['systemctl','reload','php8.5-fpm']);check(run(['systemctl','is-active','php8.5-fpm']).strip()==b'active','PHP-FPM reloaded with automated Core')
-    run(['php8.5',str(stage/'scripts/publish-ai-product-pages.php'),str(web),'--apply',str(backup)]);publisher_applied=True
+    publisher_applied=True;run(['php8.5',str(stage/'scripts/publish-ai-product-pages.php'),str(web),'--apply',str(backup)])
     reconcile=json.loads(run(['sudo','-u','sensecms','php8.5',str(web/'scripts/ai-knowledge-sync.php'),'--reconcile']));check(reconcile['failed']==0 and reconcile['ready']>0,'Public AI pages synchronized into the local RAG index')
     queue=json.loads(php(r'''$r=new App\Core\Runtime($argv[1]);$db=App\Core\Runtime::connect($r->read('installed')['database']);echo json_encode(['queued'=>(int)$db->query('SELECT COUNT(*) FROM ai_knowledge_sync_queue')->fetchColumn(),'failed'=>(int)$db->query("SELECT COUNT(*) FROM ai_knowledge_documents WHERE index_status='failed'")->fetchColumn(),'ready'=>(int)$db->query("SELECT COUNT(*) FROM ai_knowledge_documents WHERE index_status='ready'")->fetchColumn(),'chunks'=>(int)$db->query('SELECT COUNT(*) FROM ai_knowledge_chunks')->fetchColumn()],JSON_THROW_ON_ERROR);''',web,user='sensecms'));check(queue['failed']==0 and queue['ready']>=before['documents'] and queue['chunks']>=before['chunks'],'Knowledge index is healthy after the AI product-page publication')
     check(b'PASS Production Core Knowledge Base' in run(['python3',str(stage/'tests/ai-knowledge-ui-production.py')]),'Authenticated Knowledge Base acceptance')
