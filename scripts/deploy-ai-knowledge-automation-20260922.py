@@ -56,7 +56,8 @@ def restore():
     else:cron.write_bytes(cron_previous);os.chown(cron,0,0);os.chmod(cron,0o644)
     run(['systemctl','reload','php8.5-fpm'])
 
-required=[stage/'.cms/source'/p for p in files+[migration]]+[stage/'deploy/cron/sensecms-ai-knowledge',stage/'scripts/publish-ai-product-pages.php',stage/'tests/ai-knowledge.php',stage/'tests/ai-knowledge-ui-production.py']
+test_files=['database/workspace/040_ai_knowledge_base.sql','app/Core/AiRepository.php','app/Core/AccessControl.php','app/Views/console-content-post-form.php','public/theme/sensecms-ai-knowledge.js']
+required=[stage/'.cms/source'/p for p in files+[migration]+test_files]+[stage/'deploy/cron/sensecms-ai-knowledge',stage/'scripts/publish-ai-product-pages.php',stage/'tests/ai-knowledge.php',stage/'tests/ai-knowledge-ui-production.py']
 check(stage.is_dir() and str(stage).startswith('/root/sense-ai-automation-'),'Private scoped deployment stage')
 check(all(p.is_file() and not p.is_symlink() for p in required),'Complete AI automation deployment payload')
 check(all((web/p).is_file() and sha(web/p)==expected for p,expected in baseline.items()),'Expected production Core baseline')
