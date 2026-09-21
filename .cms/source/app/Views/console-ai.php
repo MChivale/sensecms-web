@@ -25,6 +25,7 @@ $sectionHero=['overline'=>'ENGAGEMENT · ASSISTED SUPPORT','title'=>'AI & Live S
 ?>
 <section class="sensecms-unified-workspace">
     <?php require __DIR__.'/console-section-hero.php'; ?>
+    <?php $aiActive='providers';require __DIR__.'/console-ai-navigation.php'; ?>
     <div class="sensecms-ai-summary"><?php foreach($ai as$label=>$value): ?><article><span><?= $escape(ucwords(str_replace('_',' ',$label))) ?></span><strong><?= $escape((string)$value) ?></strong></article><?php endforeach; ?></div>
     <section class="card sensecms-ai-provider-workspace">
         <div class="card-header"><div><h6 class="card-title">AI providers</h6><p class="mt-1 text-sm font-normal text-default-500">Credentials are encrypted. Usage metadata never contains prompts or generated content.</p></div><a href="/conversations" class="btn btn-sm bg-primary text-white"><i data-lucide="messages-square"></i>Open live chat</a></div>

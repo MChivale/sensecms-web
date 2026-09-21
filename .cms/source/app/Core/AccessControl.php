@@ -324,7 +324,7 @@ final class AccessControl
         if(str_starts_with($path,'/forms/submissions')||str_starts_with($path,'/api/forms/submissions'))return str_contains($path,'/export')?'forms.export':($method==='GET'?'forms.view':'forms.manage');
         if(str_starts_with($path,'/surveys')||str_starts_with($path,'/api/surveys')){if(str_contains($path,'/export.'))return'surveys.export';if(str_contains($path,'/anonymize'))return'surveys.anonymize';if(str_contains($path,'/responses'))return'surveys.responses';if(str_contains($path,'/statistics')||$method==='GET')return'surveys.view';return'surveys.manage';}
         if(str_starts_with($path,'/conversations')||str_starts_with($path,'/api/operator/'))return $method==='GET'?'chat.view':'chat.manage';
-        if($path==='/ai'||str_starts_with($path,'/ai/providers'))return'ai.manage';
+        if($path==='/ai'||str_starts_with($path,'/ai/providers')||str_starts_with($path,'/ai/knowledge'))return'ai.manage';
         if(str_starts_with($path,'/appearance'))return'appearance.manage';
         if(str_starts_with($path,'/system/extensions')||str_starts_with($path,'/marketplace')||str_starts_with($path,'/api/marketplace'))return'extensions.manage';
         if(str_starts_with($path,'/system/')||$path==='/license')return'system.manage';

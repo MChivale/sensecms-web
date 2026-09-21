@@ -154,6 +154,7 @@ final class ConsoleSearchIndex
             ['Form inbox','Review and export website form submissions.','/forms/submissions','Engagement','inbox','forms.view',['forms','messages','enquiries']],
             ['Professional Surveys','Build surveys, publish campaigns and analyze responses.','/surveys','Engagement','clipboard-list','surveys.view',['nps','csat','responses']],
             ['AI & Live Support','Monitor assistant providers and human handover readiness.','/ai','Engagement','bot-message-square','ai.manage',['assistant','provider','support']],
+            ['Knowledge Base','Manage RAG sources, website inclusion, indexing and training readiness.','/ai/knowledge','Engagement','brain-circuit','ai.manage',['rag','knowledge','training','documents']],
             ['Appearance','Manage shared brand assets, colors and typography.','/appearance','Experience','palette','appearance.manage',['logo','favicon','colors','fonts']],
             ['Themes','Configure, preview and activate presentation themes.','/appearance/themes','Experience','panels-top-left','appearance.manage',['theme','design']],
             ['SenseCMS Marketplace','Discover verified themes, plugins and add-ons.','/marketplace','Experience','store','extensions.manage',['catalog','packages']],

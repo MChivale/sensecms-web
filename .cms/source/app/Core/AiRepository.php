@@ -72,12 +72,11 @@ final class AiRepository
 
     public function context(string $message, string $locale): array
     {
-        $terms = array_slice(array_filter(preg_split('/[^[:alnum:]]+/u', mb_strtolower($message)) ?: [], static fn(string $term): bool => mb_strlen($term) > 3), 0, 8);
+        $terms = array_values(array_unique(array_slice(array_filter(preg_split('/[^[:alnum:]]+/u', mb_strtolower($message)) ?: [], static fn(string $term): bool => mb_strlen($term) > 2), 0, 10)));
         if (!$terms) return [];
-        $where = implode(' OR ', array_fill(0, count($terms), 'content LIKE ?'));
-        $statement = $this->db->prepare("SELECT content FROM ai_knowledge_chunks WHERE ({$where}) AND (document_id IN (SELECT id FROM ai_knowledge_documents WHERE status = 'published' AND (locale = ? OR locale IS NULL))) ORDER BY id DESC LIMIT 5");
-        $statement->execute(array_merge(array_map(static fn(string $term): string => '%' . $term . '%', $terms), [$locale]));
-        return array_column($statement->fetchAll(), 'content');
+        $score=implode('+',array_fill(0,count($terms),'CASE WHEN LOWER(c.content) LIKE ? THEN 1 ELSE 0 END'));$where=implode(' OR ',array_fill(0,count($terms),'LOWER(c.content) LIKE ?'));$likes=array_map(static fn(string$term):string=>'%'.$term.'%',$terms);
+        $statement=$this->db->prepare("SELECT c.content,d.title,d.source_url,({$score}) relevance FROM ai_knowledge_chunks c INNER JOIN ai_knowledge_documents d ON d.id=c.document_id WHERE d.status='published' AND d.index_status='ready' AND (d.locale=? OR d.locale IS NULL) AND ({$where}) ORDER BY relevance DESC,d.updated_at DESC,c.sort_order LIMIT 8");
+        $statement->execute(array_merge($likes,[$locale],$likes));$result=[];foreach($statement->fetchAll()as$row){$source=trim((string)$row['title']);if(trim((string)($row['source_url']??''))!=='')$source.=' · '.trim((string)$row['source_url']);$result[]='[Source: '.$source."]\n".(string)$row['content'];}return$result;
     }
 
     public function conversation(string $id, string $locale, ?string $ip = null): void

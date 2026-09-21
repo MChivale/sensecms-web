@@ -5119,3 +5119,56 @@ theme did not change and fresh service logs contained no critical errors. Deploy
 acceptance did not call OpenAI, create content or change the AI usage-event count, so they
 incurred no API cost. Production recovery is
 `/root/sensecms-backups/20260921T150013Z-posts-ai`.
+
+### 2026-09-21 — Core AI Knowledge Base, RAG and training workspace
+
+Portable Core now owns a provider-neutral Knowledge Base at `/ai/knowledge`. Authorized AI
+managers can create and correct manual sources, upload TXT, PDF, RTF, DOC and DOCX sources,
+approve or disable retrieval, remove a source and its private original, and rebuild the RAG
+index. Uploaded originals live outside the public web root, are bounded to 20 MiB and are
+validated by extension and detected MIME type. Extraction is local; PDF and legacy DOC
+support fail closed when their local server tools are unavailable. Scanned PDFs require OCR
+before upload.
+
+Published public pages and current published posts can be included or excluded independently.
+New posts default to inclusion and expose the choice in the Core editor. Rebuilds synchronize
+language-specific sources transactionally, archive excluded or no-longer-public sources,
+replace stale chunks and expose per-source indexing failures. Visitor retrieval now reads only
+approved, successfully indexed, locale-compatible chunks and ranks bounded passages while
+retaining source attribution.
+
+The separate Training & evals workspace stores versioned datasets, human-written ideal-answer
+examples and held-out evaluation cases. A dataset cannot become ready before it has at least
+10 examples and every example is approved. Raw documents and visitor conversations are never
+copied into training data automatically. Provider/model selection is preparatory only: the
+paid fine-tuning action remains disabled and no external API request or charge is possible in
+this implementation stage.
+
+Migration `040_ai_knowledge_base.sql` is additive and preserves existing documents, pages and
+posts. Local validation passed PHP and JavaScript syntax, 28 Knowledge Base checks, Posts and
+Page Builder AI checks, post-editor, security, maintenance, package, licensing and standalone
+project checks, deterministic installer-package checks, 37 web-installer checks and
+`git diff --check`.
+
+Production acceptance first rehearsed the complete migration against an isolated disposable
+MariaDB database, then created a private database-and-files recovery backup and applied
+migration 040 exactly once. The reviewed migration and 14 Core/UI files were deployed with
+matching SHA-256 checksums. PHP-FPM was reloaded so its OPcache could activate the new route.
+Authenticated acceptance passed all four Knowledge Base tabs, the create/edit post inclusion
+control and adjacent Page Builder AI. Direct browser QA confirmed the production layout,
+navigation, empty states and source form with no browser console warnings or errors.
+
+The deployment preserved existing knowledge data, provider configuration, the complete AI
+usage ledger and the active signed theme. It made no provider API request and incurred no AI
+cost. Nginx configuration passed; Nginx, PHP-FPM, MariaDB and cron remained healthy; affected
+HTTP routes and versioned assets returned successfully; fresh service logs contained no new
+critical errors. The final recovery backup is
+`/root/sensecms-backups/20260921T165335Z-ai-knowledge`.
+
+Two earlier controlled attempts were automatically rolled back before acceptance: one exposed
+a case-sensitive UI-test expectation, and one showed that the long-running PHP-FPM workers
+needed an explicit reload after adding the route. Their recoveries remain at
+`/root/sensecms-backups/20260921T164758Z-ai-knowledge` and
+`/root/sensecms-backups/20260921T165012Z-ai-knowledge`; the additive migration state was
+validated and intentionally retained. A preceding incomplete-package preflight stopped before
+any production backup or mutation.
