@@ -5082,3 +5082,40 @@ contract/regression checks and `git diff --check`. Production controller and ent
 hashes match the reviewed local files; Nginx configuration, Nginx, PHP-FPM and MariaDB are
 healthy, the public site returns HTTP 200, unauthenticated Builder correctly redirects,
 and no new PHP error followed the successful request.
+
+### 2026-09-21 — Core Posts AI writing assistant
+
+Portable Core now provides the same provider-neutral, review-first AI workflow for new
+and existing posts. Editors with the additive `content.posts.ai` permission can generate
+an article draft, improve, shorten or expand copy, prepare SEO metadata, translate the
+default-language article, or operate on a selected passage. The action and scope contract
+constrains which fields may change. Provider JSON and generated HTML are validated and
+sanitized by Core; a stale-document fingerprint prevents applying an outdated proposal.
+AI only fills the unsaved browser draft after explicit review and approval. It never saves,
+schedules or publishes a post.
+
+The assistant is part of the Core post editor and uses the existing independently scrolling
+sidebar, multilingual inputs, self-hosted Quill editor and keyword-chip control. Its large
+responsive comparison dialog shows every before/after value. Provider configuration now
+offers a separate Posts purpose. The production `openai-mtc` provider is enabled only for
+Builder and Posts; visitor chat remains disabled. Its encrypted credential, driver, model,
+priority and complete request, token and USD budget configuration were preserved exactly.
+Posts and Builder share a 20-request-per-user/10-minute editorial rate limit and the same
+metadata-only provider budget ledger. Prompts and generated content are not stored.
+
+Migration `039_posts_ai.sql` added one permission and granted it to owner, administrator,
+content-manager and editor roles. Local validation passed PHP/JavaScript syntax, 16 Posts
+AI checks, 22 post-editor checks, 23 shared AI checks, 282 Builder checks, 92 security
+checks, 16 maintenance checks, 11 project-boundary checks, 55 package checks, 81 licensing
+checks, 18 media checks, 678 theme/site checks, installer package checks and
+`git diff --check`. Production lacks `pdo_sqlite`, so SQLite security checks passed locally
+and were skipped server-side.
+
+Production deployment applied migration 039 exactly once, deployed exact reviewed hashes,
+passed authenticated create/edit post and adjacent Page Builder acceptance, returned the
+new versioned assets, and left Nginx, PHP-FPM, MariaDB and cron healthy. Direct browser QA
+confirmed the aligned post workspace and independently scrolling sidebar. The active signed
+theme did not change and fresh service logs contained no critical errors. Deployment and
+acceptance did not call OpenAI, create content or change the AI usage-event count, so they
+incurred no API cost. Production recovery is
+`/root/sensecms-backups/20260921T150013Z-posts-ai`.

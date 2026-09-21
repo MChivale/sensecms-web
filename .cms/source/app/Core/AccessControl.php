@@ -316,7 +316,7 @@ final class AccessControl
             if($method==='GET'||preg_match('#/(?:sections/[a-f0-9-]+/(?:workflow|comments|lock|unlock)|comments/\d+/resolve|revisions/compare)$#',$path))return'content.pages.collaborate';
             return'content.pages.edit';
         }
-        if(str_starts_with($path,'/content/posts')){if($method==='GET')return str_ends_with($path,'/new')||str_ends_with($path,'/edit')?'content.posts.edit':'content.posts.view';if(str_ends_with($path,'/archive'))return'content.posts.delete';return'content.posts.edit';}
+        if(str_starts_with($path,'/content/posts')){if($path==='/content/posts/ai')return'content.posts.ai';if($method==='GET')return str_ends_with($path,'/new')||str_ends_with($path,'/edit')?'content.posts.edit':'content.posts.view';if(str_ends_with($path,'/archive'))return'content.posts.delete';return'content.posts.edit';}
         if(str_starts_with($path,'/content/categories')||str_starts_with($path,'/content/navigation'))return'content.navigation.manage';
         if($path==='/seo'||str_starts_with($path,'/seo/'))return'content.seo.manage';
         if($path==='/content/home'||str_starts_with($path,'/system/extensions/popups'))return'content.pages.edit';

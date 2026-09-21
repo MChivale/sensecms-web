@@ -28,6 +28,7 @@ $check(str_contains($workflow,'sensecms:content-ready')&&str_contains($workflow,
 $check(str_contains($management,"postEditor().then")||str_contains($management,'.then(postEditor).then(pageBuilder).then(hydrate)')||str_contains($management,'.then(postEditor).then(hydrate)'),'content navigation loads page-specific editor assets before hydration');
 $check(str_contains($style,'.ql-container{height:auto;min-height:330px'),'rich editor participates in layout without overlapping SEO fields');
 $check(str_contains($postEditor,'sensecms-tag-chip')&&str_contains($postEditor,"event.key==='Enter'||event.key===','"),'post keywords become removable chips on comma or Enter');
+$check(str_contains($postEditor,"value.addEventListener('change'")&&str_contains($postEditor,'tags=parse(value.value)'),'external reviewed proposals refresh visible keyword chips');
 $check(str_contains($postEditor,'data-media-folder-save')&&str_contains($postEditor,'/trash'),'post media workspace supports upload, folders and protected trash actions');
 $check(str_contains($style,'width:min(1180px')&&str_contains($style,'.sensecms-media-picker-workspace'),'post media workspace is large, centered and responsive');
 $media=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Core/MediaLibrary.php');

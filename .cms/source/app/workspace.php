@@ -179,6 +179,7 @@ if ($method === 'GET' && $path === '/content/posts') $dashboard->posts();
 if ($method === 'GET' && $path === '/content/posts/new') $dashboard->postForm();
 if ($method === 'GET' && preg_match('#^/content/posts/(\d+)/edit$#', $path, $matches)) $dashboard->postForm((int) $matches[1]);
 if ($method === 'POST' && $path === '/content/posts') $dashboard->savePost();
+if ($method === 'POST' && $path === '/content/posts/ai') $dashboard->proposePostAi();
 if ($method === 'POST' && preg_match('#^/content/posts/(\d+)/(archive|restore|duplicate)$#', $path, $matches)) $dashboard->postAction((int) $matches[1], $matches[2]);
 if ($method === 'GET' && $path === '/content/categories') $dashboard->categories();
 if ($method === 'POST' && $path === '/content/categories') $dashboard->saveCategory();
