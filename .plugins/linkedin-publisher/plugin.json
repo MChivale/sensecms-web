@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS LinkedIn Publisher",
   "slug": "linkedin-publisher",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Publishes reviewed Sense CMS posts to connected LinkedIn member profiles.",
@@ -27,6 +27,7 @@
     "/social-publishing/linkedin/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.1.2", "summary": "Align account cards, connection metadata, empty state and publishing workflow with the shared Social Publishing interface."},
     {"version": "0.1.1", "summary": "Close the OAuth window after return even when the provider has isolated it from the opener."},
     {"version": "0.1.0", "summary": "Connect multiple LinkedIn member profiles and publish reviewed article-link posts through the official Share on LinkedIn API."}
   ]

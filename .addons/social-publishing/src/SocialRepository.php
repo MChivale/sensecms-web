@@ -20,11 +20,12 @@ final class SocialRepository
 
     public function editorState(int $postId): array
     {
-        $targets = [];
+        $targets = [];$postMedia=['featured_media_id'=>0,'audio_media_id'=>0,'video_media_id'=>0];
         if ($postId > 0) {
-            $statement = $this->db->prepare('SELECT connection_id,enabled,message,revision,last_enqueued_revision FROM social_post_targets WHERE post_id=? AND connection_id IS NOT NULL');
+            $statement = $this->db->prepare('SELECT connection_id,enabled,message,options_json,revision,last_enqueued_revision FROM social_post_targets WHERE post_id=? AND connection_id IS NOT NULL');
             $statement->execute([$postId]);
             foreach ($statement->fetchAll() as $row) $targets[(int)$row['connection_id']] = $row;
+            $media=$this->db->prepare('SELECT featured_media_id,audio_media_id,video_media_id FROM posts WHERE id=? LIMIT 1');$media->execute([$postId]);$postMedia=$media->fetch()?:$postMedia;
         }
         $providers = $this->integrations->catalog();
         foreach ($providers as &$provider) {
@@ -33,10 +34,12 @@ final class SocialRepository
                 $connection['selected'] = (bool) ($target['enabled'] ?? false);
                 $connection['message'] = (string) ($target['message'] ?? '');
                 $connection['published_before'] = $target && (int)$target['last_enqueued_revision'] > 0;
+                $options=[];if(is_string($target['options_json']??null)&&$target['options_json']!==''){try{$decoded=json_decode($target['options_json'],true,16,JSON_THROW_ON_ERROR);if(is_array($decoded))$options=$decoded;}catch(\Throwable){$options=[];}}
+                if(!empty($provider['editor_options'])&&$connection['enabled']){try{$editor=$this->integrations->editor((string)$provider['slug'],(int)$connection['id']);foreach($editor['fields']??[]as&$field){$fallback=$field['type']==='checkbox'?false:'';if($field['type']==='media')$fallback=(int)($postMedia[($field['kind']??'').'_' . 'media_id']??0);$field['value']=$options[$field['name']]??$fallback;}unset($field);$connection['editor']=$editor;}catch(\Throwable$error){error_log('Social publishing editor options failed: '.get_class($error));$connection['editor_error']='Publishing options are temporarily unavailable. Refresh before selecting this destination.';}}
             }
             unset($connection);
         }
-        unset($provider);
+        unset($provider);array_push($providers,['slug'=>'whatsapp-publisher','platform'=>'whatsapp','label'=>'WhatsApp','icon'=>'message-circle','brand_color'=>'#25d366','order'=>50,'capabilities'=>['text','link'],'planned'=>true,'connections'=>[],'max_message_length'=>4096],['slug'=>'instagram-publisher','platform'=>'instagram','label'=>'Instagram','icon'=>'instagram','brand_color'=>'#e1306c','order'=>60,'capabilities'=>['image','video'],'planned'=>true,'connections'=>[],'max_message_length'=>2200],['slug'=>'threads-publisher','platform'=>'threads','label'=>'Threads','icon'=>'at-sign','brand_color'=>'#111827','order'=>70,'capabilities'=>['text','image','video'],'planned'=>true,'connections'=>[],'max_message_length'=>500]);usort($providers,static fn(array$a,array$b):int=>[(int)($a['order']??900),(string)$a['label']]<=>[(int)($b['order']??900),(string)$b['label']]);
         return ['providers'=>$providers,'post_id'=>$postId];
     }
 
@@ -47,25 +50,24 @@ final class SocialRepository
         foreach ($this->integrations->catalog() as $provider) {
             foreach ($provider['connections'] as $connection) $known[$connection['id']] = ['provider'=>$provider, 'connection'=>$connection];
         }
-        $selected = [];
+        $selected = [];$prepared=[];
+        foreach($known as$connectionId=>$destination){$input=is_array($submitted[$connectionId]??null)?$submitted[$connectionId]:[];$enabled=!empty($input['enabled']);$message=trim((string)($input['message']??''));$limit=max(1,min(5000,(int)($destination['provider']['max_message_length']??5000)));if(mb_strlen($message)>$limit||str_contains($message,"\0"))throw new RuntimeException('A social message is too long or invalid.');$options=$enabled?$this->integrations->normalizeOptions((string)$destination['provider']['slug'],(int)$connectionId,is_array($input['options']??null)?$input['options']:[]):[];if($enabled)$this->validateMediaOptions($postId,$destination,$options);$prepared[$connectionId]=['enabled'=>$enabled,'message'=>$message,'options'=>$options];}
         $this->db->beginTransaction();
         try {
             $find = $this->db->prepare('SELECT id,enabled,revision,last_enqueued_revision FROM social_post_targets WHERE post_id=? AND connection_id=? FOR UPDATE');
             foreach ($known as $connectionId => $destination) {
-                $input = is_array($submitted[$connectionId] ?? null) ? $submitted[$connectionId] : [];
-                $enabled = !empty($input['enabled']);
+                $enabled = $prepared[$connectionId]['enabled'];
                 if ($enabled && !$destination['connection']['enabled']) throw new RuntimeException('Connect the selected social account before publishing.');
                 if ($enabled) $selected[] = $connectionId;
-                $message = trim((string) ($input['message'] ?? ''));
-                if (mb_strlen($message) > 5000 || str_contains($message, "\0")) throw new RuntimeException('A social message is too long or invalid.');
+                $message=$prepared[$connectionId]['message'];$options=$prepared[$connectionId]['options'];$optionsJson=$options?json_encode($options,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR):null;
                 $find->execute([$postId, $connectionId]);
                 $current = $find->fetch();
                 if ($current) {
                     $revision = (int) $current['revision'];
                     if ($republish && $enabled && (int)$current['last_enqueued_revision'] >= $revision) $revision++;
-                    $this->db->prepare('UPDATE social_post_targets SET enabled=?,message=?,revision=?,updated_at=NOW() WHERE id=?')->execute([$enabled?1:0,$message?:null,$revision,$current['id']]);
-                } elseif ($enabled || $message !== '') {
-                    $this->db->prepare('INSERT INTO social_post_targets (post_id,plugin_slug,connection_id,enabled,message,revision,last_enqueued_revision,updated_at) VALUES (?,?,?,?,?,1,0,NOW())')->execute([$postId,$destination['provider']['slug'],$connectionId,$enabled?1:0,$message?:null]);
+                    $this->db->prepare('UPDATE social_post_targets SET enabled=?,message=?,options_json=?,revision=?,updated_at=NOW() WHERE id=?')->execute([$enabled?1:0,$message?:null,$optionsJson,$revision,$current['id']]);
+                } elseif ($enabled || $message !== '' || $options) {
+                    $this->db->prepare('INSERT INTO social_post_targets (post_id,plugin_slug,connection_id,enabled,message,options_json,revision,last_enqueued_revision,updated_at) VALUES (?,?,?,?,?,?,1,0,NOW())')->execute([$postId,$destination['provider']['slug'],$connectionId,$enabled?1:0,$message?:null,$optionsJson]);
                 }
             }
             $this->db->prepare('INSERT INTO activity_log (user_id,event,subject_type,subject_id,context,created_at) VALUES (?,"social.targets.changed","post",?,?,NOW())')->execute([$actorId?:null,$postId,json_encode(['connection_ids'=>$selected,'republish'=>$republish],JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR)]);
@@ -92,12 +94,17 @@ final class SocialRepository
     {
         $payload = $this->payload($postId);
         if (!$payload) return 0;
-        $statement = $this->db->prepare('SELECT t.id,t.plugin_slug,t.connection_id,t.revision,t.message,c.external_account_id,c.display_name FROM social_post_targets t INNER JOIN social_connections c ON c.id=t.connection_id AND c.plugin_slug=t.plugin_slug AND c.enabled=1 WHERE t.post_id=? AND t.enabled=1 AND t.last_enqueued_revision<t.revision');
+        $limits = [];
+        foreach ($this->integrations->catalog() as $provider) {
+            $limits[(string)$provider['slug']] = max(1, min(5000, (int)($provider['max_message_length'] ?? 5000)));
+        }
+        $statement = $this->db->prepare('SELECT t.id,t.plugin_slug,t.connection_id,t.revision,t.message,t.options_json,c.external_account_id,c.display_name FROM social_post_targets t INNER JOIN social_connections c ON c.id=t.connection_id AND c.plugin_slug=t.plugin_slug AND c.enabled=1 WHERE t.post_id=? AND t.enabled=1 AND t.last_enqueued_revision<t.revision');
         $statement->execute([$postId]);
         $count = 0;
         foreach ($statement->fetchAll() as $target) {
             $item = $payload;
-            $item['message'] = trim((string)$target['message']) ?: $this->defaultMessage($payload);
+            $item['message'] = trim((string)$target['message']) ?: $this->defaultMessage($payload, $limits[(string)$target['plugin_slug']] ?? 5000);
+            $item['social_options']=[];if(is_string($target['options_json']??null)&&$target['options_json']!==''){$decoded=json_decode($target['options_json'],true,16,JSON_THROW_ON_ERROR);if(!is_array($decoded))throw new RuntimeException('The social publishing options are invalid.');$item['social_options']=$decoded;}
             $item['delivery_key'] = hash('sha256',(string)$target['plugin_slug']."\0".(string)$target['connection_id']."\0".$postId."\0".(string)$target['revision']);
             $json = json_encode($item, JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
             $this->db->beginTransaction();
@@ -152,11 +159,17 @@ final class SocialRepository
         return ['post_id'=>(int)$post['id'],'title'=>(string)$post['title'],'excerpt'=>(string)($post['excerpt']??''),'url'=>$url,'image_url'=>$image?:null,'locale'=>(string)$post['locale'],'published_at'=>$post['published_at']];
     }
 
-    private function defaultMessage(array $payload): string
+    private function defaultMessage(array $payload, int $limit): string
     {
         $message = trim((string)$payload['title']);
         $excerpt = trim(strip_tags((string)$payload['excerpt']));
         if ($excerpt !== '') $message .= "\n\n" . $excerpt;
-        return mb_substr($message, 0, 5000);
+        return mb_substr($message, 0, max(1, min(5000, $limit)));
+    }
+
+    private function validateMediaOptions(int$postId,array$destination,array$options):void
+    {
+        if(empty($destination['provider']['editor_options']))return;$editor=$this->integrations->editor((string)$destination['provider']['slug'],(int)$destination['connection']['id']);
+        foreach((array)($editor['fields']??[])as$field){if(($field['type']??'')!=='media')continue;$id=max(0,(int)($options[(string)$field['name']]??0));if(!$id){if(!empty($field['required']))throw new RuntimeException('Choose a video from the Media Library.');continue;}$statement=$this->db->prepare('SELECT m.mime_type FROM media m INNER JOIN posts p ON p.id=? WHERE m.id=? AND m.status="active" AND (m.facility_id IS NULL OR m.facility_id=p.facility_id) LIMIT 1');$statement->execute([$postId,$id]);$mime=(string)($statement->fetchColumn()?:'');if(($field['kind']??'')==='video'&&!str_starts_with($mime,'video/'))throw new RuntimeException('Choose an available video from this post facility or the shared Media Library.');$accept=(array)($field['accept_mime']??[]);if($accept&&!in_array($mime,$accept,true))throw new RuntimeException('Choose a compatible '.implode(' or ',$accept).' file for this destination.');}
     }
 }

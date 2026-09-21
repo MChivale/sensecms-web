@@ -4001,3 +4001,1084 @@ Authenticated workspace/assets, public marketplace GET/HEAD, 20 product prices a
 licence policies, worker no-op, Nginx syntax and Nginx/PHP-FPM/MariaDB/cron health
 passed. Fresh service error count is zero; Pinterest has zero connections and zero due
 publications. No Pinterest account was connected and no social post was published.
+
+### 2026-09-19 — Configurable footer and managed legal pages
+
+Replaced the dated footer copyright and removed `Independent by design.`. Theme
+configuration now exposes the left copyright text and a right-side Links/Text mode,
+including three editable labels and destinations. Defaults are Privacy Policy,
+Terms & Conditions and Cookies. Internal, HTTPS, mailto and tel destinations are
+accepted; executable or malformed URLs are omitted. The mobile copyright wraps
+without horizontal overflow.
+
+Published `/privacy-policy`, `/terms-and-conditions` and `/cookies` as CMS-managed
+English pages. The combined privacy copy preserves the Meta/Facebook connection
+disclosures and covers active Facebook, X, LinkedIn, Bluesky, Mastodon and Telegram
+Channels integrations; pending Instagram, Threads and Pinterest; and future TikTok
+and YouTube. The existing Meta `/terms-of-service` and `/data-deletion` pages remain
+unchanged for platform compatibility. The page publisher records exact existing
+content and builder versions and refuses rollback over concurrent editorial changes.
+
+The initial signed theme 1.0.1 deployment is retained at
+`sensecms-1.0.1-8a13fd9e2b00f8b1`; archive SHA-256
+`8a13fd9e2b00f8b1a229cf352d7b1243b4e3c33915650e5d221a113d9746b760`.
+Its recovery set is `/root/sensecms-backups/20260918T155107Z-footer-legal`.
+Guarded pre-release attempts from `20260918T154651Z` through `20260918T154949Z`
+rolled back to theme 1.0.0 and did not leave partial legal-page changes; their private
+receipts and candidates are retained for diagnosis.
+
+User review requested column-style legal links with no permanent underline and an
+underline on interaction. Signed theme 1.0.2 applies the same 14px muted footer-link
+presentation, no decoration at rest, and a 1px underline with 4px offset on hover or
+keyboard focus. Production active release is
+`sensecms-1.0.2-c82c82f5b62c146e`; archive SHA-256
+`c82c82f5b62c146e683868203a927d0cca89add9459704deaedfe69449107c3e`.
+Recovery is `/root/sensecms-backups/20260918T204646Z-footer-legal`.
+
+Local PHP lint, 604 theme/website checks, 46 version checks and `git diff --check`
+passed. Both signed installations matched reviewed payload hashes. Live homepage and
+all three legal routes returned the expected content; the old slogan is absent.
+Browser inspection measured the legal link at rest as 14px, muted `rgb(185,201,223)`
+and `text-decoration: none`; hover changed it to white with a 1px underline and 4px
+offset. Nginx/PHP-FPM/MariaDB/cron health, Nginx syntax and fresh PHP fatal-error checks
+passed. No Core, schema, service configuration or public theme-distribution offer was
+changed; the public package remains the immutable signed 1.0.0 artifact.
+
+### 2026-09-19 — Unified footer links and multilingual product header
+
+Replaced the footer's separate column/legal link rules with one shared selector for
+every non-brand footer link. Platform, Extensions, Release status, Documentation,
+Installation, Package contract, Contact, email and all three legal links now use the
+same 14px muted colour, 7px vertical hit area and no decoration at rest. Hover and
+keyboard focus use the same white 1px underline with a 4px offset. The former
+`.footer-legal a` override and product-theme last-navigation-link styling were removed.
+
+Rebuilt the product header around explicit brand, primary navigation and action
+regions, following the compact interaction pattern reviewed on Eduvixo while retaining
+Sense CMS identity. It now has consistent semibold navigation links, an accessible
+native EN/PL switcher sourced from active CMS languages and page-specific alternate
+URLs, a responsive mobile menu, and a separate Demo action opening
+`https://demo.sensecms.com/` with `_blank` plus `noopener noreferrer`. The old
+Get Sense CMS header action is omitted without removing the `/download` release page.
+
+Signed theme 1.0.3 is active as `sensecms-1.0.3-032ba92aeff8c5d2`; archive SHA-256 is
+`032ba92aeff8c5d2273ad19122c1acefda15a1b7d504a9950b416c7e5f8d9fd5`. Recovery is
+`/root/sensecms-backups/20260918T210821Z-header-footer`. The guarded deployment verified
+the 1.0.2 baseline, private signing/trust, database backup, exact installed payload,
+homepage and legal routes, shared footer rule, header controls, active signed pointer,
+Nginx syntax, service health and no fresh PHP fatal errors.
+
+PHP lint, JavaScript syntax, Python compilation, 625 theme/website checks, 46 release
+version checks and `git diff --check` passed. Local desktop/390px review found no
+horizontal overflow and a usable expanded mobile menu. Live browser review confirmed
+the five-link navigation, EN/PL destinations, secure Demo target, identical computed
+styles for all 11 footer text links, and the underline appearing only on interaction.
+No Core, database schema, service configuration or public theme-distribution offer
+changed; public Distribution remains the immutable signed 1.0.0 artifact.
+
+### 2026-09-19 — Header interaction and text-size accessibility
+
+Matched the reviewed Eduvixo primary-navigation interaction without adding per-link
+variants: one shared pseudo-element grows from the centre to a 2px blue underline in
+0.25 seconds on hover, keyboard focus, the current page and a current parent. The
+underline is omitted from the compact menu, where the full row is already the target.
+
+Added a keyboard-accessible header dialog for local text scaling from 100% to 200% in
+10% steps, with decrease, increase, reset and native range controls. The preference is
+stored only in browser `localStorage` under `sensecms:text-scale`; the default creates
+no stored value, and the control sends no data. At 130% and above the header switches
+to the compact navigation. Long content wraps at enlarged sizes, while the panel uses
+a fixed readable control scale so it remains operable at 200%.
+
+Signed theme 1.0.4 is active as `sensecms-1.0.4-df204bee163ec526`; archive SHA-256 is
+`df204bee163ec5265b0bfef291b18a062d330ecab00bac5bd80188a8870c640a`. Recovery is
+`/root/sensecms-backups/20260918T214133Z-header-accessibility`. The guarded deployment
+verified the 1.0.3 baseline, publisher trust, a private database dump, exact installed
+payload, public routes and assets, the active signed pointer, Nginx configuration,
+service health and fresh PHP-FPM errors.
+
+PHP lint, JavaScript syntax, Python compilation, 628 theme/website checks, 46 release
+version checks and `git diff --check` passed. Desktop browser inspection confirmed the
+2px underline's final computed position and 0.25-second transition. Local and live
+390px checks at 200% confirmed the compact menu, readable dialog and zero horizontal
+overflow; the production preference was reset to 100% after validation. No Core,
+schema, external service or public distribution artifact changed.
+
+### 2026-09-19 — Content-only scaling and right-aligned navigation
+
+Refined the accessibility control after visual review. Text scaling still supports
+100–200%, but header and footer typography now use fixed pixel sizes: the desktop
+brand is 26px, navigation and footer links are 14px, and footer metadata is 12px.
+Only main content scales. Enlarging text no longer switches an otherwise desktop
+header into the compact menu. Content-specific wrapping remains enabled from 130%.
+
+The primary navigation now aligns to the right edge of its available column and sits
+directly beside the accessibility, language and Demo controls, retaining a deliberate
+30px group gap. Existing shared link styling and the expanding underline remain one
+implementation rather than per-link variants.
+
+Theme 1.0.5 first published the fixed navigation/link sizes, but final browser review
+found the product-theme brand override still used `rem` and therefore enlarged the
+Sense CMS wordmark. The immediately superseding signed 1.0.6 release corrects that
+last override. Production is active at `sensecms-1.0.6-dbcdd0a5f97e2654`; archive
+SHA-256 is `dbcdd0a5f97e2654e80ec8706d998fac33dab204e0f787daf03e1848de918d60`.
+Recovery is `/root/sensecms-backups/20260918T220358Z-fixed-navigation-scale`.
+
+The guarded deployment verified the 1.0.5 baseline, private database recovery dump,
+publisher trust, exact installed payload, public routes/assets, active signed pointer,
+Nginx and service health, and no fresh PHP-FPM fatal errors. Local and live browser
+checks at desktop and 390px measured the header brand, navigation, footer brand and
+footer links before and after 200% scaling; only main content doubled, the desktop
+menu stayed visible, the mobile menu remained responsive, and horizontal overflow was
+zero. The production preference was reset to 100%. PHP/JavaScript/Python checks,
+630 theme/website checks, 46 version checks and `git diff --check` passed. No Core,
+schema, service configuration or public distribution artifact changed.
+
+### 2026-09-19 — Configurable footer identity, social previews and crawl signals
+
+Published signed Sense CMS theme 1.0.7 with a configurable footer logo, brand label
+and SEO description in the existing theme configuration panel. The default footer
+uses the light Sense mark at 42px and two justified sentences describing the
+self-hosted multilingual CMS, editorial workflow, media and social publishing. The
+existing shared footer-link interaction remains the only link style. A subtle top
+separator now gives the footer a clearer boundary.
+
+The sticky header gains a restrained shadow and transitions to a 66px compact state
+after scrolling. Public product, documentation and managed-page templates now share
+one visible breadcrumb implementation. Matching `BreadcrumbList` JSON-LD is emitted
+from the same breadcrumb model, avoiding a second navigation definition.
+
+Generated and installed `assets/og.image.jpg`, an exact 1200 by 630 JPEG, as the
+theme-level Open Graph and Twitter fallback. The page editor exposes a localized
+social-image URL, alternative text and upload action through the existing protected
+media endpoint. Page-specific images retain their measured MIME type and dimensions;
+pages without an image inherit the theme fallback with `image/jpeg`, 1200 and 630.
+Static theme routes use the explicit descriptor `content_updated_at` for sitemap
+`lastmod`; database-managed pages continue using their stored modification time.
+
+Production is active at `sensecms-1.0.7-a62dda26889fa759`; signed archive SHA-256 is
+`a62dda26889fa759e16a03fa191bbac25c7dc7c3d43b97b3db0bcd413e26ba05`.
+Recovery is `/root/sensecms-backups/20260918T224644Z-website-polish-seo` and contains
+the previous theme pointer and releases, a transactional database dump, exact Core
+files before deployment, reviewed source inventory and deployment receipt.
+
+PHP lint, JavaScript syntax, Python compilation, 658 theme/website checks, 46 release
+version checks, 18 media/default checks, 11 project-boundary checks, 92 security
+regression checks, 55 package checks and `git diff --check` passed. Deployment
+verified exact Core and theme payload hashes, GET/HEAD for both new assets, public
+legal routes, OG metadata, visible/structured breadcrumbs, sitemap dates, Nginx and
+service health, and no fresh PHP-FPM fatal errors. Desktop and 390px browser review
+found no horizontal overflow; the header compacts after scrolling and the footer
+keeps its 42px logo, justified copy and responsive columns. No schema or external
+service configuration changed, and the public Core/theme distribution offer remains
+unchanged.
+
+### 2026-09-19 — Unified white footer wordmark
+
+Unified the footer identity with the header without adding another typography
+variant. Both locations now render the same `Sense` + lighter `CMS` + terminal dot
+structure through one shared renderer. The footer keeps the light symbol and makes
+the complete `SenseCMS.` wordmark, including its dot, white at rest and on
+interaction. Arbitrary configured brand labels remain escaped plain text; the former
+default `Sense CMS` is safely recognized as the canonical product wordmark.
+
+Updated the configurable footer brand default and the production theme setting to
+`SenseCMS.` without overwriting a custom value. Signed theme 1.0.8 is active as
+`sensecms-1.0.8-77873a465336bebc`; archive SHA-256 is
+`77873a465336bebc0a53841287b944547377a72b24ab18bdaab88107cba0c7e6`.
+Recovery is `/root/sensecms-backups/20260918T225706Z-footer-wordmark`, including the
+previous theme/settings state, database dump, Core snapshot and deployment receipt.
+
+PHP lint, JavaScript syntax, Python compilation, 659 theme/website checks, 46 release
+version checks and `git diff --check` passed. The guarded deployment verified the
+1.0.7 baseline, exact signed payload, the non-destructive settings migration, two
+identical wordmark structures in the live homepage, white footer colour, routes,
+assets, service health and no fresh PHP-FPM fatal errors. Live browser measurement
+confirmed identical 26px size, 750 primary weight and -1.56px letter spacing in both
+locations, with only the intended navy/white contextual colour difference. No schema
+or external-service configuration changed.
+
+### 2026-09-19 — TikTok Publisher 0.1.0 Sandbox deployment
+
+Implemented `plugin:tiktok-publisher` 0.1.0 as a separately licensed USD 15/year
+Social Publishing provider. Its licence has an independent key and validity range;
+the supplied value remains only in ignored `.cfg/License.TikTok.txt`. The TikTok
+client key and secret remain in ignored `.cfg/TikTok.txt` and the production private
+broker, never in Core, plugin packages, deployment output or tenant installations.
+
+The provider supports multiple creator accounts, featured-image Direct Post,
+per-post privacy and interaction settings, commercial and AI disclosures, explicit
+TikTok Music Usage Confirmation, token refresh and asynchronous publication status.
+The official broker binds short-lived OAuth requests and claims to the licensed
+installation, validates the returned account identity and stages verified private
+media without exposing the app secret. TikTok Sandbox has `user.info.basic` and
+`video.publish`; production access and public distribution remain gated by TikTok
+review. No test post was sent.
+
+Signed Social Publishing 0.3.0 and TikTok Publisher 0.1.0 are active in production.
+Artifact SHA-256 values are
+`8c352e62a55049077bb31a97078b7839ee1f688d27a2cdd1097fe79de1e200d2`
+and `af97739af355ab5539b9ad4f14132f0a693eb8e55f2a85b3617820e759167c8f`.
+Recovery is `/root/sensecms-backups/20260919T115609Z-tiktok-publisher-010`;
+the two earlier guarded candidates at `20260919T105015Z` and `20260919T105216Z`
+rolled back completely after preflight failures.
+
+Broker, provider and exact signed-package suites passed 25, 15 and lifecycle checks.
+Licensing, package, version, boundary, security and theme/website suites also passed,
+as did PHP/JavaScript/Python syntax and `git diff --check` apart from the existing
+CRLF warning for `social.css`. The guarded deployment preserved the exact existing
+social data, installed the additive empty `options_json` field, verified marketplace
+and authenticated workspace routes, worker no-op, Nginx syntax, service health and
+fresh error logs. The approved Sandbox target `@chivale.group` is connected and
+enabled; the Social Publishing overview reports eight connected destinations, zero
+queued deliveries and zero publications.
+
+### 2026-09-19 — LinkedIn, Pinterest and TikTok provider UI consistency
+
+Aligned the three outlying provider workspaces with the established Social Publishing
+interface used by X, Bluesky, Mastodon and Telegram. LinkedIn profiles, Pinterest
+boards and TikTok accounts now use the shared account card, three-column connection
+metadata, connected status, destructive action, responsive empty state, four-step
+workflow and provider-note footer. Provider colours and content remain specific to
+each service; no new parallel CSS component family was introduced.
+
+Released and installed signed `plugin:linkedin-publisher` 0.1.2,
+`plugin:pinterest-publisher` 0.1.1 and `plugin:tiktok-publisher` 0.1.1. Artifact
+SHA-256 values are `968f7507b0e26562e6cc38e58d646a7bf2fcfa3a30f09dbfd8ff64c20d8be91f`,
+`6c920316ec37afbdaab3930455863bd80c9c0cc281296358150fc4790c1bcb97`
+and `2560c20a05c2def2a6654ec92be78328face640f462f187a2d35f2db0e5ab5e5`.
+Recovery is `/root/sensecms-backups/20260919T145313Z-social-provider-ui`, including
+the previous plugin trees, transactional database dump, exact signed candidates and
+deployment receipt.
+
+PHP lint, Python compilation, provider protocol checks and all three exact signed
+package lifecycle tests passed. Authenticated production acceptance confirmed the
+new shared UI structures and versioned assets for all three workspaces; the public
+21-product marketplace/catalogue test also passed. The guarded deployment preserved
+the exact connection, target and delivery fingerprints, ran the production worker
+with zero publications, retained Social Publishing 0.3.0, verified service health and
+found no fresh critical Nginx or PHP-FPM errors. No schema, OAuth credential, account
+connection or provider-permission change was made.
+
+### 2026-09-20 — YouTube Publisher 0.1.0 private-upload deployment
+
+Implemented and deployed `plugin:youtube-publisher` 0.1.0 as a separately
+licensed USD 15/year provider. Its fixed licence identity is ProductName
+`Sense CMS YouTube Publisher Plugin`, ProductModel `YouTube Publisher Plugin`
+and protocol ProductVersion `1.0`; the supplied key remains only in ignored
+`.cfg/License.YouTube.txt`. The Google OAuth client export remains only in
+ignored `.cfg/youtube.json` and in the private production broker configuration.
+No client secret or channel token is packaged, committed or written to this log.
+
+Google Cloud project `Chivale` has YouTube Data API v3 enabled, the `Sense CMS`
+OAuth brand and authorized `sensecms.com` domain, public privacy/terms links,
+and one web client named `Sense CMS YouTube Publisher`. It uses only
+`youtube.upload` and the fixed callback
+`https://www.sensecms.com/api/social/youtube/v1/callback`. Google does not charge
+per upload, but the default API allocation is quota-limited. New unaudited API
+projects can upload only private videos, so public and unlisted publishing remain
+fail-closed behind the broker's `public_uploads=false` gate until compliance review.
+
+Social Publishing 0.4.0 adds a permission- and facility-scoped Media Library
+video picker shared by providers. YouTube connects multiple channels, requires a
+reviewed MP4, explicit audience and privacy selections, supports synthetic-media
+and subscriber-notification declarations, refreshes offline credentials and uses
+resumable upload. The current Media Library contract limits a selected MP4 to
+80 MiB; the provider revalidates facility ownership, MIME type, size and real path
+immediately before delivery. No video was uploaded during release validation.
+
+Signed Social Publishing 0.4.0 and YouTube Publisher 0.1.0 are active in
+production. Artifact SHA-256 values are
+`50263d95c3fd109828301e90655d4639b01f05ae585cbd6d5bacdec72603500f`
+and `ef28311cd7fe0e51d1eff69225fd9d5d58e8438afad884a316c35e4d6de46e6e`.
+Recovery is `/root/sensecms-backups/20260920T014545Z-youtube-publisher-010`.
+The preceding guarded candidate stopped on an overly strict empty-state UI test
+and rolled back completely; its receipt is retained at
+`/root/sensecms-backups/20260920T014410Z-youtube-publisher-010`.
+
+Broker, provider and exact signed-package lifecycle suites passed, as did licensing,
+package, project-boundary, release-version, JavaScript and syntax checks. The final
+deployment preserved exact social connection, target and delivery fingerprints,
+verified authenticated workspace/assets/media picker, the 22-product public
+marketplace, licensed broker reachability, unlicensed request rejection, worker
+no-op, Nginx syntax, service health and fresh error logs. Desktop and 390px live
+review confirmed the established Social Publishing cards, actions, empty state,
+four-step workflow and responsive layout without clipping.
+
+### 2026-09-20 — YouTube OAuth verification disclosure published
+
+Google's Verification Center showed the OAuth brand as previously rejected because
+the old application name did not match the homepage and the linked privacy notice was
+not sufficiently detailed. The current OAuth brand fields already use `Sense CMS`,
+`https://www.sensecms.com/`, the Sense CMS privacy and terms routes, and the authorised
+`sensecms.com` domain. The public warning therefore remains expected until Google
+approves a new brand and data-access review; it is not a callback or CMS failure.
+
+Updated the three CMS-managed legal pages without mutating the immutable signed theme
+release. The privacy notice now documents the minimum `youtube.upload` scope, channel
+identifier and credential handling, single-use claims, explicit upload fields,
+delivery records, revocation/deletion choices, excluded Google data classes and
+Google API Services User Data Policy Limited Use compliance. Terms identify TikTok
+and YouTube as Development Preview integrations subject to platform review and quota.
+The obsolete statement that YouTube was only planned is no longer public.
+
+The publication used a reviewed copy from private operator staging, an exact recovery
+journal and a transactional production database dump. Recovery is
+`/root/sensecms-backups/20260920T020444Z-youtube-google-verification`; the private
+stage is `/root/sense-youtube-legal-20260920T020444Z`. All three routes returned HTTP
+200 and the expected markers after publication. Local PHP lint, 662 theme/website
+checks, 11 project-boundary checks and `git diff --check` passed. Production Nginx
+syntax, Nginx/PHP-FPM/MariaDB/cron health and fresh PHP-FPM fatal-error checks passed.
+No theme package, Core file, schema, credential, connection or social delivery changed.
+
+### 2026-09-20 — Google Search Console ownership and OAuth brand verification
+
+Google's renewed brand check accepted the updated `Sense CMS` name, logo and legal
+disclosures, then identified one remaining prerequisite: ownership of the configured
+homepage. Added the URL-prefix property `https://www.sensecms.com/` to Google Search
+Console and verified it with the persistent public HTML verification file. The exact
+file returns HTTP 200 over HTTPS and must remain deployed while ownership is required.
+
+The reviewed source is `web/public/google1355afe69ff57c1c.html`; production recovery
+metadata is `/root/sensecms-backups/20260920T022617Z-google-search-console`, and private
+staging is `/root/sense-google-verification-20260920T022617Z`. No DNS, database, Core,
+theme, package, OAuth credential, service configuration or social delivery changed.
+After Search Console reported `Ownership verified`, the repeated Google OAuth brand
+check completed successfully. The owner then published the verified brand, and Google
+now reports that the `Sense CMS` brand elements are verified and displayed to users.
+Data-access verification remains pending because Google requires a real workflow
+demonstration video before the requested YouTube scopes can be submitted for review.
+
+### 2026-09-20 — YouTube OAuth channel-identification scope correction
+
+The first real Google callback reached the official Sense CMS broker but returned HTTP
+502 before creating a connection. Production access evidence and the broker flow showed
+the root cause: the code exchanged the authorization code successfully and then called
+`channels.list(mine=true)` to identify the selected destination, while the OAuth request
+contained only `youtube.upload`. Google's current YouTube Data API discovery contract
+does not authorize `channels.list` with that scope; `youtube.readonly` is the least
+additional scope that permits identification of the authenticated channel.
+
+The broker now requests exactly `youtube.upload` for the explicit upload and
+`youtube.readonly` only for the current channel identifier and title. Token validation,
+the public privacy disclosure and the YouTube extension description were updated to
+match. No connection, refresh token or social delivery was created by the failed attempt.
+
+The guarded production update used private staging
+`/root/sense-youtube-scope-20260920T025909Z` and recovery
+`/root/sensecms-backups/20260920T025909Z-youtube-oauth-scopes`, including the prior
+broker and a transactional database dump. The deployed broker SHA-256 is
+`43ed9571ae6c181d09f48f9a3ccab409949934c4c2a6c35ffb5e31d3dcf73821` and matches the
+reviewed source. PHP lint, 21 isolated broker checks, 662 theme/website checks and
+`git diff --check` passed. Production legal and extension pages expose the corrected
+scope explanation; Nginx syntax and Nginx/PHP-FPM/MariaDB/cron health checks passed.
+
+### 2026-09-20 — Social Publishing delivery and editor hotfix
+
+Production delivery evidence for the first reviewed post showed successful Facebook,
+LinkedIn and Telegram deliveries, but failed Bluesky, Mastodon and X deliveries. The
+shared queue had generated the same 712-character default message for every provider,
+ignoring the declared 300-character Bluesky, 400-character Mastodon and 250-character
+X limits. Social Publishing 0.4.1 now truncates only generated default messages to the
+selected provider limit while preserving editor-supplied validation and delivery
+idempotency. Provider validation also runs before any OAuth refresh, preventing an
+invalid local payload from consuming rotating X or Bluesky credentials.
+
+Bluesky 0.1.4 and YouTube 0.1.1 restore the runtime variables required by the private
+workspace configuration during token refresh. X 0.1.2 validates locally before refresh.
+TikTok 0.1.3 fixes its `creator_info/query` body from JSON `[]` to the required `{}`;
+the API had returned HTTP 400 `invalid_params`. It also retries one transient rejection
+and retains normalized creator choices for five minutes inside the already encrypted
+connection credentials, avoiding duplicate editor queries. Live production checks
+confirmed seven TikTok editor fields from the API and from the subsequent cache read,
+and confirmed live YouTube editor choices after refresh.
+
+The signed, verified production versions are `addon:social-publishing` 0.4.1,
+`plugin:bluesky-publisher` 0.1.4, `plugin:x-publisher` 0.1.2,
+`plugin:tiktok-publisher` 0.1.3 and `plugin:youtube-publisher` 0.1.1. Recovery is
+`/root/sensecms-backups/20260920T052956Z-social-publishing-hotfix` plus the focused
+TikTok recovery `/root/sensecms-backups/20260920T053852Z-tiktok-editor-cache`.
+Exact signed archives, Linux provider suites, package checksums, database backup,
+worker no-op, HTTP assets, service health and fresh critical logs passed. No post was
+published or retried during deployment; pre-existing connections, targets and delivery
+history were preserved before the intentional successful credential verifications.
+
+Mastodon account verification now succeeds. The earlier failed Mastodon delivery keeps
+its reviewed historical payload and must not be retried verbatim; a new post revision
+will receive the corrected limit. Existing Bluesky and X refresh credentials were
+already unusable after the earlier failed attempts, so those two accounts require a
+one-time reconnect before a new reviewed revision is submitted. Pinterest remains
+intentionally fail-closed while Trial access is pending and no production private
+broker configuration exists. Instagram and Threads packages are not implemented while
+the required Meta verification remains outstanding.
+
+The public Extensions cards and detail pages were then aligned with the installed
+versions for Bluesky 0.1.4, X 0.1.2, TikTok 0.1.3 and YouTube 0.1.1; the YouTube
+detail also names its Social Publishing 0.4.1 dependency. The CMS-managed update has
+a database dump and page-builder recovery journal at
+`/root/sensecms-backups/20260920T-social-hotfix-marketplace-final`. All 22 managed
+catalogue routes and pricing/licence assertions passed, and the four updated detail
+routes returned HTTP 200. An earlier preflight-only backup named
+`20260920T-social-hotfix-marketplace` contains no applied page change.
+
+### 2026-09-20 — Post rich-media editor and Social Publishing workspace UI
+
+The local workspace post editor now uses a self-hosted Quill 2 editor with image,
+audio and video embeds, direct HTTPS media URLs and the existing protected Media
+Library upload flow. Posts can independently select a featured/OG/social image,
+audio and video, persist localized tags, and inherit SEO title and description from
+the post title and excerpt until an editor overrides them. Public post pages render
+the featured image, localized tags and accessible modal players with localized
+audio/video calls to action. Sanitization and CSP rules permit only controlled
+media elements and safe local or HTTPS sources.
+
+The editor sidebar now follows the shared card language in the order Publication,
+Review & accountability, Media & distribution, and Social Publishing. Social
+providers use one accordion with the agreed fixed order: LinkedIn, X, Facebook,
+Telegram, WhatsApp, Instagram, Threads, YouTube, TikTok, Pinterest, Bluesky and
+Mastodon. WhatsApp, Instagram and Threads remain visible but inactive until their
+providers are implemented. Provider icons retain their recognizable brand colors;
+the right column scrolls independently on desktop and collapses responsively.
+
+No audio-to-video conversion was introduced. YouTube accepts only an explicitly
+selected MP4 or WebM video; post audio remains available to the public player and future
+compatible providers. The schema addition is additive (`031_post_editor_media.sql`)
+and preserves existing posts. Media usage checks now protect featured, audio and
+video references from trash or permanent deletion.
+
+Local validation passed PHP lint for changed PHP sources, JavaScript syntax checks,
+11 post-editor regressions, 8 Social Publishing regressions, 13 YouTube protocol
+checks, 18 media-limit checks, 92 security regressions, 662 theme checks and
+`git diff --check`. The exact signed package set and migration also passed a clean
+isolated MariaDB lifecycle rehearsal on the production host.
+
+Production deployment completed with the additive migration, signed and verified
+`addon:social-publishing` 0.5.1, signed and verified `plugin:youtube-publisher` 0.2.0,
+and signed product theme 1.0.9. Social Publishing 0.5.1 corrects the shared UI asset
+cache key found by production acceptance. Recovery is
+`/root/sensecms-backups/20260920T090618Z-post-editor-social`, containing the private
+database dump, prior package trees, Core files and final receipt. The first theme
+activation attempt could not traverse the root-owned staging directory to read the
+public trust key; the key was copied temporarily with service-only permissions, the
+theme was activated, and the temporary copy was removed. The deployment script now
+uses that safe path and performs independent rollback steps.
+
+Authenticated production acceptance passed for the rich post editor, self-hosted
+Quill assets, fixed provider order, media picker, YouTube workspace and editor API.
+The migration journal is ready with no pending files; both media columns and both tag
+tables exist. Nine social connection identities remain intact; TikTok and YouTube
+credentials were intentionally refreshed by their option readers. All seven targets
+and seven delivery rows match the pre-deployment dump exactly. The worker returned
+zero queued, published and failed operations, the due/processing queue is empty,
+HTTP assets return 200, Nginx configuration is valid, required services are active,
+and fresh critical-log checks are clean. A final browser review exposed an immutable
+legacy cache key for the main content-management stylesheet; the console now uses the
+`20260920-post-editor-1` CSS/workflow keys, with the prior console view preserved under
+the same recovery directory. At 1920×945 the media heading/help spacing, six rich-media
+controls, independent 847px sidebar scroll area, required four-section order and exact
+twelve-provider order were verified from computed production layout. No content was
+published by deployment.
+
+### 2026-09-20 — post editor layout and AJAX edit parity hotfix
+
+The reported overlap below the rich post body had one concrete layout cause: Quill's
+base stylesheet applies `height: 100%` to its container while the Sense CMS field used
+only a minimum height. The editor therefore rendered beyond its parent flow and covered
+the SEO title, help and description controls. The CMS override now uses `height: auto`,
+keeps the established minimum editor height and makes the rich-field help a separate
+block with stable spacing.
+
+Existing-post editing already used the same server-side form as post creation, but an
+AJAX transition from the post list replaced only the main document area. Page-specific
+Quill assets were not loaded and the post editor, editorial workflow and social
+destination scripts had one-shot bootstraps. Content navigation now loads the approved
+self-hosted post-only assets when required; all three modules rehydrate idempotently on
+`sensecms:content-ready`. Direct loads and repeated AJAX transitions therefore expose
+the same rich editor, SEO inheritance, media controls, Review & accountability and
+Social Publishing UI for new and existing posts without duplicate bindings.
+
+Production received signed and verified `addon:social-publishing` 0.5.2 plus the five
+reviewed Core view/asset files. Recovery is
+`/root/sensecms-backups/20260920T100526Z-post-editor-ajax`, including the prior add-on,
+Core files and transactional database dump. The first deployment attempt stopped in
+preflight before mutation because the isolated regression payload lacked an unchanged
+theme view; the view was added to the private stage and the full preflight was rerun.
+
+Validation passed JavaScript and PHP syntax, 16 post-editor regressions, 8 Social
+Publishing regressions, signed archive verification, exact deployed checksums and
+authenticated production acceptance for both `/content/posts/new` and
+`/content/posts/1/edit`. All connection, target and delivery fingerprints remain exact,
+the due/processing queue is empty, the worker published zero items, versioned assets
+return HTTP 200, required services are active and fresh critical logs are clean. No
+post was saved, queued, retried or published during deployment.
+
+### 2026-09-20 — post tag chips and professional Media Library picker
+
+The post tag field now commits localized tags as removable chips on comma or Enter,
+splits pasted comma/newline lists, removes the last chip with Backspace, deduplicates
+values and preserves the existing 30-tag server limit. The same component is used by
+both post creation and editing, including AJAX navigation.
+
+The post Media Library picker was rebuilt as a large centered, responsive workspace
+that reuses the existing protected media APIs. Editors can search and paginate media,
+browse and refresh folders, upload into the active folder, create folders, remove empty
+folders and move unused media to trash. A direct `Manage library` action opens the full
+Media Library for restore, permanent deletion and metadata operations without
+duplicating its safer DAM controls inside the picker. The previous cancel failure was
+caused by a `method="dialog"` form being intercepted by the global AJAX form handler;
+the picker now uses non-submit close controls, including Cancel, close and Escape.
+
+Production deployment used recovery
+`/root/sensecms-backups/20260920T102934Z-post-media-workspace` with a transactional
+database dump and exact prior Core files. One preflight stopped before mutation when
+the isolated payload lacked an unchanged Social Publishing test asset. A subsequent
+deployment deliberately rolled back after a typo in the acceptance assertion; the
+rollback receipt and restored `20260920-2` asset key were checked before retrying. The
+corrected deployment then passed 21 post-editor regressions, 18 media-limit checks,
+JavaScript/PHP syntax, exact deployed checksums, authenticated create/edit acceptance,
+HTTP 200 for all three versioned assets, service health and fresh critical-log checks.
+Social Publishing remains pinned at signed version 0.5.2; connection, target and
+delivery fingerprints were preserved, the worker performed no work, and no content
+was saved, queued, retried or published.
+
+### 2026-09-20 — portable Core Page Builder standard for every theme
+
+The Page Builder no longer allows a theme's `supported_blocks` metadata to hide Core
+sections from the Workspace. The fifteen built-in section identities and field
+contracts are now always present, independent of the active theme. Theme resolution
+also reports the complete Core standard while preserving any additional theme section
+metadata; themes may style Core sections or add new ones, but cannot remove portable
+editing capabilities.
+
+The official Sense CMS product theme source advances to 1.0.10 and now renders all
+fifteen Core sections, including hero and slider media, gallery, process steps, story,
+values, services, statistics, motion, news, call to action and image/text layouts. Its
+responsive CSS and accessible slider script use the existing presentation language.
+The accepted public distribution artifact intentionally remains theme 1.0.0; this
+source change does not promote or replace Stable distribution bytes.
+
+Local verification passed PHP and JavaScript syntax, 177 builder contract checks, 675
+theme/website checks, 92 security regressions, 46 release-version checks and scoped
+`git diff --check`. The first remote preflight stopped before mutation because the
+production CLI does not provide `pdo_sqlite`; the same security suite had already
+passed locally. The corrected preflight records that environmental skip and retained
+all other remote checks.
+
+Production received the two reviewed Core contract files plus signed and verified
+theme 1.0.10. Active release is
+`sensecms-1.0.10-4565910ae47dee81`; recovery is
+`/root/sensecms-backups/20260920T125947Z-core-theme-standard`, containing the prior
+Core files, theme pointer/storage archive, signed candidate, deployment receipt and a
+private transactional database dump. Exact local/deployed SHA-256 checks passed for
+both Core files and both principal theme assets. Production PHP confirmed the complete
+Core catalogue and active-theme contract, five public routes/assets returned HTTP 200,
+Nginx configuration is valid, required services are active and fresh critical service
+logs are clean. The accepted public Stable distribution artifact remains unchanged.
+No database migration, content edit, queue operation or content publication occurred.
+
+### 2026-09-20 — Core Page Builder work recovery foundation (local)
+
+Page Builder now keeps a private recovery draft per page and user in Core. Edits are
+debounced to the server after 2.5 seconds with a 15-second maximum interval during
+continuous input, while manual **Save changes** remains the only operation that updates
+the page, advances its optimistic version and creates a revision. Draft writes are
+version-bound, do not emit page events or activity-log noise, accept safe incomplete
+work, reject executable media URLs and are removed after a successful manual save or
+page deletion.
+
+The Workspace adds bounded 50-state Undo/Redo history, keyboard shortcuts outside
+native form-field editing, explicit recovery/discard UI after reopening, accessible
+save-state messaging and close-tab keepalive recovery. AJAX navigation from the page
+editor now loads and rehydrates the Builder assets and cancels the prior Builder
+lifecycle when leaving, preventing stale timers and unload guards. The section-library
+copy now consistently states that all themes support the complete Core standard.
+
+Local validation passed PHP and JavaScript syntax, 184 Builder contract/regression
+checks, 21 post-editor regressions, 675 theme/website checks, 92 security regressions,
+11 project-boundary checks, 55 package checks and `git diff --check`. The self-hosted
+Quill distribution was subsequently relocated byte-for-byte from the protected,
+theme-scoped `public/theme/vendor/quill` path to the Core-owned
+`public/assets/lib/quill` path, with its licence retained as `LICENSE.txt`. The
+protected-directory manifest remains unchanged; the installer
+builder permits only the exact public basename `LICENSE.txt`, while a regression
+fixture proves that an arbitrary public `.txt` file remains rejected. Validation then
+passed 46 installer-package checks, 37 web-installer checks, 184 Builder checks,
+21 post-editor checks, 675 theme/website checks, 92 security checks, 11 project-boundary
+checks and 55 package checks. No persistent installer artifact was rebuilt. This Page
+Builder foundation was subsequently deployed together with the Navigator and private
+section clipboard described below; no production content was modified.
+
+The Shared library layout was also corrected locally after its three per-item actions
+exceeded the generic one-action grid column and forced horizontal overflow. Shared rows
+now allocate an intrinsic actions column, constrain long labels inside the content
+column and keep the library scroll vertical at desktop, tablet and mobile widths.
+
+### 2026-09-20 — Core Page Builder navigator and private section clipboard
+
+The second Page Builder improvement stays entirely in portable Core. The right library
+now opens with a compact **Navigator** that mirrors the current page structure, shows
+visibility, jumps to and expands a section, reorders sections, and supports multi-select.
+An editor can copy one section from its canvas action or up to twenty selected sections
+into a server-side clipboard private to that user, switch pages, and paste the copied
+sections after the current selection or at the end of the destination page.
+
+Clipboard input is CSRF-protected, checked against page editing access, sanitized using
+the active Core catalogue, limited to 2 MB and detached from global-section identities.
+Paste creates fresh UUIDs, respects singleton sections and the sixty-section Core page
+limit, and remains an unsaved local edit until the editor explicitly saves the page.
+Deleting a source page preserves the copied content while clearing its stale source
+reference. The clipboard adds no dependency on a public theme or extension.
+
+Local validation passed JavaScript and PHP syntax, 190 Builder contract/regression
+checks, 21 post-editor checks, 675 theme/website checks, 92 security checks, 11
+project-boundary checks, 55 package checks, 46 installer-package checks, 37 web-installer
+checks and `git diff --check`.
+
+Production deployment used recovery
+`/root/sensecms-backups/20260920T142856Z-page-builder-navigator`, containing exact prior
+Core files, the legacy theme-scoped Quill bundle, a transactional database dump and the
+deployment receipt. Migrations `032_page_builder_drafts.sql` and
+`033_page_builder_clipboard.sql` were applied additively; both new tables were empty at
+final acceptance. Exact deployed SHA-256 checks passed for eleven Core files/assets and
+both migrations. Quill now resolves only from `public/assets/lib/quill`; its former
+`public/theme/vendor/quill` copy was removed after the new JS/CSS returned HTTP 200.
+
+Two guarded attempts rolled back the Core files before the successful cutover. The
+first exposed the two-second FPM OPcache revalidation window through an immediate
+authenticated request; acceptance now waits for a complete revalidation interval. The
+second exposed a private intermediate directory mode inherited from the deployment
+`umask`; every public directory is now explicitly traversable (`0755`) while files stay
+read-only (`0644`). Both rollback receipts retained the already verified additive
+migrations and restored exact baseline file hashes. Final authenticated acceptance
+passed the Page Builder, Shared layout, private clipboard UI, post create/edit editor
+and Core-owned Quill assets. Nginx configuration, required services, public HTTP checks
+and fresh critical logs are healthy. No page, post, draft or clipboard row was created,
+saved, queued or published by deployment.
+
+### 2026-09-20 — Core Page Builder patterns and ready page layouts
+
+The third Page Builder improvement adds a Core-owned **Patterns** library beside the
+Navigator, Sections and Shared tabs. It provides eleven purpose-based structures:
+Landing page, Campaign, Newsletter landing page, About us, Contact, Product
+presentation, Service page, Pricing, Documentation, Event and FAQ. Patterns are
+searchable and grouped by purpose; each card previews its section sequence before the
+editor confirms insertion.
+
+Insertion creates ordinary independent Page Builder sections from the existing Core
+catalogue. It does not create a new persistence model or a hidden theme dependency.
+The operation uses fresh UUIDs, participates in Undo/Redo and recovery autosave,
+preserves manual save as the publication boundary, respects singleton conflicts and
+the sixty-section page limit, and reports skipped incompatible sections. Shared
+Sections remain a separate, explicitly linked mechanism.
+
+Local validation passed PHP and JavaScript syntax, 216 Builder contract/regression
+checks, 675 theme/website checks, 92 security regressions, 55 package checks, 11
+project-boundary checks and `git diff --check`. Production deployment used recovery
+`/root/sensecms-backups/20260920T152035Z-page-builder-patterns`, containing the exact
+eight prior/new Core files and deployment receipt. Exact deployed SHA-256 checks,
+authenticated owner-session acceptance of all eleven patterns, versioned JS/CSS HTTP
+checks, Nginx configuration, required services and fresh critical logs passed. There
+was no schema change and no page, draft, clipboard or public content was modified.
+
+### 2026-09-20 — Core Page Builder responsive layouts
+
+The fourth Page Builder improvement adds a Core-owned **Layouts** workspace. Editors
+can select consecutive sections and apply controlled container, column, grid, stack,
+sidebar or full-width presets, then adjust gap, alignment, wrapping and independent
+desktop, tablet and mobile span, order and visibility settings. Layout groups move as
+one structural unit and safely return to standalone sections when ungrouped. Separator
+and Spacer are now first-class portable Core sections, bringing the standard catalogue
+to seventeen sections. No absolute positioning or public-theme authoring dependency was
+introduced.
+
+Layout metadata is stored page-locally in the additive `content_blocks.layout` JSON
+column. Migration `034_page_builder_layouts.sql` left every existing block unconfigured,
+so deployment did not alter existing content or assign layouts implicitly. The public
+theme consumes the sanitized Core contract through a twelve-column responsive grid and
+supports content, wide and full-width containers, breakpoint ordering and visibility,
+wrapping, separators and responsive spacers.
+
+Local validation passed PHP and JavaScript syntax, 247 Builder contract/regression
+checks, 678 theme/website checks, 92 security checks, 55 package checks, 46 installer
+package checks, 37 web-installer checks and `git diff --check`. Production deployment
+used recovery `/root/sensecms-backups/20260920T160554Z-page-builder-layouts`, containing
+the prior Core files, active theme pointer and storage, a transactional database dump,
+the signed theme archive and deployment receipt. Exact Core and migration checksums,
+authenticated Page Builder acceptance, public layout rendering on `/` and `/platform`,
+versioned asset responses, Nginx configuration, required services and fresh critical
+logs passed. Signed Sense CMS theme `1.0.11` is active as release
+`sensecms-1.0.11-d179b3bffda72cb2`.
+
+### 2026-09-20 — styled Page Builder unsaved-changes navigation
+
+The Core unsaved-changes guard now handles internal navigation consistently through
+the existing accessible Sense CMS alert dialog. Clicking the active Page Builder menu
+item is no longer exempt merely because it resolves to the current URL, and switching
+the edited document calls the same central guard. Confirming the styled dialog grants
+one short-lived navigation bypass, preventing the browser from displaying a second
+native prompt. The browser-owned prompt intentionally remains the standards-mandated
+fallback for closing or reloading a tab and cannot be visually customized by a site.
+
+Local JavaScript/PHP syntax, 248 Builder contract checks, 16 maintenance regressions
+and `git diff --check` passed. Production recovery is
+`/root/sensecms-backups/20260920T161842Z-page-builder-unsaved-dialog`. Exact deployed
+checksums, authenticated Page Builder acceptance, versioned JS responses, Nginx/PHP-FPM
+health and fresh critical logs passed. No database, content or public-theme change was
+made.
+
+### 2026-09-20 — Core Page Builder Live Canvas and Inspector
+
+The fifth Page Builder improvement adds an inline **Live Canvas** beside the structural
+editor. It renders the current editor's private recovery draft with the active public
+theme, supports Desktop, Tablet and Mobile canvas widths, selects theme-rendered
+sections directly, and synchronizes the existing Core field model with the right-side
+Inspector. Selected sections expose move, visibility, duplicate, remove and responsive
+layout actions. Structure remains available as the precise form-oriented editing mode.
+
+The preview is an authenticated, current-user-only route with private no-store and
+noindex headers. It disables popups, forms, live chat and facility geolocation and adds
+only a small Core selection bridge; themes provide presentation plus the stable section
+UID hook. The global framing policy remains `frame-ancestors 'none'` everywhere except
+the exact authenticated `/content/builder/{id}/live-preview` route, which permits only
+same-origin embedding. No public draft URL, cross-origin framing or automatic
+publication was introduced.
+
+Local validation passed PHP and JavaScript syntax, 255 Builder contract/regression
+checks, 678 theme/website checks, 92 security regressions, 16 maintenance regressions,
+Python syntax and `git diff --check`. Production recovery for the main deployment is
+`/root/sensecms-backups/20260920T164407Z-page-builder-live-canvas`; the signed Sense CMS
+theme `1.0.12` is active as release `sensecms-1.0.12-46b8528c3c52ea36`. The same-origin
+frame-policy hotfix has independent recovery at
+`/root/sensecms-backups/20260920T164956Z-page-builder-live-frame`.
+
+Authenticated production acceptance verified the private draft document, section UIDs,
+bridge assets and CSP. Direct browser QA then verified active-theme rendering, canvas
+selection to Inspector synchronization and all three responsive widths. Required
+services, Nginx configuration, versioned asset responses, public `/` and `/platform`
+routes and fresh critical logs are healthy. Production lacks `pdo_sqlite`, so the two
+SQLite-dependent suites were run locally and explicitly skipped server-side. Two
+frame-policy attempts rolled back before success: the first identified the missing
+same-origin CSP exception, and the second identified the two-second FPM OPcache
+revalidation interval. The successful zero-downtime deployment waits for that interval
+before acceptance. No schema, page, draft or published content was changed.
+
+### 2026-09-21 — portable Page Builder appearance tokens
+
+The sixth Page Builder improvement adds Core-owned, placement-specific appearance
+controls to the Inspector. Editors can choose a controlled frame, semantic surface,
+spacing, corner radius and content alignment. The contract accepts only declared Core
+values; arbitrary CSS, selectors and raw colour input are not stored. Theme default is
+the fallback for every field, so existing pages retain their prior presentation and a
+different compatible theme can interpret the same semantic choices safely.
+
+Appearance metadata is stored independently from content, shared-section identity and
+responsive layout in the additive `content_blocks.appearance` JSON column. It follows
+the same sanitized document path through recovery drafts, revisions, clipboard,
+duplication, Live Canvas and publication. The Sense CMS theme maps the Core tokens to
+its existing palette and spacing variables and was released as signed presentation
+version `1.0.13`; Core remains independent from the public theme.
+
+Local validation passed PHP, JavaScript and Python syntax, 260 Builder contract checks,
+678 theme/website checks, 92 security regressions, 16 maintenance regressions, installer
+package checks, web-installer checks and `git diff --check`. Production preflight first
+stopped safely before any mutation because the private test staging omitted the public
+package catalogue; the staging payload was completed and the full preflight restarted.
+The successful deployment recovery is
+`/root/sensecms-backups/20260920T235610Z-page-builder-appearance`, including the prior
+Core files, theme state/storage and transactional database dump. Migration `035` was
+applied exactly once and confirmed zero configured existing blocks. Signed theme
+`1.0.13` is active as release `sensecms-1.0.13-f32013652f54457b`.
+
+Exact deployed checksums, authenticated production acceptance, versioned Core assets,
+public `/` and `/platform`, Nginx/services and fresh critical logs passed. Direct browser
+QA verified the independent scrolling Inspector, complete Appearance controls and live
+active-theme canvas. Production lacks `pdo_sqlite`, so its two SQLite-dependent suites
+were passed locally and explicitly skipped server-side. No page content or publication
+state was changed.
+
+### 2026-09-21 — Core Page Builder section collaboration
+
+The ninth Page Builder improvement adds Core-owned section collaboration without making
+themes or extensions responsible for editorial state. Each section now has an assignee,
+Draft/In review/Approved workflow, reviewer-gated approval, threaded comments with
+resolve/reopen actions, an exact two-revision comparison and a short database-backed
+editing lock. The lock is renewed only while the selected section is being edited and
+expires automatically; writes reject an active lock held by another editor. All
+collaboration endpoints use the existing AJAX/JSON and CSRF conventions.
+
+Migration `036` adds three facility-scoped tables and the
+`content.pages.collaborate` permission for owner, administrator, content-manager,
+editor and reviewer roles. Existing revision history remains the comparison source and
+no parallel content copy was introduced. Reviewers can discover and open Page Builder
+through the collaboration permission, while normal edit and approval capabilities keep
+their existing least-privilege boundaries. Production locking uses database time for
+both expiry and active-lock evaluation, avoiding application/database timezone drift.
+
+Local validation passed PHP and JavaScript syntax, 282 Builder contract/regression
+checks, 678 theme/website checks, 92 security regressions, 16 maintenance regressions,
+package/project-boundary/installer checks, 37 web-installer checks and
+`git diff --check`. Production lacks `pdo_sqlite`, so its SQLite-dependent suites were
+passed locally and explicitly skipped server-side. Early guarded deployment attempts
+rolled Core back while diagnosing a MariaDB metadata-query incompatibility, an acceptance
+contract mismatch and PHP/database timezone drift; the corrected deployment then passed
+the complete gate.
+
+Production recovery is
+`/root/sensecms-backups/20260921T020239Z-page-builder-collaboration`. Migration `036`
+was applied exactly once, all three collaboration tables and five role grants were
+verified, and the signed Sense CMS theme remained unchanged at `1.0.14`. Exact deployed
+checksums, authenticated collaboration acceptance, versioned assets, required services,
+Nginx configuration and fresh critical logs passed. Direct Chrome QA verified the
+Review workspace, workflow controls, discussion empty state, editing indicator and
+independently scrolling responsive panel without saving content or discussion data. A
+final database check confirmed no residual editing locks and no workflow/comment rows.
+The reviewed deployment stage and transport archive were retained inside that private
+recovery directory; the local transport copy was moved to the Windows Recycle Bin.
+
+### 2026-09-21 — Core Page Builder Quality Inspector
+
+The seventh Page Builder improvement adds a Core-owned **Quality** workspace and toolbar
+summary for the current saved or unsaved Builder document. The report separates blocking
+errors, warnings and editorial advice, assigns a bounded score and checks localized page
+metadata, required section content, link-label/target pairs, image alternative text,
+video posters, visibility schedules, empty device layouts, missing headings and oversized
+Media Library images or videos. Clicking a section issue selects the affected section and
+language in Inspector; page and SEO issues use the existing styled unsaved-changes guard
+before leaving Builder.
+
+The authenticated `/content/builder/{id}/quality` endpoint sanitizes the submitted draft
+through the normal Core component contract and performs no database write. Local media
+metadata is read only from active, facility-scoped Media Library rows, with a maximum of
+250 typed `/media/` paths. The Inspector deliberately does not fetch arbitrary external
+links, avoiding SSRF and unpredictable third-party requests. Themes remain presentation
+only and no theme release or schema migration was required.
+
+Local validation passed PHP and JavaScript syntax, 266 Builder contract/regression checks,
+678 theme/website checks, 92 security regressions, 16 maintenance regressions, installer
+package checks, web-installer checks and `git diff --check`. The first production preflight
+stopped before mutation because its private staging bundle omitted Core bootstrap files;
+the complete private bundle then passed the same hash-gated preflight. Successful recovery
+is `/root/sensecms-backups/20260921T002440Z-page-builder-quality`.
+
+Exact deployed checksums, authenticated production acceptance, versioned assets, required
+services, Nginx configuration and fresh critical logs passed. Direct Chrome QA verified
+the separately scrolling Quality panel, counters and issue list, then followed a Polish
+content issue into the matching section and language in Inspector without changing content.
+Production lacks `pdo_sqlite`, so its SQLite-dependent suites were passed locally and
+explicitly skipped server-side. No database, page content, draft or publication state was
+changed.
+
+### 2026-09-21 — Core Page Builder dynamic collections
+
+The eighth Page Builder improvement evolves the legacy `news` section into a reusable
+Core-owned **Dynamic collection** while preserving its stable section identity and old
+defaults. Editors can use any number of collections and choose live posts or public pages,
+automatic or explicit selection, a post category, four ordering modes, a bounded item
+limit, cards/editorial-list/compact presentation and independent image, excerpt and date
+visibility. The selected-content control is searchable, source-aware and limited to twelve
+items. All editor controls and data resolution belong to portable Core; the active theme
+only presents the normalized collection items.
+
+Public collection data is resolved fresh for each request from published or due-scheduled,
+facility-scoped content. Private/draft/future content, trashed media and the page currently
+being rendered are excluded. Existing sections remain compatible, selected items preserve
+their editorial order and repeated identical rules share a request-local result. No copied
+content, schema migration or automatic content change was introduced; existing
+`content_blocks.settings` JSON stores the sanitized collection rule.
+
+Local validation passed PHP and JavaScript syntax, 270 Builder contract/regression checks,
+7 isolated SQLite collection checks, 678 theme/website checks, 92 security regressions, 16
+maintenance regressions, package/project-boundary/installer checks, 37 web-installer checks
+and `git diff --check`. Production lacks `pdo_sqlite`, so the SQLite-dependent suites were
+passed locally and explicitly skipped server-side. Server-side contract and theme suites,
+exact hash-gated deployment, authenticated owner-session acceptance, public HTTP checks,
+Nginx/services and fresh critical logs all passed.
+
+Production recovery is
+`/root/sensecms-backups/20260921T010552Z-page-builder-collections`, containing exact prior
+Core files, theme state/storage, the verified signed theme archive and deployment receipt.
+Signed Sense CMS theme `1.0.14` is active as release
+`sensecms-1.0.14-4583096ecaefb98b`. Direct Chrome QA confirmed the responsive right-side
+library, the new Dynamic collection card and the live posts/pages option payload without
+creating a recovery draft or saving content. No database row, page, post or publication
+state was changed.
+
+### 2026-09-21 — Core Page Builder AI Copilot and provider orchestration
+
+The tenth Page Builder improvement adds a provider-neutral AI layer to portable Core.
+Administrators may configure multiple encrypted providers with independent driver, API
+endpoint, model, priority, enabled state and Page Builder or visitor-assistant purpose.
+Native Core drivers cover OpenAI Responses, OpenAI-compatible chat completions, Anthropic
+Messages and Google Gemini generateContent; the former single OpenAI visitor assistant now
+uses the same preferred-provider contract. Themes remain presentation-only. Trusted active
+plugins and add-ons may register supplementary Builder actions, but they cannot replace the
+Core workflow, sanitization, authorization or persistence rules.
+
+Builder exposes a separately styled **AI Copilot** workspace for whole-page or selected-
+section proposals: new page draft, supporting sections, rewrite, shorten, expand, translate
+and quality fixes. Only the selected bounded Builder context is sent. Returned JSON is
+validated against the active Core section catalogue and localized field schema, sanitized
+through the normal draft contract and previewed as a standard revision diff. Nothing is
+saved or published automatically; editors must explicitly apply the proposal to their
+unsaved local draft, inspect it and use the existing manual Save action. A document
+fingerprint prevents applying a stale proposal after intervening edits.
+
+Migration `037_page_builder_ai.sql` is additive: provider priority and verification state,
+metadata-only AI run auditing/rate limiting, and least-privilege `content.pages.ai` grants.
+Prompts and generated output are not stored. Provider requests require HTTPS, resolve only
+to public IPv4 addresses, are DNS-pinned for the request, reject redirects, bound request
+and response sizes, and keep credentials out of rendered pages, audit context and logs.
+Connection checks never mark a provider verified after a failure or quota response.
+
+Local validation passed PHP and JavaScript syntax, 16 dedicated provider-neutral AI checks,
+282 Builder contract/regression checks, 7 collection checks, 92 security regressions, 16
+maintenance regressions, 46 installer distribution checks, 37 web-installer checks and
+`git diff --check`. Production lacks `pdo_sqlite`, so the SQLite-dependent suites were
+passed locally and explicitly skipped server-side. Production deployment applied migration
+037 exactly once, preserved the complete encrypted provider fingerprint, deployed exact
+reviewed hashes, passed authenticated Builder and provider-panel acceptance, HTTP/assets,
+services, Nginx and fresh critical-log checks, and made no external AI request.
+Direct Chrome QA verified the independently scrolling AI Copilot panel, its review-first
+empty state and the responsive multi-provider configuration workspace. The page had no
+horizontal overflow, no populated secret input and no browser warning or error logs.
+
+Production recovery is
+`/root/sensecms-backups/20260921T071659Z-page-builder-ai`. The signed active theme was not
+changed and no page, section, draft, publication, prompt or generated-content row was
+created by deployment or acceptance testing.
+
+### 2026-09-21 — Core AI usage guardrails and cost controls
+
+Continued Page Builder improvement ten without waiting for an API key. Portable Core now
+applies the same provider-independent usage policy to Page Builder proposals, the visitor
+assistant and provider verification. Each provider may independently set daily and monthly
+request limits, token limits and USD budgets, a warning threshold, and operator-maintained
+input/output prices per million tokens. Zero means unlimited. Sense CMS deliberately does
+not embed vendor prices because model pricing changes outside the Core release lifecycle.
+A disabled provider may be prepared without a key and completed later.
+
+Migration `038_ai_usage_controls.sql` adds a metadata-only usage ledger. It stores provider
+and model identity, purpose, status, bounded token reservations, returned token counts and
+estimated cost; it never stores prompts, knowledge context or generated output. Before an
+external request, Core locks the provider row, calculates a conservative input estimate,
+reserves the requested maximum output and fails closed if a configured budget would be
+exceeded. This prevents concurrent requests from bypassing the guardrail. When a provider
+omits token usage, the reserved amount is retained instead of reporting a misleading zero.
+Failed requests retain only a short error category and do not consume token or cost totals.
+
+The `/ai` workspace now shows daily and monthly requests, tokens and estimated cost per
+provider, the highest configured budget ratio, responsive warning state, and the complete
+guardrail form. Aggregate monthly requests, tokens and estimated cost are shown in the
+existing summary cards. Credentials remain write-only and encrypted.
+
+Local validation passed PHP syntax, 22 dedicated AI/usage-control checks, 282 Builder
+contract checks, 7 collection checks, 92 security regressions, 16 maintenance regressions,
+installer package inventory checks, 37 web-installer checks and `git diff --check`.
+Production lacks `pdo_sqlite`, so SQLite-dependent suites passed locally and were skipped
+server-side.
+
+The first deployment preflight exposed an existing migrator edge case: a new SQL file was
+created mode `0640` under `root:root`, so the `sensecms` runtime read it as an empty
+string, executed no DDL and journaled the SHA-256 of empty content. No application file or
+schema table was changed. After verifying the exact empty checksum and confirming that
+`ai_usage_events` did not exist, the single invalid journal row and unreadable failed-stage
+file were removed. The deployment helper now creates new Core files mode `0644`.
+
+The successful deployment applied migration 038 exactly once, created a private database
+and file recovery backup, deployed exact reviewed hashes and exercised the guardrail with
+a temporary disabled provider. A second concurrent request was rejected, token/cost
+accounting completed, and all temporary provider and usage rows were removed. Existing
+provider count and encrypted configuration fingerprint stayed unchanged. Authenticated
+production acceptance covered `/ai`, `/content/builder` and the versioned CSS asset;
+Nginx, PHP-FPM, MariaDB and cron remained healthy, and fresh logs contained no critical
+errors. No external AI request was made. The signed active theme was unchanged.
+
+Production recovery is
+`/root/sensecms-backups/20260921T083608Z-ai-usage-controls`.
+
+### 2026-09-21 — Core responsive administration navigation
+
+The narrow-screen administration menu is now a true Core off-canvas panel. The root
+cause of the unusable state was the menu rendering at z-index 60 while its full-screen
+blur backdrop rendered at 95; the backdrop therefore visually covered the navigation.
+The responsive shell now renders the menu above the backdrop and starts the backdrop at
+the menu edge, keeps a visible close control despite the legacy framework ID selector,
+locks only the page behind the panel, and preserves an independently scrollable 100dvh
+navigation area. Closed off-canvas navigation is inert and hidden from assistive
+technology; Escape, backdrop click and the close control close it, with focus returned to
+the opener. The implementation remains in portable Core and does not depend on a public
+theme package.
+
+Local validation passed PHP and JavaScript syntax, the 282 Page Builder/Core contract
+checks, the responsive shell assertions and `git diff --check`. Production deployment
+used exact baseline and candidate hashes, atomic replacement and a private recovery copy.
+The first attempt was automatically rolled back when an acceptance login was rejected by
+the active CAPTCHA policy; no bypass was attempted. The successful deployment verified
+served CSS/JavaScript checksums, Nginx/PHP-FPM/MariaDB health and fresh critical logs.
+Direct authenticated browser QA passed at 1024x768 and 390x844: the menu remained sharp,
+the backdrop began at its edge, the close control was visible, menu content overflowed
+vertically without page or horizontal overflow, Escape and backdrop closing worked,
+focus returned correctly, and the browser console contained no errors.
+
+Production recovery is
+`/root/sensecms-backups/20260921T103241Z-mobile-navigation`; the harmless failed-attempt
+recovery record is `/root/sensecms-backups/20260921T102640Z-mobile-navigation`.
+
+### 2026-09-21 — Production OpenAI provider provisioning
+
+The official Sense CMS installation now has one Core-managed OpenAI Responses provider,
+`openai-mtc`, using `gpt-5.6-terra` and `https://api.openai.com/v1`. The operator key was
+read only from ignored `.cfg/API-OpenAI.txt`, transferred through a root-only temporary
+stage, encrypted with this installation's existing Workspace secret and removed from the
+server stage immediately after reading. No plaintext or encrypted credential was printed,
+logged or written to this work history.
+
+The provider is scoped to Page Builder only, priority 100, with daily/monthly guardrails of
+100/2,000 requests, 250,000/5,000,000 tokens and USD 1/30. The manually recorded current
+prices are USD 2 per million input tokens and USD 12 per million output tokens, with an 80%
+warning threshold. Visitor assistant access remains intentionally disabled.
+
+The initial live verification request reached OpenAI but returned HTTP 429 with the safe
+diagnostic `credit_balance_exhausted` (`insufficient_quota`), so Core retained the encrypted
+configuration in a disabled and unverified state. After the operator funded the API account,
+two explicit connection checks completed successfully: 62 total tokens and USD 0.000264.
+The provider is now enabled and its verification timestamp is the latest completed check,
+`2026-09-21 14:37:03`. No additional paid request was made while activating it. Failed and
+successful checks stored metadata only and no prompt or generated content. Production UI
+confirmed one active provider, the enabled/verified status and unchanged guardrails;
+Nginx, PHP-FPM and MariaDB remained active, Nginx configuration passed, the root-only
+transfer stage was removed and fresh service logs contained no critical errors.
+
+The active configuration recovery backup is
+`/root/sensecms-backups/20260921T114822Z-openai-provider`; the preceding failed-verification
+attempt was removed cleanly and retained its independent recovery dump at
+`/root/sensecms-backups/20260921T114653Z-openai-provider`.
+
+### 2026-09-21 — Production Page Builder AI acceptance and runtime fix
+
+The first controlled Page Builder proposal failed before provider usage with reference
+`f71183cbd510`. Cost-protected reproduction identified the exact root cause: the proposal
+endpoint called a nonexistent `DashboardController::activeTheme()` helper while every
+other Builder endpoint resolves the active theme through the shared Core setting and
+theme registry. The endpoint now uses that established contract. A regression assertion
+prevents the undefined helper from returning.
+
+Diagnosis temporarily set this provider's daily request limit to the already-consumed
+request count and enabled error-message logging only long enough to identify the failure.
+The repaired endpoint then reached the normal Core budget guard and returned the expected
+limit response without contacting OpenAI. The usage ledger remained at four events and
+USD 0.000264. Standard exception logging and the configured daily limit of 100 were
+restored before final acceptance; both private diagnostic stages were removed.
+
+One final bounded production proposal used `Make concise` for one selected English Rich
+text section. OpenAI returned a valid structured proposal, Core sanitized it, and Builder
+displayed the review diff with one changed section. The proposal was explicitly discarded:
+no draft was applied, no manual save occurred and the published page remained unchanged.
+The request used 2,644 input and 100 output tokens at an actual cost of USD 0.006488.
+Combined provider usage is now USD 0.006752.
+
+Validation passed PHP syntax, 23 dedicated provider-neutral AI checks, 282 Builder
+contract/regression checks and `git diff --check`. Production controller and entry-point
+hashes match the reviewed local files; Nginx configuration, Nginx, PHP-FPM and MariaDB are
+healthy, the public site returns HTTP 200, unauthenticated Builder correctly redirects,
+and no new PHP error followed the successful request.

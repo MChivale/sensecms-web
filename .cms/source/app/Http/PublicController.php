@@ -85,6 +85,32 @@ final class PublicController extends Controller
         $fallback=$this->cms->defaultLocale($this->config['default_locale']);$facility=$this->facilities->resolve($citySlug,$facilitySlug,$locale,$fallback);if(!$facility){http_response_code(404);exit('Facility not found');}$this->renderFacility($locale,null,$facility,false,$slug);
     }
 
+    public function builderPreview(int $pageId, int $userId): never
+    {
+        $locale = strtolower(trim((string) ($_GET['locale'] ?? '')));
+        $languages = $this->cms->languages();
+        $fallback = $this->cms->defaultLocale($this->config['default_locale']);
+        if (!in_array($locale, array_column($languages, 'locale'), true)) $locale = $fallback;
+        $document = $this->cms->builderDocument($pageId);
+        if (!$document || $userId < 1) { http_response_code(404); exit('Preview not found'); }
+        $facility = $this->facilities->activeById((int) $document['facility_id'], $locale, $fallback);
+        if (!$facility) { http_response_code(404); exit('Preview not found'); }
+        $draft = $this->cms->builderDraft($pageId, $userId);
+        $blocks = is_array($draft['blocks'] ?? null) ? $draft['blocks'] : (array) ($document['blocks'] ?? []);
+        $translation = (array) ($document['translations'][$locale] ?? $document['translations'][$fallback] ?? reset($document['translations']));
+        $page = array_replace($document, [
+            'title'=>(string)($translation['title']??$document['title']??'Untitled page'),
+            'localized_slug'=>(string)($translation['slug']??$document['slug']??''),
+            'excerpt'=>(string)($translation['excerpt']??''),
+            'seo_title'=>(string)($translation['seo_title']??''),
+            'seo_description'=>(string)($translation['seo_description']??''),
+            'blocks'=>PageBuilder::previewBlocks($blocks,$locale,$fallback),
+        ]);
+        header('Cache-Control: private, no-store');
+        header('X-Robots-Tag: noindex, nofollow');
+        $this->renderFacility($locale, null, $facility, false, null, $pageId, $page, true);
+    }
+
     public function robots(): never
     {
         $global=array_replace(SeoMeta::globalDefaults(),(array)$this->cms->setting('seo_global',[]));$base=rtrim((string)($global['site_url']?:$this->config['base_url']),'/');
@@ -101,20 +127,21 @@ final class PublicController extends Controller
         $theme = $this->themes->find((string) $this->cms->setting('active_theme', 'sensecms'));
         if (is_file($theme['_path'] . '/pages.php')) {
             $static = require $theme['_path'] . '/pages.php';
+            $updated=(string)($theme['content_updated_at']??'');$updatedAt=preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/D',$updated)&&strtotime($updated)!==false?date(DATE_ATOM,(int)strtotime($updated)):'';
             array_pop($xml);
-            foreach (array_keys($static) as $route) if (!isset($paths[$route])) $xml[] = '<url><loc>' . $escape($base . $route) . '</loc></url>';
+            foreach (array_keys($static) as $route) if (!isset($paths[$route])) $xml[] = '<url><loc>' . $escape($base . $route) . '</loc>' . ($updatedAt!==''?'<lastmod>'.$escape($updatedAt).'</lastmod>':'') . '</url>';
             $xml[] = '</urlset>';
         }
         header('Content-Type: application/xml; charset=utf-8');header('Cache-Control: no-store');echo implode('', $xml);exit;
     }
 
-    private function renderFacility(string$locale,?string$slug,array$facility,bool$facilityHome,?string$postSlug=null,?int$pageId=null):never
+    private function renderFacility(string$locale,?string$slug,array$facility,bool$facilityHome,?string$postSlug=null,?int$pageId=null,?array$builderPreviewPage=null,bool$isBuilderPreview=false):never
     {
         unset($_SESSION['ai_chat_ended']);
         $languages = $this->cms->languages();$fallbackLocale=$this->cms->defaultLocale($this->config['default_locale']);
         $validLocales = array_column($languages, 'locale');
         if (!in_array($locale, $validLocales, true)) { http_response_code(404); exit('Language not found'); }
-        $contentType=$postSlug===null?'page':'post';$page=$pageId!==null?$this->cms->pageById($pageId,$locale,$fallbackLocale,(int)$facility['id']):($contentType==='post'?$this->cms->publicPost((string)$postSlug,$locale,$fallbackLocale,(int)$facility['id']):($facilityHome&&$facility['homepage_page_id']?$this->cms->pageById((int)$facility['homepage_page_id'],$locale,$fallbackLocale,(int)$facility['id']):$this->cms->page($slug??'home',$locale,$fallbackLocale,(int)$facility['id'])));
+        $contentType=$postSlug===null?'page':'post';$page=$builderPreviewPage??($pageId!==null?$this->cms->pageById($pageId,$locale,$fallbackLocale,(int)$facility['id']):($contentType==='post'?$this->cms->publicPost((string)$postSlug,$locale,$fallbackLocale,(int)$facility['id']):($facilityHome&&$facility['homepage_page_id']?$this->cms->pageById((int)$facility['homepage_page_id'],$locale,$fallbackLocale,(int)$facility['id']):$this->cms->page($slug??'home',$locale,$fallbackLocale,(int)$facility['id']))));
         if (!$page) { http_response_code(404); exit($contentType==='post'?'Post not found':'Page not found'); }
         if($contentType==='post')$page['blocks']=[['type'=>'text','payload'=>['eyebrow'=>'News','title'=>$page['title'],'text'=>$page['content']??''],'shared'=>[]]];
         $activeTheme=(string)$this->cms->setting('active_theme','sensecms');$preview=$this->themePreview();$themeSlug=$preview['slug']??$activeTheme;$theme=$this->themes->find($themeSlug);$configs=(array)$this->cms->setting('theme_configurations',[]);$appearance=$this->themeConfiguration($themeSlug,$theme,$configs);$isThemePreview=$preview!==null;if($isThemePreview){$drafts=(array)$this->cms->setting('theme_drafts',[]);$draft=is_array($drafts[$themeSlug]??null)?$drafts[$themeSlug]:[];$appearance=ThemeContract::sanitize($theme,(array)($draft['settings']??[]),$appearance);}
@@ -122,6 +149,7 @@ final class PublicController extends Controller
         $supportedBlocks = array_fill_keys(array_keys($catalog), true);
         if ($supportedBlocks) $page['blocks'] = array_values(array_filter((array) ($page['blocks'] ?? []), static fn (array $block): bool => isset($supportedBlocks[(string) ($block['type'] ?? '')])));
         $page['blocks'] = array_map(static function(array $block)use($catalog):array{$definition=$catalog[(string)($block['type']??'')]??[];$block['component_renderer']=$definition['renderer']??'';$block['component_source']=$definition['source']??'';return$block;},(array)$page['blocks']);
+        $page['blocks']=$this->cms->hydratePageCollections((array)$page['blocks'],$locale,$fallbackLocale,$facility,(int)$page['id']);
         $profile = $this->cms->setting('school_profile', []);
         foreach(['email','phone','secondary_phone','website_url','map_url','address']as$key)if(trim((string)($facility[$key]??''))!=='')$profile[$key]=$facility[$key];$profile['facility_name']=$facility['name'];$profile['facility_city']=$facility['city_name'];
         $seoGlobal=array_replace_recursive(SeoMeta::globalDefaults(),(array)$this->cms->setting('seo_global',[]));$seoDocument=(array)$this->cms->setting('seo_'.$contentType.'_' . (int) $page['id'] . '_' . $locale, []);if($contentType==='post'&&($seoDocument['og_image']??'')===''&&($page['image']??'')!=='')$seoDocument=array_replace(['og_image'=>$page['image'],'og_image_alt'=>$page['image_alt']??'','og_image_width'=>(int)($page['image_width']??0),'og_image_height'=>(int)($page['image_height']??0),'og_image_type'=>$page['image_type']??'','author'=>$page['author_name']??''],$seoDocument);
@@ -130,10 +158,10 @@ final class PublicController extends Controller
         $navigationBase = '/' . rawurlencode($locale) . '/facilities/' . rawurlencode($facility['city_slug']) . '/' . rawurlencode($facility['facility_slug']);
         foreach ($navigation as &$links) $links = $this->scopeMenu($links, $locale, $facility, $navigationBase);
         unset($links);
-        $isFacilityHome=$contentType==='page'&&($facilityHome||(int)($facility['homepage_page_id']??0)===(int)$page['id']);$states=array_replace(['page-popups'=>true,'forms'=>true,'live-chat'=>true,'facility-geolocation'=>true],(array)$this->cms->setting('extension_states',[]));$campaigns=(array)$this->cms->setting('page_popups',[]);$configured=$contentType==='page'?($campaigns[(string)(int)$page['id']]??($isFacilityHome&&$facility['is_primary']?$this->cms->setting('home_popup',null):null)):null;$popup=$states['page-popups']&&is_array($configured)?$configured:['enabled'=>false];
+        $isFacilityHome=$contentType==='page'&&($facilityHome||(int)($facility['homepage_page_id']??0)===(int)$page['id']);$states=array_replace(['page-popups'=>true,'forms'=>true,'live-chat'=>true,'facility-geolocation'=>true],(array)$this->cms->setting('extension_states',[]));if($isBuilderPreview)$states=array_replace($states,['page-popups'=>false,'forms'=>false,'live-chat'=>false,'facility-geolocation'=>false]);$campaigns=(array)$this->cms->setting('page_popups',[]);$configured=$contentType==='page'?($campaigns[(string)(int)$page['id']]??($isFacilityHome&&$facility['is_primary']?$this->cms->setting('home_popup',null):null)):null;$popup=$states['page-popups']&&is_array($configured)?$configured:['enabled'=>false];
         $facilityList=$this->facilities->publicList($locale,$fallbackLocale);$facilityBase='/'.rawurlencode($locale).'/facilities/'.rawurlencode((string)$facility['city_slug']).'/'.rawurlencode((string)$facility['facility_slug']);$legacy=(bool)$facility['is_primary'];$languageUrls=[];$localizedSlugs=$contentType==='post'?$this->cms->postSlugs((int)$page['id']):$this->cms->pageSlugs((int)$page['id']);foreach($languages as$language){$code=(string)$language['locale'];$base=$legacy?'/'.rawurlencode($code):'/'.rawurlencode($code).'/facilities/'.rawurlencode((string)$facility['city_slug']).'/'.rawurlencode((string)$facility['facility_slug']);$localizedSlug=(string)($localizedSlugs[$code]??$localizedSlugs[$fallbackLocale]??$page['localized_slug']);if($contentType==='post')$languageUrls[$code]=$base.'/posts/'.rawurlencode($localizedSlug);else{$home=$facilityHome||(int)($facility['homepage_page_id']??0)===(int)$page['id'];$languageUrls[$code]=$home?($legacy?$base.'/home':$base):$base.'/'.rawurlencode($localizedSlug);}}$facilityGeolocation=array_replace(['mode'=>'redirect','auto_prompt'=>true,'remember_days'=>30],(array)$this->cms->setting('facility_geolocation',[]));$facilityGeolocation['enabled']=$states['facility-geolocation']&&count($facilityList)>1;
         if ($contentType === 'page' && !empty($page['public_path'])) $languageUrls[$fallbackLocale] = $page['public_path'];
-        $menu=$navigation['primary']??[];$footerMenu=$navigation['footer']??[];$footerConnectMenu=$navigation['footer-connect']??[];$siteChrome=SiteChrome::resolve((array)$this->cms->setting('site_chrome',SiteChrome::defaults()),$locale,$fallbackLocale,$profile);$showHostingCredit=(bool)$this->cms->setting('show_hosting_credit',true);$seo=SeoMeta::resolve($seoGlobal,$seoDocument,$page,['type'=>$contentType,'locale'=>$locale,'default_locale'=>$fallbackLocale,'base_url'=>$this->config['base_url'],'current_path'=>$languageUrls[$locale]??('/'.$locale.'/'.$page['localized_slug']),'language_urls'=>$languageUrls,'profile'=>$profile,'logo'=>$appearance['logo_url']??$profile['logo']??'','fallback_image'=>(string)($theme['default_social_image']??''),'facility'=>$facility]);$latestPosts=$this->cms->latestPosts($locale,$fallbackLocale,3,(int)$facility['id']);foreach($latestPosts as&$latestPost){$latestBase=$legacy?'/'.rawurlencode($locale):$facilityBase;$latestPost['url']=$latestBase.'/posts/'.rawurlencode((string)$latestPost['slug']);}unset($latestPost);$this->view((string)$theme['_view_path'], compact('page', 'theme', 'locale', 'languages', 'appearance','menu','footerMenu','footerConnectMenu','siteChrome','showHostingCredit','isThemePreview','contentType') + [
+        $menu=$navigation['primary']??[];$footerMenu=$navigation['footer']??[];$footerConnectMenu=$navigation['footer-connect']??[];$siteChrome=SiteChrome::resolve((array)$this->cms->setting('site_chrome',SiteChrome::defaults()),$locale,$fallbackLocale,$profile);$showHostingCredit=(bool)$this->cms->setting('show_hosting_credit',true);$seo=SeoMeta::resolve($seoGlobal,$seoDocument,$page,['type'=>$contentType,'locale'=>$locale,'default_locale'=>$fallbackLocale,'base_url'=>$this->config['base_url'],'current_path'=>$languageUrls[$locale]??('/'.$locale.'/'.$page['localized_slug']),'language_urls'=>$languageUrls,'profile'=>$profile,'logo'=>$appearance['logo_url']??$profile['logo']??'','fallback_image'=>(string)($theme['default_social_image']??''),'fallback_image_type'=>(string)($theme['default_social_image_type']??''),'fallback_image_width'=>(int)($theme['default_social_image_width']??0),'fallback_image_height'=>(int)($theme['default_social_image_height']??0),'facility'=>$facility]);$latestPosts=$this->cms->latestPosts($locale,$fallbackLocale,3,(int)$facility['id']);foreach($latestPosts as&$latestPost){$latestBase=$legacy?'/'.rawurlencode($locale):$facilityBase;$latestPost['url']=$latestBase.'/posts/'.rawurlencode((string)$latestPost['slug']);}unset($latestPost);$this->view((string)$theme['_view_path'], compact('page', 'theme', 'locale', 'languages', 'appearance','menu','footerMenu','footerConnectMenu','siteChrome','showHostingCredit','isThemePreview','isBuilderPreview','contentType') + [
             'profile' => $profile,
             'themeSettings' => $appearance,
             'popup' => $popup,
@@ -158,6 +186,11 @@ final class PublicController extends Controller
             try { require $file; return (string) ob_get_contents(); }
             finally { ob_end_clean(); }
         })($file, $data);
+        if (!empty($data['isBuilderPreview'])) {
+            $assets = '<link rel="stylesheet" href="/theme/sensecms-builder-preview.css?v=20260920-live-1"><script src="/theme/sensecms-builder-preview.js?v=20260920-live-1" defer></script>';
+            $html = str_replace('</head>', $assets . '</head>', $html);
+            $html = preg_replace('/<body\b/', '<body data-sensecms-builder-preview', $html, 1) ?? $html;
+        }
         if (!empty($data['extensionStates']['live-chat']) && empty($data['isThemePreview'])) {
             $html = \App\Core\PublicChat::inject($html, (array) ($data['liveChatSettings'] ?? []), (string) ($data['locale'] ?? 'en'));
         }

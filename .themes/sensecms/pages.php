@@ -84,6 +84,12 @@ $content = [
         ['Technical questions', 'Include your PHP version, Core version and a short description of the problem. Never send passwords, license keys, private encryption keys or database credentials.'],
     ],
 ];
+$legalPages = require __DIR__ . '/legal-pages.php';
+foreach ($legalPages as $legalPath => $legalPage) {
+    $pages[$legalPath] = ['title'=>$legalPage['title'], 'description'=>$legalPage['description'], 'kind'=>'managed'];
+    $content[$legalPath] = $legalPage['sections'];
+}
+unset($legalPages, $legalPath, $legalPage);
 foreach (['modules'=>'Application capabilities', 'plugins'=>'Connections and integrations', 'addons'=>'Optional workspace tools', 'themes'=>'Your public identity'] as $slug => $title) {
     $pages['/extensions/' . $slug] = ['title'=>ucfirst($slug) . ': ' . $title, 'description'=>'Understand the role of ' . $slug . ' in Sense CMS.', 'kind'=>'managed'];
     $content['/extensions/' . $slug] = [
@@ -94,9 +100,9 @@ foreach (['modules'=>'Application capabilities', 'plugins'=>'Connections and int
 }
 $pages['/docs/themes'] = ['title'=>'Build an independent theme', 'description'=>'A public theme contract for Sense CMS: presentation without ownership of your content.', 'kind'=>'article', 'sections'=>[
     ['Package identity', 'Declare type theme, a unique slug, version, publisher and compatibility in sense-package.json. Keep the same slug and version in theme.json. Use a trusted publisher signature before installation.'],
-    ['Rendering contract', 'Include pages.php for optional starter routes, layout.php for their presentation and views/page.php for CMS-managed pages. A content-only theme may return an empty array from pages.php. Declare contract_version 1, page_templates, supported_blocks and configuration in theme.json.'],
+    ['Rendering contract', 'Include pages.php for optional starter routes, layout.php for their presentation and views/page.php for CMS-managed pages. A content-only theme may return an empty array from pages.php. Declare contract_version 1, page_templates and configuration in theme.json. Every compatible theme renders the complete portable Core section standard; supported_blocks remains descriptive metadata for additional package tooling.'],
     ['Content stays in Core', 'Managed pages, translations, publication rules and public paths remain in the database when a theme changes. The managed view receives page with blocks, locale, navigation, themeSettings, appearance, baseUrl and SEO metadata. Do not import another installation’s database or credentials.'],
-    ['Templates and blocks', 'Declare only templates and blocks that your view actually implements. Always support a default page template as a fallback. Escape plain text and use App\\Core\\HtmlSanitizer for editor HTML. Render only trusted extension components.'],
+    ['Templates and blocks', 'Implement every Core section and declare only additional theme-specific blocks beyond that standard. Always support a default page template as a fallback. Escape plain text and use App\\Core\\HtmlSanitizer for editor HTML. Render only trusted extension components.'],
     ['Theme assets', 'Place CSS, JavaScript, images, fonts and video beneath assets. The active theme serves them at /theme-assets/ followed by their relative path. Nested asset directories are supported. Executable source, hidden paths and traversal are not served.'],
     ['URLs belong to pages', 'Set a Public path in the page editor for the default language, such as /about or /docs/installation. Core resolves it before starter theme routes. Unpublished, private and archived pages remain unavailable, instead of falling back to starter copy. Other languages retain their localized URLs.'],
     ['Independent administration', 'Do not style or replace the administration panel from a public theme. Keep configuration declarative so Core can provide draft, preview and publication controls. Test a second theme, preserved content, routing, keyboard access, mobile layout and rollback before release.'],

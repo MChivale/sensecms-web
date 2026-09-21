@@ -1,4 +1,36 @@
 'use strict';
+const textScaleKey = 'sensecms:text-scale';
+const normaliseTextScale = value => {
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.min(200, Math.max(100, Math.round(number / 10) * 10)) : 100;
+};
+let textScale = 100;
+try { textScale = normaliseTextScale(localStorage.getItem(textScaleKey)); } catch {}
+const applyTextScale = value => {
+    textScale = normaliseTextScale(value);
+    document.documentElement.style.fontSize = textScale === 100 ? '' : textScale + '%';
+    document.documentElement.toggleAttribute('data-text-scale-large', textScale >= 130);
+    const range = document.querySelector('[data-text-range]');
+    const output = document.querySelector('[data-text-scale]');
+    const decrease = document.querySelector('[data-text-decrease]');
+    const increase = document.querySelector('[data-text-increase]');
+    if (range) range.value = String(textScale);
+    if (output) output.textContent = textScale + '%';
+    if (decrease) decrease.disabled = textScale <= 100;
+    if (increase) increase.disabled = textScale >= 200;
+};
+const saveTextScale = value => {
+    applyTextScale(value);
+    try { if (textScale === 100) localStorage.removeItem(textScaleKey); else localStorage.setItem(textScaleKey, String(textScale)); } catch {}
+};
+applyTextScale(textScale);
+const siteHeader = document.querySelector('.header');
+if (siteHeader) {
+    let headerFrame = 0;
+    const updateHeader = () => { headerFrame = 0; siteHeader.classList.toggle('is-compact', window.scrollY > 36); };
+    window.addEventListener('scroll', () => { if (!headerFrame) headerFrame = requestAnimationFrame(updateHeader); }, {passive: true});
+    updateHeader();
+}
 document.querySelectorAll('[data-marketplace]').forEach(market => {
     const form = market.querySelector('[data-market-filters]');
     const cards = [...market.querySelectorAll('[data-market-item]')];
@@ -188,13 +220,43 @@ document.querySelectorAll('[data-contact-form]').forEach(form => {
 });
 const menu = document.querySelector('.menu-button');
 const nav = document.querySelector('#navigation');
-function closeMenu() { menu.setAttribute('aria-expanded', 'false'); nav.classList.remove('open'); }
-menu.addEventListener('click', () => {
-    const open = menu.getAttribute('aria-expanded') !== 'true';
-    menu.setAttribute('aria-expanded', String(open)); nav.classList.toggle('open', open);
+const languageMenus = [...document.querySelectorAll('.language-menu')];
+const accessibilityMenu = document.querySelector('.accessibility-menu');
+const accessibilityToggle = document.querySelector('[data-accessibility-toggle]');
+const accessibilityPanel = document.querySelector('[data-accessibility-panel]');
+const closeAccessibility = focus => {
+    if (!accessibilityPanel || accessibilityPanel.hidden) return;
+    accessibilityPanel.hidden = true; accessibilityToggle?.setAttribute('aria-expanded', 'false');
+    if (focus) accessibilityToggle?.focus();
+};
+accessibilityToggle?.addEventListener('click', () => {
+    const open = accessibilityPanel?.hidden ?? false;
+    if (!accessibilityPanel) return;
+    accessibilityPanel.hidden = !open; accessibilityToggle.setAttribute('aria-expanded', String(open));
+    if (open) { languageMenus.forEach(details => details.open = false); accessibilityPanel.querySelector('[data-accessibility-close]')?.focus(); }
 });
-document.addEventListener('keydown', event => { if (event.key === 'Escape' && nav.classList.contains('open')) { closeMenu(); menu.focus(); } });
-nav.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
+accessibilityPanel?.querySelector('[data-accessibility-close]')?.addEventListener('click', () => closeAccessibility(true));
+accessibilityPanel?.querySelector('[data-text-decrease]')?.addEventListener('click', () => saveTextScale(textScale - 10));
+accessibilityPanel?.querySelector('[data-text-increase]')?.addEventListener('click', () => saveTextScale(textScale + 10));
+accessibilityPanel?.querySelector('[data-text-reset]')?.addEventListener('click', () => saveTextScale(100));
+accessibilityPanel?.querySelector('[data-text-range]')?.addEventListener('input', event => saveTextScale(event.target.value));
+applyTextScale(textScale);
+const closeMenu = () => { menu?.setAttribute('aria-expanded', 'false'); nav?.classList.remove('open'); };
+menu?.addEventListener('click', () => {
+    const open = menu.getAttribute('aria-expanded') !== 'true';
+    menu.setAttribute('aria-expanded', String(open)); nav?.classList.toggle('open', open);
+});
+document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (nav?.classList.contains('open')) { closeMenu(); menu?.focus(); }
+    languageMenus.forEach(details => { if (details.open) { details.open = false; details.querySelector('summary')?.focus(); } });
+    closeAccessibility(true);
+});
+document.addEventListener('click', event => {
+    languageMenus.forEach(details => { if (!details.contains(event.target)) details.open = false; });
+    if (accessibilityMenu && !accessibilityMenu.contains(event.target)) closeAccessibility(false);
+});
+nav?.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
 matchMedia('(min-width: 901px)').addEventListener('change', closeMenu);
 const topButton = document.querySelector('[data-back-to-top]');
 if (topButton) {
@@ -211,3 +273,5 @@ if (topButton) {
         window.scrollTo({top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'});
     });
 }
+document.addEventListener('click',event=>{const trigger=event.target.closest('[data-post-player]'),dialog=document.querySelector('[data-post-player-dialog]');if(trigger&&dialog){const stage=dialog.querySelector('[data-post-player-stage]'),kind=trigger.dataset.postPlayer,media=document.createElement(kind);media.controls=true;media.preload='metadata';media.src=trigger.dataset.src||'';if(kind==='video'){media.playsInline=true;if(trigger.dataset.poster)media.poster=trigger.dataset.poster}dialog.classList.toggle('is-audio',kind==='audio');stage.replaceChildren(media);dialog.showModal();media.play().catch(()=>{});return}if(event.target.closest('[data-post-player-close]')){const dialog=event.target.closest('dialog');dialog?.querySelector('audio,video')?.pause();dialog?.close()}if(event.target===dialog){dialog.querySelector('audio,video')?.pause();dialog.close()}});
+document.querySelectorAll('[data-core-slider]').forEach(slider=>{const slides=[...slider.querySelectorAll('[data-slide]')],dots=[...slider.querySelectorAll('[data-slider-dot]')];if(slides.length<2)return;let index=0,timer=0,paused=false;const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches,loop=slider.dataset.loop==='1',interval=Math.max(3,Math.min(15,Number(slider.dataset.interval)||6))*1000;const show=next=>{if(next<0)next=loop?slides.length-1:0;if(next>=slides.length)next=loop?0:slides.length-1;index=next;slides.forEach((slide,i)=>{const active=i===index;slide.classList.toggle('is-active',active);slide.setAttribute('aria-hidden',String(!active));const video=slide.querySelector('video');if(video){if(active&&slider.dataset.autoplay==='1'&&!reduced)video.play().catch(()=>{});else video.pause()}});dots.forEach((dot,i)=>{dot.classList.toggle('is-active',i===index);if(i===index)dot.setAttribute('aria-current','true');else dot.removeAttribute('aria-current')})};const stop=()=>{clearInterval(timer);timer=0},start=()=>{stop();if(slider.dataset.autoplay==='1'&&!reduced&&!paused)timer=setInterval(()=>show(index+1),interval)};slider.querySelector('[data-slider-prev]')?.addEventListener('click',()=>{show(index-1);start()});slider.querySelector('[data-slider-next]')?.addEventListener('click',()=>{show(index+1);start()});dots.forEach(dot=>dot.addEventListener('click',()=>{show(Number(dot.dataset.sliderDot));start()}));if(slider.dataset.pauseHover==='1'){slider.addEventListener('mouseenter',()=>{paused=true;stop()});slider.addEventListener('mouseleave',()=>{paused=false;start()});slider.addEventListener('focusin',()=>{paused=true;stop()});slider.addEventListener('focusout',event=>{if(!slider.contains(event.relatedTarget)){paused=false;start()}})}document.addEventListener('visibilitychange',()=>document.hidden?stop():start());show(0);start()});

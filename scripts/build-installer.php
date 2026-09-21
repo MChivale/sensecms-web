@@ -105,6 +105,7 @@ final class InstallerBuilder
             'public' => ['css', 'js', 'svg', 'png', 'jpg', 'jpeg', 'ico', 'webp', 'mp3', 'woff', 'woff2'], default => [],
         };
         if ($name === 'public/index.php') return;
+        if ($top === 'public' && basename($name) === 'LICENSE.txt') return;
         if (!in_array(pathinfo($name, PATHINFO_EXTENSION), $allowed, true)) throw new RuntimeException('Unexpected installer file: ' . $name);
     }
 

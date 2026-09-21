@@ -18,7 +18,7 @@ return static function(string$method,string$path,ExtensionContext$context):bool{
     require_once$foundation;$manager=new SocialIntegrationManager($context->db,$context->root,(string)($context->config['secrets_key']??''));
     if($method==='GET'&&$path==='/social-publishing/x'){
         $provider=null;foreach($manager->catalog()as$item)if($item['slug']==='x-publisher'){$provider=$item;break;}
-        $context->dashboard->extensionPage('X Publisher',__DIR__.'/views/x.php',['xProvider'=>$provider,'xOAuthRevision'=>(int)($_SESSION['x_oauth_revision']??0),'xOAuthOutcome'=>(string)($_SESSION['flash_type']??''),'csrf'=>$context->auth->csrf(),'extensionActive'=>'/social-publishing','extensionStyles'=>['/extension-assets/addon/social-publishing/social.css?v=0.2.2','/extension-assets/plugin/x-publisher/x.css?v=0.1.1'],'extensionScripts'=>['/extension-assets/plugin/x-publisher/x.js?v=0.1.1']]);
+        $context->dashboard->extensionPage('X Publisher',__DIR__.'/views/x.php',['xProvider'=>$provider,'xOAuthRevision'=>(int)($_SESSION['x_oauth_revision']??0),'xOAuthOutcome'=>(string)($_SESSION['flash_type']??''),'csrf'=>$context->auth->csrf(),'extensionActive'=>'/social-publishing','extensionStyles'=>['/extension-assets/addon/social-publishing/social.css?v=0.4.1','/extension-assets/plugin/x-publisher/x.css?v=0.1.2'],'extensionScripts'=>['/extension-assets/plugin/x-publisher/x.js?v=0.1.2']]);
     }
     if($method==='GET'&&$path==='/social-publishing/x/status'){
         $connections=[];foreach($manager->catalog()as$item)if($item['slug']==='x-publisher'){$connections=(array)($item['connections']??[]);break;}

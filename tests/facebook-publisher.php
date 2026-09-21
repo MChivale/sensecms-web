@@ -26,7 +26,7 @@ namespace {
     facebookCheck(str_contains($popup,"fetch('/social-publishing/facebook/status'")&&str_contains($popup,'checks>=600')&&str_contains($popup,'facebookOauthRevision'),'OAuth popup polls a bounded per-session completion revision');
     facebookCheck(str_contains($popup,"if(window.name!==popupName)return false")&&str_contains($popup,'if(window.opener&&!window.opener.closed)')&&str_contains($popup,'window.close()'),'OAuth popup closes after a provider-isolated return without requiring its opener');
     facebookCheck(str_contains($popup,"facebookOauthOutcome==='success'")&&!str_contains($popup,"facebookConnected==='1'"),'existing connections cannot mask an OAuth failure');
-    $editor=(string)file_get_contents(dirname(__DIR__).'/.addons/social-publishing/assets/editor.js');facebookCheck(str_contains($editor,'provider.connections')&&str_contains($editor,'social_targets[${Number(connection.id)}]'),'post editor targets independent connection IDs');
+    $editor=(string)file_get_contents(dirname(__DIR__).'/.addons/social-publishing/assets/editor.js');$manager=(string)file_get_contents(dirname(__DIR__).'/.addons/social-publishing/src/SocialIntegrationManager.php');facebookCheck(str_contains($editor,'provider.connections')&&str_contains($editor,'social_targets[${connection.id}]')&&str_contains($manager,"\$row['id'] = (int) \$row['id'];"),'post editor targets server-normalized independent connection IDs');
     $credentials=['page_id'=>'123456789','access_token'=>'test-access-token-1234567890','api_version'=>'v26.0'];
     $payload=['message'=>'A reviewed story','url'=>'https://example.test/en/posts/story','image_url'=>null];
     facebookResponses([[200,['id'=>'123456789','name'=>'Sense Page']]]);

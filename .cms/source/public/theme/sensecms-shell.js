@@ -8,6 +8,7 @@
     };
     let state = read();
     let mobile = matchMedia('(max-width: 1140px)').matches;
+    let menuReturnFocus = null;
     const store = () => localStorage.setItem(key, JSON.stringify(state));
     const resolvedTheme = () => state.theme === 'system' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : state.theme;
     const syncTheme = () => {
@@ -23,6 +24,11 @@
         else html.dataset.sidenavSize = state.menuHidden ? 'hidden' : 'default';
         document.querySelectorAll('[name="sensecms-menu"]').forEach(input => input.checked = input.value === (state.menuHidden ? 'hidden' : 'default'));
         const open = html.classList.contains('sidenav-enable');
+        const menu = document.querySelector('#app-menu');
+        if (menu) {
+            menu.inert = mobile && !open;
+            menu.setAttribute('aria-hidden', String(mobile && !open));
+        }
         document.querySelector('#button-toggle-menu')?.setAttribute('aria-expanded', String(mobile ? open : !state.menuHidden));
     };
     const syncTextScale = () => {
@@ -40,6 +46,7 @@
     };
     const setMenuOpen = open => {
         if (mobile) {
+            if (open && document.activeElement instanceof HTMLElement) menuReturnFocus = document.activeElement;
             html.classList.toggle('sidenav-enable', open);
             document.querySelector('[data-menu-backdrop]')?.toggleAttribute('hidden', !open);
         } else {
@@ -47,6 +54,9 @@
             store();
         }
         syncMenu();
+        if (!mobile) return;
+        if (open) requestAnimationFrame(() => document.querySelector('#button-hover-toggle')?.focus());
+        else if (menuReturnFocus?.isConnected) { menuReturnFocus.focus(); menuReturnFocus = null; }
     };
     const positionActiveMenu = () => {
         const scroller = document.querySelector('[data-menu-scroll]');
@@ -171,6 +181,7 @@
         document.querySelector('#button-hover-toggle')?.addEventListener('click', () => setMenuOpen(false));
         document.querySelector('[data-menu-backdrop]')?.addEventListener('click', closeMobileMenu);
         document.querySelectorAll('.app-menu a').forEach(link => link.addEventListener('click', () => { if (mobile) closeMobileMenu(); }));
+        document.addEventListener('keydown', event => { if (event.key === 'Escape' && mobile && html.classList.contains('sidenav-enable')) closeMobileMenu(); });
         document.querySelector('#light-dark-mode')?.addEventListener('click', () => { state.theme = html.dataset.theme === 'dark' ? 'light' : 'dark'; store(); syncTheme(); });
         matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (state.theme === 'system') syncTheme(); });
         addEventListener('resize', () => { const next = matchMedia('(max-width: 1140px)').matches; if (next === mobile) return; mobile = next; html.classList.remove('sidenav-enable'); document.querySelector('[data-menu-backdrop]')?.setAttribute('hidden',''); syncMenu(); positionActiveMenu(); });

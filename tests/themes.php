@@ -20,6 +20,9 @@ $assert($logoStatus===200&&$logoHeaders['Content-Type']==='image/png','Default e
 $assert($logoBody===file_get_contents($source.'/assets/sensecms/images/sensecms-logo-email.png')&&getimagesizefromstring($logoBody)['mime']==='image/png','Email logo route returns the exact valid PNG');
 [$headStatus,$headHeaders,$headBody]=$theme->response($emailLogo,'HEAD');
 $assert($headStatus===200&&$headBody===''&&(int)$headHeaders['Content-Length']===strlen($logoBody),'Email logo HEAD has correct length and no body');
+$socialImage='/theme-assets/og.image.jpg';[$socialStatus,$socialHeaders,$socialBody]=$theme->response($socialImage);$socialSize=getimagesizefromstring($socialBody);
+$assert($socialStatus===200&&$socialHeaders['Content-Type']==='image/jpeg'&&$socialSize['mime']==='image/jpeg'&&$socialSize[0]===1200&&$socialSize[1]===630,'Default Open Graph image is an exact 1200 by 630 JPEG');
+$assert($theme->response('/theme-assets/logo-light.svg')[0]===200&&$theme->response('/theme-assets/logo-light.svg')[1]['Content-Type']==='image/svg+xml','Light footer logo is a public theme asset');
 $catalogPackage = ['type'=>'theme','slug'=>'catalog-test','name'=>'Catalog test','version'=>'0.1.0','installed_version'=>'0.2.0','pending_version'=>'0.2.0','managed_releases'=>true,'active'=>true,'source'=>'package','signature_status'=>'verified','manifest'=>['engine'=>'>=0.1.0 <1.0.0','release_channel'=>'stable']];
 $remoteRelease = ['id'=>7,'type'=>'theme','slug'=>'catalog-test','version'=>'0.2.0','release_channel'=>'stable','manifest'=>[]];
 $catalog = static fn(array $package, array $remote = [], array $themes = [], array $legacy = []) => App\Core\MarketplaceCatalog::build('0.1.0', $themes, [], [], [$package], $legacy, [], [], $remote);
@@ -69,15 +72,53 @@ $assert(!str_contains($theme->response('/download')[2], '.zip'), 'no fake releas
 $fields = json_decode((string) file_get_contents($source . '/theme.json'), true)['configuration'];
 $settings = array_column($fields, 'default', 'key');
 foreach ($settings as $key => $_value) {
-    $body = $theme->response('/', 'GET', ['theme_settings'=>[$key=>'QA-' . $key . '<unsafe>']])[2];
-    $assert(str_contains($body, 'QA-' . $key . '&lt;unsafe&gt;') && !str_contains($body, '<unsafe>'), 'editable homepage field escapes text: ' . $key);
+    $field = array_values(array_filter($fields, static fn(array $candidate): bool => $candidate['key'] === $key))[0];
+    if ($field['type'] === 'select') continue;
+    $value = str_ends_with($key, '_url') ? '/qa-' . str_replace('_', '-', $key) : 'QA-' . $key . '<unsafe>';
+    $input = [$key=>$value];
+    if ($key === 'footer_right_text') $input['footer_right_type'] = 'text';
+    $body = $theme->response('/', 'GET', ['theme_settings'=>$input])[2];
+    $expected = str_ends_with($key, '_url') ? $value : 'QA-' . $key . '&lt;unsafe&gt;';
+    $assert(str_contains($body, $expected) && !str_contains($body, '<unsafe>'), 'editable homepage field escapes text: ' . $key);
 }
+$defaultFooter = $theme->response('/')[2];
+$assert(str_contains($defaultFooter, '© Copyright by Sense CMS · QUANT Software House Limited. All rights reserved.') && !str_contains($defaultFooter, 'Independent by design.'), 'product footer uses the requested copyright text');
+$assert(str_contains($defaultFooter,'src="/theme-assets/logo-light.svg"')&&str_contains($defaultFooter,'Sense CMS is a flexible, self-hosted content management system')&&str_contains($footerCss=(string)file_get_contents($source.'/assets/site.css'),'.footer-brand>p{max-width:390px;text-align:justify'),'footer logo, brand and justified SEO description use configurable theme fields');
+$wordmark='Sense<span class="brand-light">CMS</span><span class="brand-dot">.</span>';
+$assert(substr_count($defaultFooter,$wordmark)===2&&str_contains($footerCss,'.footer .brand,.footer .brand-dot{color:#fff}'),'header and footer share one SenseCMS wordmark structure while the footer stays white');
+$assert(str_contains($defaultFooter, 'href="/privacy-policy">Privacy Policy</a>') && str_contains($defaultFooter, 'href="/terms-and-conditions">Terms &amp; Conditions</a>') && str_contains($defaultFooter, 'href="/cookies">Cookies</a>'), 'product footer links every legal page');
+$privacy = $theme->response('/privacy-policy')[2];
+$terms = $theme->response('/terms-and-conditions')[2];
+$cookies = $theme->response('/cookies')[2];
+$assert(str_contains($privacy, 'company number 16902352') && str_contains($privacy, '71-75 Shelton Street'), 'privacy policy identifies the UK controller');
+foreach (['Facebook Pages', 'X', 'LinkedIn', 'Bluesky', 'Mastodon', 'Telegram Channels', 'TikTok', 'YouTube'] as $provider) $assert(str_contains($privacy, $provider), 'privacy policy covers active integration ' . $provider);
+foreach (['Instagram', 'Threads', 'Pinterest'] as $provider) $assert(str_contains($privacy, $provider), 'privacy policy covers pending integration ' . $provider);
+$assert(str_contains($privacy, 'youtube.upload') && str_contains($privacy, 'youtube.readonly') && str_contains($privacy, 'currently authenticated channel') && str_contains($privacy, 'Google API Services User Data Policy') && str_contains($privacy, 'does not request email, contacts, comments, subscribers or analytics'), 'privacy policy documents minimum YouTube data use and Limited Use compliance');
+$assert(str_contains($terms, 'Social publishing is review-first') && str_contains($terms, 'Development Preview integrations') && str_contains($terms, 'remain subject to platform access or production enablement'), 'terms distinguish reviewed delivery, preview and pending integrations');
+$assert(str_contains($cookies, 'sensecms_session') && str_contains($cookies, 'sensecms:analytics:') && str_contains($cookies, 'sensega_ga'), 'cookie notice documents necessary storage and consent-gated analytics');
+$footerCss = (string) file_get_contents($source . '/assets/site.css');
+$assert(str_contains($footerCss, '.footer a:not(.brand){color:#b9c9df;font-size:14px;padding:7px 0;text-decoration:none}') && str_contains($footerCss, '.footer a:not(.brand):is(:hover,:focus-visible){color:#fff;text-decoration:underline') && !str_contains($footerCss, '.footer-legal a{'), 'all footer text links share one style and underline only on interaction');
+$assert(str_contains($defaultFooter, '<nav id="navigation" class="primary-nav"') && str_contains($defaultFooter, 'class="language-menu"') && str_contains($defaultFooter, '>EN</span>'), 'product header exposes consistent navigation and language controls');
+$assert(str_contains($defaultFooter, 'class="header-demo" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer">Demo') && !str_contains($defaultFooter, '>Get Sense CMS <'), 'product header replaces the old action with a safe external Demo link');
+$assert(str_contains($footerCss, '.primary-nav>a::after{content:"";position:absolute;right:50%;bottom:-12px;left:50%;height:2px') && str_contains($footerCss, '.primary-nav>a:is(:hover,:focus-visible,[aria-current],.nav-parent)::after{right:0;left:0}'), 'primary navigation uses one expanding underline for hover, focus and current page');
+$assert(str_contains($defaultFooter, 'aria-controls="accessibility-panel" aria-haspopup="dialog" data-accessibility-toggle') && str_contains($defaultFooter, 'id="accessibility-scale" type="range" min="100" max="200" step="10"'), 'header exposes the accessible text-size dialog and bounded range');
+$siteJs = (string) file_get_contents($source . '/assets/site.js');
+$assert(str_contains($siteJs, "const textScaleKey = 'sensecms:text-scale';") && str_contains($siteJs, "Math.min(200, Math.max(100") && str_contains($siteJs, "localStorage.removeItem(textScaleKey)"), 'text-size preference is bounded and stored locally only when changed');
+$assert(str_contains($siteJs,"siteHeader.classList.toggle('is-compact'")&&str_contains($footerCss,'.header.is-compact .header-inner{height:66px}')&&str_contains($footerCss,'.footer:before{'), 'scrolling compacts the sticky header and the footer has a subtle shared separator');
+$productCss = (string) file_get_contents($source . '/assets/product.css');
+$assert(str_contains($footerCss, '.primary-nav{display:flex;align-items:center;justify-content:flex-end') && str_contains($footerCss, '.brand{display:flex;gap:10px;align-items:center;font-size:26px') && str_contains($productCss, '.product-design .brand{font-size:26px') && str_contains($footerCss, '.footer-bottom{') && str_contains($footerCss, 'font-size:12px'), 'header navigation aligns with controls while header and footer typography stay fixed during content scaling');
+$assert(str_contains($siteJs, "toggleAttribute('data-text-scale-large'") && !str_contains($siteJs, 'data-text-scale-menu'), 'large text marks content wrapping without switching the desktop header');
+$textFooter = $theme->response('/', 'GET', ['theme_settings'=>['footer_right_type'=>'text','footer_right_text'=>'Custom legal note <safe>']])[2];
+$assert(str_contains($textFooter, 'Custom legal note &lt;safe&gt;') && !str_contains($textFooter, '<nav class="footer-legal"'), 'footer right side switches safely from links to text');
+$unsafeFooter = $theme->response('/', 'GET', ['theme_settings'=>['footer_link_1_url'=>'javascript:alert(1)']])[2];
+$assert(!str_contains($unsafeFooter, 'javascript:') && !str_contains($unsafeFooter, '>Privacy Policy</a>'), 'unsafe configurable footer destination is omitted');
 $assert(!str_contains($theme->response('/', 'GET', ['theme_settings'=>['unknown'=>'UNSUPPORTED']])[2], 'UNSUPPORTED'), 'unknown homepage fields are ignored');
 $assert(!str_contains($theme->response('/docs', 'GET', ['theme_settings'=>['home_title'=>'HOME-ONLY']])[2], 'HOME-ONLY'), 'homepage settings do not overwrite documentation');
 $descriptor = ['configuration'=>$fields];
 $assert(mb_strlen(App\Core\ThemeContract::sanitize($descriptor, ['home_title'=>str_repeat('ą', 100)])['home_title']) === 60, 'homepage title length is Unicode safe');
 $reject(fn() => App\Core\ThemeContract::sanitize($descriptor, ['home_title'=>['invalid']]), 'structured theme input rejected without conversion warning');
-$assert(str_contains($theme->response('/sitemap.xml')[2], '<loc>https://www.sensecms.com/docs/packages</loc>'), 'sitemap contains docs');
+$sitemap=$theme->response('/sitemap.xml')[2];
+$assert(str_contains($sitemap, '<loc>https://www.sensecms.com/docs/packages</loc>')&&str_contains($sitemap,'<lastmod>'),'sitemap contains docs with an explicit content-change date');
 $assert($theme->response('/robots.txt', 'HEAD')[2] === '', 'robots HEAD');
 $assert(str_contains($theme->response('/theme-assets/site.css')[1]['Content-Type'], 'text/css'), 'asset MIME');
 $assert(str_contains($theme->response('/')[1]['Content-Security-Policy'], "object-src 'none'"), 'public CSP');
@@ -91,11 +132,12 @@ $configured = $theme->response('/platform', 'GET', ['navigation' => [
 $assert(str_contains($configured, '&lt;Navigation&gt;') && str_contains($configured, 'aria-current="page"'), 'configured menu is escaped and marks current page');
 $assert(str_contains($configured, 'rel="noopener noreferrer"') && !str_contains($configured, 'javascript:'), 'configured links protect new windows and remove executable URLs');
 $assert(str_contains($configured, '<h2>Explore</h2></div>'), 'intentionally empty navigation stays empty');
-$managed = static function (array $page) use ($source): string {
+$managed = static function (array $page, ?array $seo=null) use ($source): string {
     $locale = 'pl'; $baseUrl = 'https://www.sensecms.com';
+    $requestUri=$_SERVER['REQUEST_URI']??null;$_SERVER['REQUEST_URI']=(string)($page['public_path']??'/');
     ob_start();
     try { require $source . '/views/page.php'; return (string) ob_get_contents(); }
-    finally { ob_end_clean(); }
+    finally { ob_end_clean();if($requestUri===null)unset($_SERVER['REQUEST_URI']);else $_SERVER['REQUEST_URI']=$requestUri; }
 };
 $html = $managed(['title' => '<unsafe title>', 'excerpt' => 'Description', 'blocks' => [
     ['type' => 'text', 'payload' => ['title' => 'Heading', 'text' => '<p>Safe body</p><script>unsafe()</script>', 'cta_label' => 'Contact us', 'cta_url' => '/contact']],
@@ -105,23 +147,45 @@ $assert(str_contains($html, '&lt;unsafe title&gt;') && str_contains($html, 'lang
 $assert(str_contains($html, '<p>Safe body</p>') && str_contains($html, '<h2>Custom content</h2>'), 'text and custom HTML sections render');
 $assert(!str_contains($html, 'unsafe()') && !str_contains($html, 'onerror='), 'managed content strips executable HTML and URLs');
 $assert(str_contains($html, 'href="/contact">Contact us</a>'), 'text section action renders');
+$coreBlocks = [
+    ['type'=>'hero','payload'=>['media_type'=>'image','image'=>'/theme-assets/logo.svg','title'=>'Core hero']],
+    ['type'=>'hero-slider','shared'=>['arrows'=>true,'dots'=>true],'payload'=>['slides'=>[['media_type'=>'image','image'=>'/theme-assets/logo.svg','title'=>'Core slide']]]],
+    ['type'=>'gallery','payload'=>['title'=>'Core gallery','items'=>[['image'=>'/theme-assets/logo.svg','title'=>'Gallery item']]]],
+    ['type'=>'admissions','payload'=>['title'=>'Core steps','steps'=>[['title'=>'First step']]]],
+    ['uid'=>'12345678-1234-4234-8234-123456789abc','type'=>'story','layout'=>['group'=>'22345678-1234-4234-8234-123456789abc','mode'=>'columns','container'=>'wide','gap'=>'small','desktop'=>['span'=>4]],'payload'=>['title'=>'Core story','statement'=>'Story statement']],
+    ['uid'=>'32345678-1234-4234-8234-123456789abc','type'=>'values','layout'=>['group'=>'22345678-1234-4234-8234-123456789abc','mode'=>'columns','container'=>'wide','gap'=>'small','desktop'=>['span'=>8]],'payload'=>['title'=>'Core values','items'=>[['title'=>'Value','text'=>'Description']]]],
+    ['type'=>'programs','payload'=>['title'=>'Core services','items'=>[['title'=>'Service','text'=>'Description']]]],
+    ['type'=>'statistics','payload'=>['title'=>'Core highlights','items'=>[['value'=>'15','label'=>'Sections']]]],
+    ['type'=>'motion','payload'=>['title'=>'Core video','video'=>'/media/core.mp4']],
+    ['type'=>'news','payload'=>['title'=>'Core stories']],
+    ['type'=>'cta','payload'=>['title'=>'Core action','panel_title'=>'Next step']],
+    ['type'=>'image-text','payload'=>['title'=>'Core image text','image'=>'/theme-assets/logo.svg']],
+    ['type'=>'separator','shared'=>['style'=>'dashed','weight'=>2,'spacing'=>32],'payload'=>[]],
+    ['type'=>'spacer','shared'=>['desktop'=>80,'tablet'=>60,'mobile'=>40],'payload'=>[]],
+];
+$coreHtml=$managed(['title'=>'Core standard','blocks'=>$coreBlocks]);
+foreach(['hero','slider','gallery','steps','story','values','services','statistics','motion','news','cta','image-text','separator','spacer']as$marker)$assert(str_contains($coreHtml,'sense-block-'.$marker),'official theme renders Core section '.$marker);
+$assert(str_contains($coreHtml,'sense-layout-columns sense-layout-wide sense-layout-gap-small')&&str_contains($coreHtml,'--sense-span-desktop:4')&&str_contains($coreHtml,'--sense-span-desktop:8'),'official theme renders controlled responsive layout groups');
+$assert(str_contains((string)file_get_contents($source.'/assets/site.js'),'[data-core-slider]')&&str_contains((string)file_get_contents($source.'/assets/site.css'),'.sense-block-slider'),'Core slider has accessible behaviour and responsive presentation');
 $marketBlocks = [];
 foreach (require dirname(__DIR__) . '/.src/package-catalog.php' as $product) {
     $marketBlocks[] = ['type'=>'text','payload'=>['title'=>$product['name'],'text'=>'<p><strong>' . ($product['usd_year']===0?'Free':'USD '.$product['usd_year'].' / year') . '</strong></p><p>'.$product['description'].'</p><p>Not available yet</p>','cta_url'=>'/extensions/catalog/'.$product['type'].'/'.$product['slug'],'cta_label'=>'View package']];
 }
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog','blocks'=>$marketBlocks]);
-$assert(substr_count($market, 'data-market-item ')===20, 'marketplace presents all CMS products as cards');
+$assert(substr_count($market, 'data-market-item ')===22, 'marketplace presents all CMS products as cards');
 $entryMarket=$managed(['title'=>'Marketplace','public_path'=>'/extensions','blocks'=>$marketBlocks]);
-$assert(substr_count($entryMarket,'data-market-item ')===20 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
+$assert(substr_count($entryMarket,'data-market-item ')===22 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
 $assert(str_contains($entryMarket,'data-market-category="plugin"') && str_contains($entryMarket,'data-market-price="free"'), 'primary marketplace contains category and price chips');
 $assert(substr_count($entryMarket,'data-market-dialog ')===1 && str_contains($entryMarket,'aria-labelledby="market-dialog-title"'), 'marketplace provides one accessible inline details dialog');
-$assert(substr_count($entryMarket,'data-market-open href=')===40 && substr_count($entryMarket,'data-market-status hidden')===20, 'all product actions support dialogs with real no-JS detail links');
+$assert(substr_count($entryMarket,'data-market-open href=')===44 && substr_count($entryMarket,'data-market-status hidden')===22, 'all product actions support dialogs with real no-JS detail links');
 $assert(str_contains($entryMarket,'disabled>Download unavailable') && str_contains($entryMarket,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
 $assert(substr_count($market, 'data-pricing="free"')===8, 'marketplace retains eight free product tiers');
 $catalogProducts=require dirname(__DIR__) . '/.src/package-catalog.php';$bluesky=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='bluesky-publisher'))[0]??[];$assert(($bluesky['usd_year']??null)===15&&($bluesky['license']['product_name']??'')==='Sense CMS Bluesky Publisher Plugin'&&($bluesky['license']['product_model']??'')==='Bluesky Publisher Plugin','Bluesky marketplace entry keeps separate paid licence identity');
 $mastodon=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='mastodon-publisher'))[0]??[];$assert(($mastodon['usd_year']??null)===15&&($mastodon['license']['product_name']??'')==='Sense CMS Mastodon Publisher Plugin'&&($mastodon['license']['product_model']??'')==='Mastodon Publisher Plugin','Mastodon marketplace entry keeps separate paid licence identity');
 $telegramChannels=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='telegram-channels-publisher'))[0]??[];$assert(($telegramChannels['usd_year']??null)===15&&($telegramChannels['license']['product_name']??'')==='Sense CMS Telegram Channels Plugin'&&($telegramChannels['license']['product_model']??'')==='Telegram Channels Plugin','Telegram Channels marketplace entry keeps separate paid licence identity');
 $pinterest=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='pinterest-publisher'))[0]??[];$assert(($pinterest['usd_year']??null)===15&&($pinterest['license']['product_name']??'')==='Sense CMS Pinterest Publisher Plugin'&&($pinterest['license']['product_model']??'')==='Pinterest Publisher Plugin','Pinterest marketplace entry keeps separate paid licence identity');
+$tiktok=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='tiktok-publisher'))[0]??[];$assert(($tiktok['usd_year']??null)===15&&($tiktok['license']['product_name']??'')==='Sense CMS TikTok Publisher Plugin'&&($tiktok['license']['product_model']??'')==='TikTok Publisher Plugin','TikTok marketplace entry keeps separate paid licence identity');
+$youtube=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='youtube-publisher'))[0]??[];$assert(($youtube['usd_year']??null)===15&&($youtube['license']['product_name']??'')==='Sense CMS YouTube Publisher Plugin'&&($youtube['license']['product_model']??'')==='YouTube Publisher Plugin','YouTube marketplace entry keeps separate paid licence identity');
 $assert(str_contains($market, 'data-market-filters hidden') && str_contains($market, 'data-market-count'), 'marketplace controls progressively enhance visible server-rendered cards');
 $assert(str_contains($market, 'USD 120 / year') && str_contains($market, 'Separate licence'), 'marketplace displays prices and entitlement labels');
 $marketBlocks[] = ['type'=>'text','payload'=>['title'=>'Editorial <unsafe>','text'=>'<p>Preserved editorial note</p><script>unsafe()</script>']];
@@ -141,6 +205,9 @@ $assert(!str_contains($html, 'class="platform-hero"'), 'default managed template
 $assert(str_contains($managed(['template'=>'product','title'=>'Empty','blocks'=>[]]), 'class="platform-hero"'), 'product template handles an empty block collection');
 $assert(str_contains($theme->response('/platform')[2], 'class="platform-hero"'), 'starter platform uses same presentation as managed template');
 $assert(str_contains($platform, 'aria-label="Back to top" aria-hidden="true" tabindex="-1"') && str_contains($platform, '<main id="main" tabindex="-1">'), 'return control starts hidden and has an accessible focus destination');
+$seoFixture=App\Core\SeoMeta::resolve([],[],['title'=>'Installation','excerpt'=>'Install Sense CMS'],['base_url'=>'https://www.sensecms.com','current_path'=>'/docs/installation','locale'=>'en','fallback_image'=>'/theme-assets/og.image.jpg','fallback_image_type'=>'image/jpeg','fallback_image_width'=>1200,'fallback_image_height'=>630]);
+$seoPage=$managed(['title'=>'Installation','excerpt'=>'Install Sense CMS','public_path'=>'/docs/installation','blocks'=>[]],$seoFixture);
+$assert(str_contains($seoPage,'"@type":"BreadcrumbList"')&&str_contains($seoPage,'"name":"Documentation"')&&str_contains($seoPage,'property="og:image:width" content="1200"'),'visible breadcrumb trail matches structured data and complete default Open Graph metadata');
 $assert(str_contains($theme->response('/docs')[2], 'data-back-to-top') && str_contains($theme->response('/')[2], 'data-back-to-top'), 'return control is shared by homepage and subpages');
 $assert(in_array('product', array_column(json_decode((string) file_get_contents($source . '/theme.json'), true)['page_templates'], 'key'), true), 'platform template is available to the CMS editor');
 foreach (['/contact','/docs','/docs/installation','/docs/licensing','/docs/packages','/docs/themes','/docs/server','/download','/extensions','/extensions/modules','/extensions/plugins','/extensions/addons','/extensions/themes'] as $route) {
@@ -179,6 +246,8 @@ $heroCss = (string) file_get_contents($source . '/assets/product.css');
 $assert(str_contains($heroCss, '.product-hero,.platform-hero,.subpage-hero{overflow:hidden;background:radial-gradient(ellipse at 90% 10%,#2462b590,transparent 65%),#09244d;color:#fff}'), 'all public heroes share the approved contact palette');
 $assert(!str_contains($heroCss, '.subpage-contact{') && !str_contains($heroCss, '.subpage-guide .subpage-intro'), 'contact and documentation no longer override shared hero styling');
 $assert(str_contains($theme->response('/platform')[2], 'class="subpage-intro"') && str_contains($theme->response('/platform')[2], 'class="subpage-emblem"'), 'platform uses the same heading layout and emblem as other subpages');
+$pageEditor=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console-content-page-form.php');$pageController=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Http/DashboardController.php');
+$assert(str_contains($pageEditor,'data-seo-image-upload')&&str_contains($pageEditor,'Open Graph / social image')&&str_contains($pageController,"'og_image_width','og_image_height','og_image_type'"),'page editor uploads localized Open Graph images through the existing media pipeline');
 $mail=App\Core\FormMail::render(['data'=>['fields'=>[['key'=>'message','label'=>'Message']]]],['message'=>'<script>alert(1)</script>'],'TEST-REFERENCE',true);
 $assert(str_contains($mail['html'],'&lt;script&gt;')&&!str_contains($mail['html'],'<script>'),'email template escapes visitor content');
 $assert(str_contains($mail['text'],'<script>alert(1)</script>') && str_contains($mail['html'],'TEST-REFERENCE'),'email includes readable text alternative and reference');
@@ -231,7 +300,7 @@ try {
     $registered = $registry->find('sensecms');
     $assert($registered['_view_path'] === $manager->activePath() . '/views/page.php', 'Workspace uses the signed active payload');
     $catalog = App\Core\PageBuilder::catalog($registered);
-    $assert(count($catalog) === 3 && isset($catalog['text'], $catalog['custom-html'], $catalog['contact-form']), 'builder exposes only implemented public sections');
+    $assert(count($catalog) === 17 && array_keys($catalog) === App\Core\PageBuilder::systemTypes(), 'builder exposes the complete portable Core section standard');
     $assert((new PublicTheme($manager->activePath(), 'https://www.sensecms.com'))->response('/')[0] === 200, 'installed payload renders homepage');
     $reject(fn() => $manager->install($temp . '/v1.zip', $keys), 'same version install rejected');
     $reject(fn() => $manager->rollback($keys), 'rollback without history rejected');

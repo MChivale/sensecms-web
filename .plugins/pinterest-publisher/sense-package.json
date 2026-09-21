@@ -3,7 +3,7 @@
   "type": "plugin",
   "slug": "pinterest-publisher",
   "name": "Sense CMS Pinterest Publisher",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "requires": {
     "php": {"min": "8.5.0", "max_exclusive": "9.0.0"},
     "core": {"min": "1.0.0", "max_exclusive": "2.0.0"}

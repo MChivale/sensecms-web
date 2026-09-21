@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS X Publisher",
   "slug": "x-publisher",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Publishes reviewed Sense CMS posts to connected X accounts through the X API v2.",
@@ -27,6 +27,7 @@
     "/social-publishing/x/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.1.2", "summary": "Validate post payloads before refreshing OAuth credentials."},
     {"version": "0.1.1", "summary": "Close the OAuth window after return even when the provider has isolated it from the opener."},
     {"version": "0.1.0", "summary": "Connect multiple X accounts with OAuth 2.0 PKCE and publish reviewed link posts through X API v2."}
   ]

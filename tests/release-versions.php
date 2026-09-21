@@ -7,7 +7,7 @@ $check = static function (bool $ok, string $label) use (&$count): void { if (!$o
 $product = require $root . '/.cms/source/config/product.php';
 $check($product['core_version'] === '1.0.0', 'Canonical Core release is 1.0.0');
 $check($product['license']['product_name'] === 'Sense CMS' && $product['license']['product_model'] === 'Sense CMS System' && $product['license']['product_version'] === '1.0', 'Licence identity and protocol unchanged');
-$expected = ['addon:calendar'=>'1.0.0','theme:sensecms'=>'1.0.0','plugin:telegram-notifications'=>'1.0.0','plugin:google-analytics'=>'0.1.2','plugin:google-calendar'=>'0.1.1','plugin:microsoft-365-calendar'=>'0.1.1','plugin:apple-calendar'=>'0.1.1'];
+$expected = ['addon:calendar'=>'1.0.0','theme:sensecms'=>'1.0.14','plugin:telegram-notifications'=>'1.0.0','plugin:google-analytics'=>'0.1.2','plugin:google-calendar'=>'0.1.1','plugin:microsoft-365-calendar'=>'0.1.1','plugin:apple-calendar'=>'0.1.1'];
 foreach ($expected as $identity=>$version) {
     [$type,$slug] = explode(':',$identity); $path = $root . '/.' . $type . 's/' . $slug;
     $manifest = App\Core\Packages\Manifest::validate(json_decode((string)file_get_contents($path . '/sense-package.json'),true,16,JSON_THROW_ON_ERROR));
@@ -25,7 +25,8 @@ foreach ($expected as $identity=>$version) {
     $check($runtime['release_channel'] === 'development', 'No premature Stable promotion: ' . $identity);
 }
 $catalog = require $root . '/.src/package-catalog.php';
-foreach ($catalog as $item) if (isset($expected[$item['type'].':'.$item['slug']])) $check($item['version'] === $expected[$item['type'].':'.$item['slug']], 'Website inventory version: ' . $item['slug']);
+$catalogExpected = $expected; $catalogExpected['theme:sensecms'] = '1.0.0'; // 1.0.14 is the product-site presentation, not yet a public distribution promotion.
+foreach ($catalog as $item) if (isset($catalogExpected[$item['type'].':'.$item['slug']])) $check($item['version'] === $catalogExpected[$item['type'].':'.$item['slug']], 'Website inventory version: ' . $item['slug']);
 $workspace = (string)file_get_contents($root . '/.cms/source/config/workspace.php');
 $installer = (string)file_get_contents($root . '/.cms/source/app/Installer/Installer.php');
 $builder = (string)file_get_contents($root . '/scripts/build-installer.php');

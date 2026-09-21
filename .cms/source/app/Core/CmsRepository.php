@@ -167,7 +167,7 @@ final class CmsRepository
 
     public function blocks(int $pageId, string $locale, string $fallbackLocale): array
     {
-        $statement = $this->db->prepare("SELECT b.id,b.uid,b.page_id,COALESCE(g.type,b.type) type,COALESCE(g.source_theme,b.source_theme) source_theme,b.global_section_id,COALESCE(g.settings,b.settings) settings,b.visible,b.visible_from,b.visible_until,b.sort_order,b.created_at,b.updated_at,COALESCE(gt.data,gft.data,t.data,ft.data,'{}') data
+        $statement = $this->db->prepare("SELECT b.id,b.uid,b.page_id,COALESCE(g.type,b.type) type,COALESCE(g.source_theme,b.source_theme) source_theme,b.global_section_id,COALESCE(g.settings,b.settings) settings,b.layout,b.appearance,b.visible,b.visible_from,b.visible_until,b.sort_order,b.created_at,b.updated_at,COALESCE(gt.data,gft.data,t.data,ft.data,'{}') data
             FROM content_blocks b
             LEFT JOIN global_sections g ON g.id=b.global_section_id AND g.active=1 AND g.archived_at IS NULL
             LEFT JOIN content_block_translations t ON t.block_id = b.id AND t.locale = :locale
@@ -176,7 +176,7 @@ final class CmsRepository
             LEFT JOIN global_section_translations gft ON gft.global_section_id=g.id AND gft.locale=:global_fallback
             WHERE b.page_id = :page AND b.visible = 1 AND b.archived_at IS NULL AND (b.visible_from IS NULL OR b.visible_from<=NOW()) AND (b.visible_until IS NULL OR b.visible_until>NOW()) ORDER BY b.sort_order, b.id");
         $statement->execute(['page' => $pageId, 'locale' => $locale, 'fallback' => $fallbackLocale, 'global_locale'=>$locale, 'global_fallback'=>$fallbackLocale]);
-        return array_map(static function(array $block):array{$shared=json_decode((string)($block['settings']??''),true);return $block+['payload'=>json_decode($block['data'],true,512,JSON_THROW_ON_ERROR),'shared'=>is_array($shared)?$shared:[]];},$statement->fetchAll());
+        return array_map(static function(array $block):array{$shared=json_decode((string)($block['settings']??''),true);$layout=json_decode((string)($block['layout']??''),true);$appearance=json_decode((string)($block['appearance']??''),true);return array_replace($block,['payload'=>json_decode($block['data'],true,512,JSON_THROW_ON_ERROR),'shared'=>is_array($shared)?$shared:[],'layout'=>PageBuilder::sanitizeLayout($layout),'appearance'=>PageBuilder::sanitizeAppearance($appearance)]);},$statement->fetchAll());
     }
 
     public function menu(string $location, string $locale, string $fallbackLocale): array
@@ -296,7 +296,9 @@ final class CmsRepository
     public function postAdmin(int $id): ?array
     {
         $statement=$this->db->prepare('SELECT * FROM posts WHERE id=? LIMIT 1');$statement->execute([$id]);$post=$statement->fetch();if(!$post)return null;
-        $translations=$this->db->prepare('SELECT * FROM post_translations WHERE post_id=?');$translations->execute([$id]);$post['translations']=array_column($translations->fetchAll(),null,'locale');return$post;
+        $translations=$this->db->prepare('SELECT * FROM post_translations WHERE post_id=?');$translations->execute([$id]);$post['translations']=array_column($translations->fetchAll(),null,'locale');
+        $media=$this->db->prepare('SELECT id,path,mime_type,original_name,size_bytes,width,height FROM media WHERE id IN (?,?,?) AND status="active"');$media->execute([(int)($post['featured_media_id']??0),(int)($post['audio_media_id']??0),(int)($post['video_media_id']??0)]);$post['media']=array_column($media->fetchAll(),null,'id');
+        $tags=$this->db->prepare('SELECT t.locale,t.name,t.slug FROM post_tags t INNER JOIN post_tag_map m ON m.tag_id=t.id WHERE m.post_id=? ORDER BY t.locale,m.sort_order,t.name');$tags->execute([$id]);$post['tags']=[];foreach($tags->fetchAll()as$tag)$post['tags'][(string)$tag['locale']][]=$tag;return$post;
     }
 
     public function categories(bool $includeArchived = true): array
@@ -321,7 +323,8 @@ final class CmsRepository
         $id=(int)($input['id']??0);$publishedAt=$input['status']==='published'?($input['published_at']?:date('Y-m-d H:i:s')):($input['status']==='scheduled'?$input['published_at']:null);
         if(!empty($input['category_id'])&&!$this->activeCategoryExists((int)$input['category_id']))throw new \RuntimeException('Choose an active category or leave the post uncategorised.');
         $facilityId=(int)($input['facility_id']??0);if(!$facilityId)throw new \RuntimeException('Choose a facility for this post.');
-        $workflow=in_array($input['status'],['published','scheduled'],true)?'approved':'draft';$this->db->beginTransaction();try{$post=['facility_id'=>$facilityId,'category_id'=>$input['category_id']?:null,'featured_media_id'=>$input['featured_media_id']?:null,'status'=>$input['status'],'published_at'=>$publishedAt,'assigned_user_id'=>(int)($input['assigned_user_id']??0)?:null,'editorial_note'=>mb_substr(trim((string)($input['editorial_note']??'')),0,1000)?:null,'workflow_state'=>$workflow];if($id){$statement=$this->db->prepare('UPDATE posts SET facility_id=:facility_id,category_id=:category_id,featured_media_id=:featured_media_id,status=:status,published_at=:published_at,assigned_user_id=:assigned_user_id,editorial_note=:editorial_note,workflow_state=:workflow_state,updated_at=NOW() WHERE id=:id');$statement->execute($post+['id'=>$id]);if(!$statement->rowCount()&&!$this->postAdmin($id))throw new \RuntimeException('The post was not found.');}else{$this->db->prepare('INSERT INTO posts (author_id,facility_id,owner_user_id,assigned_user_id,workflow_state,editorial_note,category_id,featured_media_id,status,published_at,created_at,updated_at) VALUES (:author_id,:facility_id,:owner_user_id,:assigned_user_id,:workflow_state,:editorial_note,:category_id,:featured_media_id,:status,:published_at,NOW(),NOW())')->execute($post+['author_id'=>$input['author_id'],'owner_user_id'=>$userId]);$id=(int)$this->db->lastInsertId();}$upsert=$this->db->prepare('INSERT INTO post_translations (post_id,facility_id,locale,title,slug,excerpt,content,seo_title,seo_description) VALUES (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE facility_id=VALUES(facility_id),title=VALUES(title),slug=VALUES(slug),excerpt=VALUES(excerpt),content=VALUES(content),seo_title=VALUES(seo_title),seo_description=VALUES(seo_description)');foreach($translations as$locale=>$value)$upsert->execute([$id,$facilityId,$locale,$value['title'],$value['slug'],$value['excerpt'],$value['content'],$value['seo_title'],$value['seo_description']]);$this->audit($userId,'post.saved','post',$id,['status'=>$input['status'],'workflow_state'=>$workflow,'facility_id'=>$facilityId]);$this->db->commit();$this->events->dispatch('post.updated',['post_id'=>$id]);return$id;}catch(\Throwable$error){$this->db->rollBack();throw$error;}
+        $featured=$this->validPostMedia((int)($input['featured_media_id']??0),'image',$facilityId);$audio=$this->validPostMedia((int)($input['audio_media_id']??0),'audio',$facilityId);$video=$this->validPostMedia((int)($input['video_media_id']??0),'video',$facilityId);
+        $workflow=in_array($input['status'],['published','scheduled'],true)?'approved':'draft';$this->db->beginTransaction();try{$post=['facility_id'=>$facilityId,'category_id'=>$input['category_id']?:null,'featured_media_id'=>$featured,'audio_media_id'=>$audio,'video_media_id'=>$video,'status'=>$input['status'],'published_at'=>$publishedAt,'assigned_user_id'=>(int)($input['assigned_user_id']??0)?:null,'editorial_note'=>mb_substr(trim((string)($input['editorial_note']??'')),0,1000)?:null,'workflow_state'=>$workflow];if($id){$statement=$this->db->prepare('UPDATE posts SET facility_id=:facility_id,category_id=:category_id,featured_media_id=:featured_media_id,audio_media_id=:audio_media_id,video_media_id=:video_media_id,status=:status,published_at=:published_at,assigned_user_id=:assigned_user_id,editorial_note=:editorial_note,workflow_state=:workflow_state,updated_at=NOW() WHERE id=:id');$statement->execute($post+['id'=>$id]);if(!$statement->rowCount()&&!$this->postAdmin($id))throw new \RuntimeException('The post was not found.');}else{$this->db->prepare('INSERT INTO posts (author_id,facility_id,owner_user_id,assigned_user_id,workflow_state,editorial_note,category_id,featured_media_id,audio_media_id,video_media_id,status,published_at,created_at,updated_at) VALUES (:author_id,:facility_id,:owner_user_id,:assigned_user_id,:workflow_state,:editorial_note,:category_id,:featured_media_id,:audio_media_id,:video_media_id,:status,:published_at,NOW(),NOW())')->execute($post+['author_id'=>$input['author_id'],'owner_user_id'=>$userId]);$id=(int)$this->db->lastInsertId();}$upsert=$this->db->prepare('INSERT INTO post_translations (post_id,facility_id,locale,title,slug,excerpt,content,seo_title,seo_description) VALUES (?,?,?,?,?,?,?,?,?) ON DUPLICATE KEY UPDATE facility_id=VALUES(facility_id),title=VALUES(title),slug=VALUES(slug),excerpt=VALUES(excerpt),content=VALUES(content),seo_title=VALUES(seo_title),seo_description=VALUES(seo_description)');foreach($translations as$locale=>$value)$upsert->execute([$id,$facilityId,$locale,$value['title'],$value['slug'],$value['excerpt'],$value['content'],$value['seo_title'],$value['seo_description']]);$this->savePostTags($id,(array)($input['tags']??[]));$this->audit($userId,'post.saved','post',$id,['status'=>$input['status'],'workflow_state'=>$workflow,'facility_id'=>$facilityId,'featured_media_id'=>$featured,'audio_media_id'=>$audio,'video_media_id'=>$video]);$this->db->commit();$this->events->dispatch('post.updated',['post_id'=>$id]);return$id;}catch(\Throwable$error){$this->db->rollBack();throw$error;}
     }
 
     public function setPostStatus(int $id, string $status, int $userId): bool
@@ -331,7 +334,7 @@ final class CmsRepository
 
     public function duplicatePost(int $id, int $userId): int
     {
-        $post=$this->postAdmin($id);if(!$post)throw new \RuntimeException('The post was not found.');$translations=[];foreach($post['translations']as$locale=>$value){$translations[$locale]=$value;$translations[$locale]['title']=mb_substr($value['title'].' — Copy',0,255);$translations[$locale]['slug']=$this->uniqueTranslationSlug('post_translations','post_id',(int)$post['facility_id'],$locale,$value['slug'].'-copy');}$input=['id'=>0,'author_id'=>$userId,'facility_id'=>$post['facility_id'],'category_id'=>$post['category_id'],'featured_media_id'=>$post['featured_media_id'],'status'=>'draft','published_at'=>null];return$this->savePost($input,$translations,$userId);
+        $post=$this->postAdmin($id);if(!$post)throw new \RuntimeException('The post was not found.');$translations=[];foreach($post['translations']as$locale=>$value){$translations[$locale]=$value;$translations[$locale]['title']=mb_substr($value['title'].' — Copy',0,255);$translations[$locale]['slug']=$this->uniqueTranslationSlug('post_translations','post_id',(int)$post['facility_id'],$locale,$value['slug'].'-copy');}$tags=[];foreach((array)$post['tags']as$locale=>$items)$tags[$locale]=implode(', ',array_column($items,'name'));$input=['id'=>0,'author_id'=>$userId,'facility_id'=>$post['facility_id'],'category_id'=>$post['category_id'],'featured_media_id'=>$post['featured_media_id'],'audio_media_id'=>$post['audio_media_id']??null,'video_media_id'=>$post['video_media_id']??null,'tags'=>$tags,'status'=>'draft','published_at'=>null];return$this->savePost($input,$translations,$userId);
     }
 
     public function navigation(): array
@@ -350,10 +353,60 @@ final class CmsRepository
         $statement->bindValue('locale', $locale); $statement->bindValue('fallback', $fallbackLocale);if($facilityId)$statement->bindValue('facility',$facilityId,PDO::PARAM_INT); $statement->bindValue('limit', $limit, PDO::PARAM_INT); $statement->execute(); return $statement->fetchAll();
     }
 
+    /** Public content choices used by the Core Page Builder collection picker. */
+    public function builderCollectionOptions(int $facilityId,string $locale,string $fallbackLocale,int$excludePageId=0):array
+    {
+        if($facilityId<1)return['sources'=>[],'categories'=>[]];
+        $categories=$this->db->prepare("SELECT c.id,COALESCE(NULLIF(t.name,''),NULLIF(ft.name,''),c.slug) label,COUNT(p.id) item_count FROM categories c LEFT JOIN category_translations t ON t.category_id=c.id AND t.locale=? LEFT JOIN category_translations ft ON ft.category_id=c.id AND ft.locale=? LEFT JOIN posts p ON p.category_id=c.id AND p.facility_id=? AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW())) WHERE c.archived_at IS NULL GROUP BY c.id,t.name,ft.name,c.slug ORDER BY label LIMIT 200");
+        $categories->execute([$locale,$fallbackLocale,$facilityId]);
+        $posts=$this->db->prepare("SELECT p.id,COALESCE(NULLIF(t.title,''),NULLIF(ft.title,''),CONCAT('Post #',p.id)) label,COALESCE(NULLIF(ct.name,''),NULLIF(cft.name,''),c.slug,'Uncategorised') category,p.published_at FROM posts p LEFT JOIN post_translations t ON t.post_id=p.id AND t.locale=? LEFT JOIN post_translations ft ON ft.post_id=p.id AND ft.locale=? LEFT JOIN categories c ON c.id=p.category_id LEFT JOIN category_translations ct ON ct.category_id=c.id AND ct.locale=? LEFT JOIN category_translations cft ON cft.category_id=c.id AND cft.locale=? WHERE p.facility_id=? AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW())) ORDER BY COALESCE(p.published_at,p.updated_at) DESC,p.id DESC LIMIT 200");
+        $posts->execute([$locale,$fallbackLocale,$locale,$fallbackLocale,$facilityId]);
+        $pageSql="SELECT p.id,COALESCE(NULLIF(t.title,''),NULLIF(ft.title,''),CONCAT('Page #',p.id)) label,p.published_at FROM pages p LEFT JOIN page_translations t ON t.page_id=p.id AND t.locale=? LEFT JOIN page_translations ft ON ft.page_id=p.id AND ft.locale=? WHERE p.facility_id=? AND p.visibility='public' AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW()))".($excludePageId>0?' AND p.id<>?':'')." ORDER BY COALESCE(p.published_at,p.updated_at) DESC,p.id DESC LIMIT 200";$pages=$this->db->prepare($pageSql);$pageParameters=[$locale,$fallbackLocale,$facilityId];if($excludePageId>0)$pageParameters[]=$excludePageId;$pages->execute($pageParameters);
+        $choices=static fn(array$rows,string$kind):array=>array_map(static function(array$row)use($kind):array{$date=trim((string)($row['published_at']??''));$meta=$kind==='posts'?(string)($row['category']??'Post'):'Page';if($date!=='')$meta.=' · '.date('j M Y',strtotime($date));return['value'=>(int)$row['id'],'label'=>(string)$row['label'],'meta'=>$meta];},$rows);
+        return['sources'=>['posts'=>['label'=>'Posts','items'=>$choices($posts->fetchAll(),'posts')],'pages'=>['label'=>'Pages','items'=>$choices($pages->fetchAll(),'pages')]],'categories'=>array_map(static fn(array$row):array=>['value'=>(int)$row['id'],'label'=>(string)$row['label'],'meta'=>(int)$row['item_count'].' published'], $categories->fetchAll())];
+    }
+
+    /** Resolve live collection items at request time; saved Builder JSON never duplicates content. */
+    public function hydratePageCollections(array $blocks,string $locale,string $fallbackLocale,array $facility,int$currentPageId=0):array
+    {
+        $cache=[];
+        foreach($blocks as&$block){
+            if((string)($block['type']??'')!=='news')continue;
+            $shared=is_array($block['shared']??null)?$block['shared']:[];$sourceValue=(string)($shared['source']??'posts');$source=in_array($sourceValue,['posts','pages'],true)?$sourceValue:'posts';$selection=($shared['selection']??'automatic')==='selected'?'selected':'automatic';$selected=array_slice(array_values(array_unique(array_filter(array_map('intval',is_array($shared['selected_ids']??null)?$shared['selected_ids']:[]),static fn(int$id):bool=>$id>0))),0,12);$limit=max(1,min(12,(int)($shared['limit']??3)));$orderValue=(string)($shared['order']??'newest');$order=in_array($orderValue,['newest','oldest','title_asc','title_desc'],true)?$orderValue:'newest';$category=$source==='posts'&&$selection==='automatic'?max(0,(int)($shared['category_id']??0)):0;
+            $key=json_encode([$source,$selection,$selected,$limit,$order,$category,(int)$facility['id'],$locale,$fallbackLocale,$currentPageId],JSON_THROW_ON_ERROR);$hash=hash('sha256',$key);
+            if(!isset($cache[$hash]))$cache[$hash]=$source==='pages'?$this->collectionPages($locale,$fallbackLocale,$facility,$selection,$selected,$limit,$order,$currentPageId):$this->collectionPosts($locale,$fallbackLocale,$facility,$selection,$selected,$limit,$order,$category);
+            $block['collection']=['source'=>$source,'items'=>$cache[$hash]];
+        }
+        unset($block);return$blocks;
+    }
+
+    private function collectionPosts(string$locale,string$fallbackLocale,array$facility,string$selection,array$selected,int$limit,string$order,int$category):array
+    {
+        if($selection==='selected'&&$selected===[])return[];$where=["p.facility_id=?","(p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW()))"];$parameters=[$locale,$fallbackLocale,(int)$facility['id']];
+        if($category>0){$where[]='p.category_id=?';$parameters[]=$category;}if($selection==='selected'){$where[]='p.id IN ('.implode(',',array_fill(0,count($selected),'?')).')';array_push($parameters,...$selected);}
+        $orders=['newest'=>'COALESCE(p.published_at,p.updated_at) DESC,p.id DESC','oldest'=>'COALESCE(p.published_at,p.updated_at),p.id','title_asc'=>'title,p.id','title_desc'=>'title DESC,p.id DESC'];$sql="SELECT p.id,COALESCE(NULLIF(t.title,''),NULLIF(ft.title,''),CONCAT('Post #',p.id)) title,COALESCE(t.slug,ft.slug,'') slug,COALESCE(t.excerpt,ft.excerpt,'') excerpt,COALESCE(p.published_at,p.updated_at) published_at,m.path image,m.alt_text image_alt FROM posts p LEFT JOIN post_translations t ON t.post_id=p.id AND t.locale=? LEFT JOIN post_translations ft ON ft.post_id=p.id AND ft.locale=? LEFT JOIN media m ON m.id=p.featured_media_id AND m.status='active' WHERE ".implode(' AND ',$where).' ORDER BY '.$orders[$order].' LIMIT '.($selection==='selected'?count($selected):$limit);$statement=$this->db->prepare($sql);$statement->execute($parameters);$rows=$statement->fetchAll();$base=$this->collectionBase($locale,$facility);foreach($rows as&$row){$row['kind']='post';$row['url']=$base.'/posts/'.rawurlencode((string)$row['slug']);}unset($row);return$this->orderSelected($rows,$selection,$selected,$limit);
+    }
+
+    private function collectionPages(string$locale,string$fallbackLocale,array$facility,string$selection,array$selected,int$limit,string$order,int$currentPageId):array
+    {
+        if($selection==='selected'&&$selected===[])return[];$where=["p.facility_id=?","p.visibility='public'","(p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW()))"];$parameters=[$locale,$fallbackLocale,(int)$facility['id']];if($currentPageId>0){$where[]='p.id<>?';$parameters[]=$currentPageId;}if($selection==='selected'){$where[]='p.id IN ('.implode(',',array_fill(0,count($selected),'?')).')';array_push($parameters,...$selected);}
+        $orders=['newest'=>'COALESCE(p.published_at,p.updated_at) DESC,p.id DESC','oldest'=>'COALESCE(p.published_at,p.updated_at),p.id','title_asc'=>'title,p.id','title_desc'=>'title DESC,p.id DESC'];$sql="SELECT p.id,p.public_path,COALESCE(NULLIF(t.title,''),NULLIF(ft.title,''),CONCAT('Page #',p.id)) title,COALESCE(t.slug,ft.slug,'') slug,COALESCE(t.excerpt,ft.excerpt,'') excerpt,COALESCE(p.published_at,p.updated_at) published_at,'' image,'' image_alt FROM pages p LEFT JOIN page_translations t ON t.page_id=p.id AND t.locale=? LEFT JOIN page_translations ft ON ft.page_id=p.id AND ft.locale=? WHERE ".implode(' AND ',$where).' ORDER BY '.$orders[$order].' LIMIT '.($selection==='selected'?count($selected):$limit);$statement=$this->db->prepare($sql);$statement->execute($parameters);$rows=$statement->fetchAll();$base=$this->collectionBase($locale,$facility);foreach($rows as&$row){$row['kind']='page';$home=(int)($facility['homepage_page_id']??0)===(int)$row['id'];$row['url']=$locale===$fallbackLocale&&trim((string)($row['public_path']??''))!==''?(string)$row['public_path']:($home?(!empty($facility['is_primary'])?$base.'/home':$base):$base.'/'.rawurlencode((string)$row['slug']));unset($row['public_path']);}unset($row);return$this->orderSelected($rows,$selection,$selected,$limit);
+    }
+
+    private function collectionBase(string$locale,array$facility):string
+    {
+        $base='/'.rawurlencode($locale);if(empty($facility['is_primary']))$base.='/facilities/'.rawurlencode((string)$facility['city_slug']).'/'.rawurlencode((string)$facility['facility_slug']);return$base;
+    }
+
+    private function orderSelected(array$rows,string$selection,array$selected,int$limit):array
+    {
+        if($selection==='selected'){$positions=array_flip($selected);usort($rows,static fn(array$a,array$b):int=>($positions[(int)$a['id']]??PHP_INT_MAX)<=>($positions[(int)$b['id']]??PHP_INT_MAX));}return array_slice($rows,0,$limit);
+    }
+
     public function publicPost(string $slug, string $locale, string $fallbackLocale, int $facilityId): ?array
     {
-        $statement=$this->db->prepare("SELECT p.*,COALESCE(t.title,ft.title) title,COALESCE(t.slug,ft.slug) localized_slug,COALESCE(t.excerpt,ft.excerpt) excerpt,COALESCE(t.content,ft.content) content,COALESCE(t.seo_title,ft.seo_title) seo_title,COALESCE(t.seo_description,ft.seo_description) seo_description,m.path image,m.mime_type image_type,m.width image_width,m.height image_height,m.alt_text image_alt,u.name author_name FROM posts p LEFT JOIN post_translations t ON t.post_id=p.id AND t.locale=:locale LEFT JOIN post_translations ft ON ft.post_id=p.id AND ft.locale=:fallback LEFT JOIN media m ON m.id=p.featured_media_id LEFT JOIN users u ON u.id=p.author_id WHERE (t.slug=:translated_slug OR (t.slug IS NULL AND ft.slug=:fallback_slug)) AND p.facility_id=:facility AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW())) LIMIT 1");
-        $statement->execute(['locale'=>$locale,'fallback'=>$fallbackLocale,'translated_slug'=>$slug,'fallback_slug'=>$slug,'facility'=>$facilityId]);$post=$statement->fetch();return$post?:null;
+        $statement=$this->db->prepare("SELECT p.*,COALESCE(t.title,ft.title) title,COALESCE(t.slug,ft.slug) localized_slug,COALESCE(t.excerpt,ft.excerpt) excerpt,COALESCE(t.content,ft.content) content,COALESCE(t.seo_title,ft.seo_title) seo_title,COALESCE(t.seo_description,ft.seo_description) seo_description,m.path image,m.mime_type image_type,m.width image_width,m.height image_height,m.alt_text image_alt,a.path audio_url,a.mime_type audio_type,a.original_name audio_name,v.path video_url,v.mime_type video_type,v.original_name video_name,u.name author_name FROM posts p LEFT JOIN post_translations t ON t.post_id=p.id AND t.locale=:locale LEFT JOIN post_translations ft ON ft.post_id=p.id AND ft.locale=:fallback LEFT JOIN media m ON m.id=p.featured_media_id AND m.status='active' LEFT JOIN media a ON a.id=p.audio_media_id AND a.status='active' LEFT JOIN media v ON v.id=p.video_media_id AND v.status='active' LEFT JOIN users u ON u.id=p.author_id WHERE (t.slug=:translated_slug OR (t.slug IS NULL AND ft.slug=:fallback_slug)) AND p.facility_id=:facility AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW())) LIMIT 1");
+        $statement->execute(['locale'=>$locale,'fallback'=>$fallbackLocale,'translated_slug'=>$slug,'fallback_slug'=>$slug,'facility'=>$facilityId]);$post=$statement->fetch();if(!$post)return null;$tags=$this->db->prepare('SELECT t.name,t.slug FROM post_tags t INNER JOIN post_tag_map m ON m.tag_id=t.id WHERE m.post_id=? AND t.locale IN (?,?) ORDER BY t.locale=? DESC,m.sort_order,t.name');$tags->execute([(int)$post['id'],$locale,$fallbackLocale,$locale]);$seen=[];$post['tags']=[];foreach($tags->fetchAll()as$tag)if(!isset($seen[$tag['slug']])){$seen[$tag['slug']]=true;$post['tags'][]=$tag;}return$post;
     }
 
     public function postSlugs(int $id): array
@@ -551,10 +604,10 @@ final class CmsRepository
             foreach($page['translations']as$locale=>$value)$translation->execute([$copyId,$page['facility_id'],$locale,mb_substr($value['title'].' — Copy',0,255),$this->uniqueTranslationSlug('page_translations','page_id',(int)$page['facility_id'],$locale,$value['slug'].'-copy'),$value['excerpt'],$value['seo_title'],$value['seo_description'],$value['canonical_url'],$value['robots']]);
             $blocks=$this->db->prepare('SELECT * FROM content_blocks WHERE page_id=? AND archived_at IS NULL ORDER BY sort_order,id');
             $blocks->execute([$id]);
-            $blockInsert=$this->db->prepare('INSERT INTO content_blocks (uid,page_id,type,source_theme,global_section_id,settings,visible,visible_from,visible_until,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,NOW(),NOW())');
+            $blockInsert=$this->db->prepare('INSERT INTO content_blocks (uid,page_id,type,source_theme,global_section_id,settings,layout,appearance,visible,visible_from,visible_until,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW(),NOW())');
             $blockTranslation=$this->db->prepare('INSERT INTO content_block_translations (block_id,locale,data) SELECT ?,locale,data FROM content_block_translations WHERE block_id=?');
             foreach($blocks->fetchAll()as$block){
-                $blockInsert->execute([$this->uuid(),$copyId,$block['type'],$block['source_theme'],$block['global_section_id']??null,$block['settings'],$block['visible'],$block['visible_from']??null,$block['visible_until']??null,$block['sort_order']]);
+                $blockInsert->execute([$this->uuid(),$copyId,$block['type'],$block['source_theme'],$block['global_section_id']??null,$block['settings'],$block['layout']??null,$block['appearance']??null,$block['visible'],$block['visible_from']??null,$block['visible_until']??null,$block['sort_order']]);
                 $blockTranslation->execute([(int)$this->db->lastInsertId(),$block['id']]);
             }
             $this->db->prepare('INSERT INTO page_builder_states (page_id,version,updated_by,updated_at) VALUES (?,0,?,NOW())')->execute([$copyId,$userId]);
@@ -572,6 +625,11 @@ final class CmsRepository
     {
         $this->db->prepare('DELETE t FROM content_block_translations t INNER JOIN content_blocks b ON b.id=t.block_id WHERE b.page_id=?')->execute([$id]);
         $this->db->prepare('DELETE FROM content_blocks WHERE page_id=?')->execute([$id]);
+        $this->db->prepare('DELETE FROM page_builder_drafts WHERE page_id=?')->execute([$id]);
+        $this->db->prepare('UPDATE page_builder_clipboards SET source_page_id=NULL WHERE source_page_id=?')->execute([$id]);
+        $this->db->prepare('DELETE FROM page_builder_section_locks WHERE page_id=?')->execute([$id]);
+        $this->db->prepare('DELETE FROM page_builder_section_comments WHERE page_id=?')->execute([$id]);
+        $this->db->prepare('DELETE FROM page_builder_section_workflow WHERE page_id=?')->execute([$id]);
         $this->db->prepare('DELETE FROM page_builder_revisions WHERE page_id=?')->execute([$id]);
         $this->db->prepare('DELETE FROM page_builder_states WHERE page_id=?')->execute([$id]);
         $this->db->prepare('UPDATE form_submissions SET page_id=NULL WHERE page_id=?')->execute([$id]);
@@ -589,9 +647,9 @@ final class CmsRepository
         if (!$document) return null;
         $translations = $this->db->prepare('SELECT pt.* FROM page_translations pt INNER JOIN languages l ON l.locale=pt.locale AND l.enabled=1 WHERE pt.page_id=? ORDER BY l.sort_order,l.id');
         $translations->execute([$pageId]); $document['translations'] = array_column($translations->fetchAll(), null, 'locale');
-        $blocks = $this->db->prepare('SELECT b.id,b.uid,COALESCE(g.type,b.type) type,COALESCE(g.source_theme,b.source_theme) source_theme,b.global_section_id,g.name global_name,COALESCE(g.version,0) global_version,COALESCE(g.settings,b.settings) settings,b.visible,b.visible_from,b.visible_until,b.sort_order,b.updated_at FROM content_blocks b LEFT JOIN global_sections g ON g.id=b.global_section_id AND g.active=1 AND g.archived_at IS NULL WHERE b.page_id=? AND b.archived_at IS NULL ORDER BY b.sort_order,b.id');
+        $blocks = $this->db->prepare('SELECT b.id,b.uid,COALESCE(g.type,b.type) type,COALESCE(g.source_theme,b.source_theme) source_theme,b.global_section_id,g.name global_name,COALESCE(g.version,0) global_version,COALESCE(g.settings,b.settings) settings,b.layout,b.appearance,b.visible,b.visible_from,b.visible_until,b.sort_order,b.updated_at FROM content_blocks b LEFT JOIN global_sections g ON g.id=b.global_section_id AND g.active=1 AND g.archived_at IS NULL WHERE b.page_id=? AND b.archived_at IS NULL ORDER BY b.sort_order,b.id');
         $blocks->execute([$pageId]); $document['blocks'] = $blocks->fetchAll();
-        foreach ($document['blocks'] as &$block) { $shared=json_decode((string)($block['settings']??''),true); $block['shared']=is_array($shared)?$shared:[]; unset($block['settings']); }
+        foreach ($document['blocks'] as &$block) { $shared=json_decode((string)($block['settings']??''),true);$layout=json_decode((string)($block['layout']??''),true);$appearance=json_decode((string)($block['appearance']??''),true);$block['shared']=is_array($shared)?$shared:[];$block['layout']=PageBuilder::sanitizeLayout($layout);$block['appearance']=PageBuilder::sanitizeAppearance($appearance);unset($block['settings']); }
         unset($block);
         if ($document['blocks']) {
             $ids = array_column($document['blocks'], 'id'); $placeholders = implode(',', array_fill(0, count($ids), '?'));
@@ -607,6 +665,68 @@ final class CmsRepository
         return $document;
     }
 
+    public function builderDraft(int $pageId, int $userId): ?array
+    {
+        if ($pageId < 1 || $userId < 1) return null;
+        $statement=$this->db->prepare('SELECT base_version,snapshot,updated_at FROM page_builder_drafts WHERE page_id=? AND user_id=? LIMIT 1');
+        $statement->execute([$pageId,$userId]);$draft=$statement->fetch();
+        if(!$draft)return null;
+        $snapshot=json_decode((string)$draft['snapshot'],true);
+        if(!is_array($snapshot)||!is_array($snapshot['blocks']??null))return null;
+        return['base_version'=>(int)$draft['base_version'],'blocks'=>$snapshot['blocks'],'updated_at'=>(string)$draft['updated_at']];
+    }
+
+    public function saveBuilderDraft(int $pageId, int $userId, int $baseVersion, array $blocks): array
+    {
+        if($userId<1)throw new \RuntimeException('Your session is no longer valid. Sign in and try again.');
+        $snapshot=json_encode(['blocks'=>$blocks],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+        if(strlen($snapshot)>2_000_000)throw new \RuntimeException('This recovery draft is too large to save safely.');
+        $this->db->beginTransaction();
+        try{
+            $page=$this->db->prepare('SELECT id FROM pages WHERE id=? FOR UPDATE');$page->execute([$pageId]);
+            if(!$page->fetchColumn())throw new \RuntimeException('The selected page no longer exists.');
+            $this->db->prepare('INSERT IGNORE INTO page_builder_states (page_id,version,updated_by,updated_at) VALUES (?,0,?,NOW())')->execute([$pageId,$userId]);
+            $state=$this->db->prepare('SELECT version FROM page_builder_states WHERE page_id=? FOR UPDATE');$state->execute([$pageId]);$current=(int)$state->fetchColumn();
+            if($current!==$baseVersion)throw new \DomainException('This page was changed in another session. Reload the builder before continuing.');
+            $this->db->prepare('INSERT INTO page_builder_drafts (page_id,user_id,base_version,snapshot,updated_at) VALUES (?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE base_version=VALUES(base_version),snapshot=VALUES(snapshot),updated_at=NOW()')->execute([$pageId,$userId,$baseVersion,$snapshot]);
+            $updated=$this->db->prepare('SELECT updated_at FROM page_builder_drafts WHERE page_id=? AND user_id=?');$updated->execute([$pageId,$userId]);$updatedAt=(string)$updated->fetchColumn();
+            $this->db->commit();return['base_version'=>$baseVersion,'updated_at'=>$updatedAt];
+        }catch(\Throwable$error){if($this->db->inTransaction())$this->db->rollBack();throw$error;}
+    }
+
+    public function discardBuilderDraft(int $pageId, int $userId): void
+    {
+        if($pageId<1||$userId<1)return;
+        $this->db->prepare('DELETE FROM page_builder_drafts WHERE page_id=? AND user_id=?')->execute([$pageId,$userId]);
+    }
+
+    public function builderClipboard(int $userId): ?array
+    {
+        if($userId<1)return null;
+        $statement=$this->db->prepare('SELECT c.source_page_id,c.blocks_json,c.updated_at,COALESCE(pt.title,IF(c.source_page_id IS NULL,"Deleted page",CONCAT("Page #",c.source_page_id))) source_title FROM page_builder_clipboards c LEFT JOIN page_translations pt ON pt.page_id=c.source_page_id AND pt.locale=(SELECT locale FROM languages WHERE enabled=1 AND is_default=1 ORDER BY id LIMIT 1) WHERE c.user_id=? LIMIT 1');
+        $statement->execute([$userId]);$clipboard=$statement->fetch();
+        if(!$clipboard)return null;
+        $blocks=json_decode((string)$clipboard['blocks_json'],true);
+        if(!is_array($blocks)||!$blocks){$this->clearBuilderClipboard($userId);return null;}
+        return['source_page_id'=>(int)($clipboard['source_page_id']??0),'source_title'=>(string)($clipboard['source_title']??'Unknown page'),'blocks'=>$blocks,'updated_at'=>(string)$clipboard['updated_at']];
+    }
+
+    public function saveBuilderClipboard(int $userId, int $pageId, array $blocks): array
+    {
+        if($userId<1||$pageId<1)throw new \RuntimeException('Your session is no longer valid. Sign in and try again.');
+        if(!$blocks||count($blocks)>20)throw new \RuntimeException('Choose between 1 and 20 sections to copy.');
+        $json=json_encode(array_values($blocks),JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+        if(strlen($json)>2_000_000)throw new \RuntimeException('The selected sections are too large to copy safely.');
+        $this->db->prepare('INSERT INTO page_builder_clipboards (user_id,source_page_id,blocks_json,updated_at) VALUES (?,?,?,NOW()) ON DUPLICATE KEY UPDATE source_page_id=VALUES(source_page_id),blocks_json=VALUES(blocks_json),updated_at=NOW()')->execute([$userId,$pageId,$json]);
+        return$this->builderClipboard($userId)??throw new \RuntimeException('The section clipboard could not be saved.');
+    }
+
+    public function clearBuilderClipboard(int $userId): void
+    {
+        if($userId<1)return;
+        $this->db->prepare('DELETE FROM page_builder_clipboards WHERE user_id=?')->execute([$userId]);
+    }
+
     public function saveBuilderDocument(int $pageId, int $version, int $userId, string $theme, array $blocks, array $managedTypes): int
     {
         $this->db->beginTransaction();
@@ -617,6 +737,8 @@ final class CmsRepository
             $state = $this->db->prepare('SELECT version FROM page_builder_states WHERE page_id=? FOR UPDATE'); $state->execute([$pageId]); $current = (int) $state->fetchColumn();
             if ($current !== $version) throw new \DomainException('This page was changed in another session. Reload the builder before saving.');
             $existing = $this->db->prepare('SELECT id,page_id,uid FROM content_blocks WHERE page_id=? FOR UPDATE'); $existing->execute([$pageId]); $existing = array_column($existing->fetchAll(), null, 'uid');
+            $locked=$this->db->prepare('SELECT l.section_uid,COALESCE(u.name,"Another editor") user_name FROM page_builder_section_locks l LEFT JOIN users u ON u.id=l.user_id WHERE l.page_id=? AND l.user_id<>? AND l.expires_at>NOW() FOR UPDATE');$locked->execute([$pageId,$userId]);
+            if($locks=$locked->fetchAll()){$current=$this->builderDocument($pageId);$currentByUid=[];foreach((array)($current['blocks']??[])as$item)$currentByUid[(string)$item['uid']]=$this->builderComparable($item);$submittedByUid=[];foreach($blocks as$item)$submittedByUid[(string)$item['uid']]=$this->builderComparable($item);foreach($locks as$lock){$uid=(string)$lock['section_uid'];if(($currentByUid[$uid]??null)!==($submittedByUid[$uid]??null))throw new \DomainException((string)$lock['user_name'].' is editing this section. Your other changes remain safe; wait for the section lock to be released.');}}
             $saved = []; $linked = [];
             foreach ($blocks as $order => $block) {
                 $uid = (string) $block['uid']; $saved[] = $uid;
@@ -631,11 +753,11 @@ final class CmsRepository
                 }
                 if (isset($existing[$uid])) {
                     $blockId = (int) $existing[$uid]['id'];
-                    $this->db->prepare('UPDATE content_blocks SET type=?,source_theme=?,global_section_id=?,visible=?,visible_from=?,visible_until=?,sort_order=?,settings=?,archived_at=NULL,updated_at=NOW() WHERE id=? AND page_id=?')->execute([$block['type'],$block['source'],$globalId,$block['visible']?1:0,$block['visible_from'],$block['visible_until'],$order,json_encode($block['shared'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),$blockId,$pageId]);
+                    $this->db->prepare('UPDATE content_blocks SET type=?,source_theme=?,global_section_id=?,visible=?,visible_from=?,visible_until=?,sort_order=?,settings=?,layout=?,appearance=?,archived_at=NULL,updated_at=NOW() WHERE id=? AND page_id=?')->execute([$block['type'],$block['source'],$globalId,$block['visible']?1:0,$block['visible_from'],$block['visible_until'],$order,json_encode($block['shared'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),json_encode($block['layout'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES),json_encode($block['appearance'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES),$blockId,$pageId]);
                 } else {
                     $collision = $this->db->prepare('SELECT page_id FROM content_blocks WHERE uid=? LIMIT 1'); $collision->execute([$uid]);
                     if ($collision->fetchColumn() !== false) throw new \RuntimeException('A section identifier belongs to another page.');
-                    $this->db->prepare('INSERT INTO content_blocks (uid,page_id,type,source_theme,global_section_id,settings,visible,visible_from,visible_until,archived_at,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,NULL,?,NOW(),NOW())')->execute([$uid,$pageId,$block['type'],$block['source'],$globalId,json_encode($block['shared'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),$block['visible']?1:0,$block['visible_from'],$block['visible_until'],$order]);
+                    $this->db->prepare('INSERT INTO content_blocks (uid,page_id,type,source_theme,global_section_id,settings,layout,appearance,visible,visible_from,visible_until,archived_at,sort_order,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,NULL,?,NOW(),NOW())')->execute([$uid,$pageId,$block['type'],$block['source'],$globalId,json_encode($block['shared'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),json_encode($block['layout'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES),json_encode($block['appearance'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES),$block['visible']?1:0,$block['visible_from'],$block['visible_until'],$order]);
                     $blockId = (int) $this->db->lastInsertId();
                 }
                 $translation = $this->db->prepare('INSERT INTO content_block_translations (block_id,locale,data) VALUES (?,?,?) ON DUPLICATE KEY UPDATE data=VALUES(data)');
@@ -643,11 +765,14 @@ final class CmsRepository
             }
             $managedTypes=array_values(array_filter(array_unique($managedTypes),'is_string'));
             if($managedTypes){$typeMarks=implode(',',array_fill(0,count($managedTypes),'?'));$parameters=[$pageId,...$managedTypes];$sql="UPDATE content_blocks SET visible=0,archived_at=NOW(),updated_at=NOW() WHERE page_id=? AND archived_at IS NULL AND type IN ({$typeMarks})";if($saved){$uidMarks=implode(',',array_fill(0,count($saved),'?'));$sql.=" AND uid NOT IN ({$uidMarks})";$parameters=array_merge($parameters,$saved);}$this->db->prepare($sql)->execute($parameters);}
+            if($saved){$marks=implode(',',array_fill(0,count($saved),'?'));$this->db->prepare("DELETE FROM page_builder_section_locks WHERE page_id=? AND section_uid NOT IN ({$marks})")->execute([$pageId,...$saved]);$this->db->prepare("DELETE FROM page_builder_section_workflow WHERE page_id=? AND section_uid NOT IN ({$marks})")->execute([$pageId,...$saved]);}else{$this->db->prepare('DELETE FROM page_builder_section_locks WHERE page_id=?')->execute([$pageId]);$this->db->prepare('DELETE FROM page_builder_section_workflow WHERE page_id=?')->execute([$pageId]);}
             $next = $current + 1;
             $this->db->prepare('UPDATE page_builder_states SET version=?,updated_by=?,updated_at=NOW() WHERE page_id=?')->execute([$next,$userId,$pageId]);
             if(in_array((string)$pageRecord['status'],['published','scheduled','private'],true))$this->db->prepare("UPDATE pages SET workflow_state='approved',updated_at=NOW() WHERE id=?")->execute([$pageId]);
             else $this->db->prepare("UPDATE pages SET workflow_state='draft',reviewed_at=NULL,reviewed_by=NULL,updated_at=NOW() WHERE id=?")->execute([$pageId]);
             $this->db->prepare('INSERT INTO page_builder_revisions (page_id,version,snapshot,created_by,created_at) VALUES (?,?,?,?,NOW())')->execute([$pageId,$next,json_encode(['blocks'=>$blocks],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),$userId]);
+            $this->db->prepare('DELETE FROM page_builder_drafts WHERE page_id=? AND user_id=?')->execute([$pageId,$userId]);
+            $this->db->prepare('DELETE FROM page_builder_section_locks WHERE page_id=? AND user_id=?')->execute([$pageId,$userId]);
             $this->db->prepare('INSERT INTO activity_log (user_id,event,subject_type,subject_id,context,created_at) VALUES (?,"page.builder.updated","page",?,?,NOW())')->execute([$userId,$pageId,json_encode(['version'=>$next,'blocks'=>count($blocks),'theme'=>$theme], JSON_UNESCAPED_SLASHES)]);
             $this->db->commit(); $this->events->dispatch('page.builder.updated', ['page_id'=>$pageId,'version'=>$next]); return $next;
         } catch (\Throwable $error) { if ($this->db->inTransaction()) $this->db->rollBack(); throw $error; }
@@ -693,6 +818,50 @@ final class CmsRepository
         $name=mb_substr(trim($name),0,120);if(mb_strlen($name)<2)throw new \RuntimeException('Shared section name must contain at least two characters.');$statement=$this->db->prepare('UPDATE global_sections SET name=?,updated_by=?,updated_at=NOW() WHERE id=? AND active=1 AND archived_at IS NULL');$statement->execute([$name,$userId,$id]);if(!$statement->rowCount()&&!array_filter($this->globalSections(),static fn(array$section):bool=>(int)$section['id']===$id))throw new \RuntimeException('The shared section is no longer available.');$this->audit($userId,'page.global-section.renamed','global_section',$id,['name'=>$name]);
     }
 
+    public function builderCollaboration(int$pageId,int$userId):array
+    {
+        $workflow=$this->db->prepare('SELECT w.section_uid,w.status,w.assigned_user_id,w.updated_at,COALESCE(a.name,"") assigned_name,COALESCE(u.name,"System") updated_by_name FROM page_builder_section_workflow w LEFT JOIN users a ON a.id=w.assigned_user_id LEFT JOIN users u ON u.id=w.updated_by WHERE w.page_id=? ORDER BY w.section_uid');$workflow->execute([$pageId]);$states=[];foreach($workflow->fetchAll()as$row){$row['assigned_user_id']=$row['assigned_user_id']!==null?(int)$row['assigned_user_id']:null;$states[(string)$row['section_uid']]=$row;}
+        $comments=$this->db->prepare('SELECT c.id,c.section_uid,c.user_id,c.body,c.resolved_at,c.resolved_by,c.created_at,c.updated_at,COALESCE(u.name,"Former user") author,COALESCE(r.name,"") resolved_by_name FROM page_builder_section_comments c LEFT JOIN users u ON u.id=c.user_id LEFT JOIN users r ON r.id=c.resolved_by WHERE c.page_id=? ORDER BY c.created_at,c.id');$comments->execute([$pageId]);$threads=[];$open=0;foreach($comments->fetchAll()as$row){$row['id']=(int)$row['id'];$row['user_id']=(int)$row['user_id'];$row['is_mine']=(int)$row['user_id']===$userId;$row['resolved']=$row['resolved_at']!==null;if(!$row['resolved'])$open++;$threads[(string)$row['section_uid']][]=$row;}
+        $locks=$this->db->prepare('SELECT l.section_uid,l.user_id,l.expires_at,COALESCE(u.name,"Another editor") user_name FROM page_builder_section_locks l LEFT JOIN users u ON u.id=l.user_id WHERE l.page_id=? AND l.expires_at>NOW() ORDER BY l.updated_at');$locks->execute([$pageId]);$active=[];foreach($locks->fetchAll()as$row){$row['user_id']=(int)$row['user_id'];$row['is_mine']=(int)$row['user_id']===$userId;$active[(string)$row['section_uid']]=$row;}
+        return['workflow'=>$states,'comments'=>$threads,'locks'=>$active,'open_comments'=>$open,'server_time'=>date('Y-m-d H:i:s')];
+    }
+
+    public function saveBuilderSectionWorkflow(int$pageId,string$uid,string$status,?int$assignedUserId,int$userId,array$allowedAssignees):array
+    {
+        $this->assertBuilderSection($pageId,$uid);if(!in_array($status,['draft','in_review','approved'],true))throw new \RuntimeException('Choose a valid section status.');$allowed=array_values(array_unique(array_map('intval',$allowedAssignees)));if($assignedUserId!==null&&!in_array($assignedUserId,$allowed,true))throw new \RuntimeException('Choose an active collaborator for this page.');
+        $before=$this->db->prepare('SELECT status,assigned_user_id FROM page_builder_section_workflow WHERE page_id=? AND section_uid=?');$before->execute([$pageId,$uid]);$previous=$before->fetch()?:['status'=>'draft','assigned_user_id'=>null];
+        $this->db->prepare('INSERT INTO page_builder_section_workflow (page_id,section_uid,status,assigned_user_id,updated_by,updated_at) VALUES (?,?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE status=VALUES(status),assigned_user_id=VALUES(assigned_user_id),updated_by=VALUES(updated_by),updated_at=NOW()')->execute([$pageId,$uid,$status,$assignedUserId,$userId]);
+        $this->audit($userId,'page.builder.section.workflow','page',$pageId,['section_uid'=>$uid,'from'=>$previous['status'],'to'=>$status,'assigned_user_id'=>$assignedUserId]);
+        if($assignedUserId&&$assignedUserId!==$userId&&(int)($previous['assigned_user_id']??0)!==$assignedUserId)$this->db->prepare('INSERT INTO user_notifications (user_id,type,title,message,url,created_at) VALUES (?,"builder_assignment","Page Builder section assigned","A page section was assigned to you for collaboration.",?,NOW())')->execute([$assignedUserId,'/content/builder?document='.$pageId]);
+        return$this->builderCollaboration($pageId,$userId);
+    }
+
+    public function addBuilderSectionComment(int$pageId,string$uid,string$body,int$userId):array
+    {
+        $this->assertBuilderSection($pageId,$uid);$body=mb_substr(trim($body),0,2000);if($body==='')throw new \RuntimeException('Write a comment before posting it.');$this->db->prepare('INSERT INTO page_builder_section_comments (page_id,section_uid,user_id,body,created_at,updated_at) VALUES (?,?,?,?,NOW(),NOW())')->execute([$pageId,$uid,$userId,$body]);$id=(int)$this->db->lastInsertId();$this->audit($userId,'page.builder.section.commented','page',$pageId,['section_uid'=>$uid,'comment_id'=>$id]);return$this->builderCollaboration($pageId,$userId);
+    }
+
+    public function resolveBuilderSectionComment(int$pageId,int$commentId,bool$resolved,int$userId):array
+    {
+        $statement=$this->db->prepare('UPDATE page_builder_section_comments SET resolved_at='.($resolved?'NOW()':'NULL').',resolved_by='.($resolved?'?':'NULL').',updated_at=NOW() WHERE id=? AND page_id=?');$parameters=$resolved?[$userId,$commentId,$pageId]:[$commentId,$pageId];$statement->execute($parameters);if(!$statement->rowCount()){ $check=$this->db->prepare('SELECT 1 FROM page_builder_section_comments WHERE id=? AND page_id=?');$check->execute([$commentId,$pageId]);if(!$check->fetchColumn())throw new \RuntimeException('The selected comment no longer exists.');}
+        $this->audit($userId,$resolved?'page.builder.comment.resolved':'page.builder.comment.reopened','page',$pageId,['comment_id'=>$commentId]);return$this->builderCollaboration($pageId,$userId);
+    }
+
+    public function acquireBuilderSectionLock(int$pageId,string$uid,int$userId,int$seconds=90):array
+    {
+        $this->assertBuilderSection($pageId,$uid);$seconds=max(45,min(180,$seconds));$this->db->beginTransaction();try{$lock=$this->db->prepare('SELECT l.user_id,l.expires_at,(l.expires_at>NOW()) active,COALESCE(u.name,"Another editor") user_name FROM page_builder_section_locks l LEFT JOIN users u ON u.id=l.user_id WHERE l.page_id=? AND l.section_uid=? FOR UPDATE');$lock->execute([$pageId,$uid]);$current=$lock->fetch();if($current&&(int)$current['user_id']!==$userId&&!empty($current['active']))throw new \DomainException((string)$current['user_name'].' is currently editing this section.');$this->db->prepare('INSERT INTO page_builder_section_locks (page_id,section_uid,user_id,expires_at,updated_at) VALUES (?,?,?,DATE_ADD(NOW(),INTERVAL '.$seconds.' SECOND),NOW()) ON DUPLICATE KEY UPDATE user_id=VALUES(user_id),expires_at=VALUES(expires_at),updated_at=NOW()')->execute([$pageId,$uid,$userId]);$this->db->commit();return$this->builderCollaboration($pageId,$userId);}catch(\Throwable$error){if($this->db->inTransaction())$this->db->rollBack();throw$error;}
+    }
+
+    public function releaseBuilderSectionLock(int$pageId,string$uid,int$userId):array
+    {
+        $this->db->prepare('DELETE FROM page_builder_section_locks WHERE page_id=? AND section_uid=? AND user_id=?')->execute([$pageId,$uid,$userId]);return$this->builderCollaboration($pageId,$userId);
+    }
+
+    public function builderRevisionComparison(int$pageId,int$fromId,int$toId,array$catalog):?array
+    {
+        $from=$this->builderRevision($pageId,$fromId);$to=$this->builderRevision($pageId,$toId);if(!$from||!$to)return null;if((int)$from['version']>(int)$to['version'])[$from,$to]=[$to,$from];return['from'=>['id'=>(int)$from['id'],'version'=>(int)$from['version'],'author'=>$from['author'],'created_at'=>$from['created_at']],'to'=>['id'=>(int)$to['id'],'version'=>(int)$to['version'],'author'=>$to['author'],'created_at'=>$to['created_at']],'diff'=>PageBuilder::revisionDiff((array)$from['snapshot'],(array)$to['snapshot'],$catalog)];
+    }
+
     public function builderRevisions(int $pageId,int $limit=30):array
     {
         $statement=$this->db->prepare('SELECT r.id,r.version,r.created_at,COALESCE(u.name,"System") author FROM page_builder_revisions r LEFT JOIN users u ON u.id=r.created_by WHERE r.page_id=? ORDER BY r.version DESC LIMIT ?');$statement->bindValue(1,$pageId,\PDO::PARAM_INT);$statement->bindValue(2,max(1,min(100,$limit)),\PDO::PARAM_INT);$statement->execute();return$statement->fetchAll();
@@ -700,7 +869,7 @@ final class CmsRepository
 
     public function builderRevision(int $pageId,int $revisionId):?array
     {
-        $statement=$this->db->prepare('SELECT id,version,snapshot FROM page_builder_revisions WHERE id=? AND page_id=? LIMIT 1');$statement->execute([$revisionId,$pageId]);$revision=$statement->fetch();if(!$revision)return null;$snapshot=json_decode((string)$revision['snapshot'],true);$revision['snapshot']=is_array($snapshot)?$snapshot:[];return$revision;
+        $statement=$this->db->prepare('SELECT r.id,r.version,r.snapshot,r.created_at,COALESCE(u.name,"System") author FROM page_builder_revisions r LEFT JOIN users u ON u.id=r.created_by WHERE r.id=? AND r.page_id=? LIMIT 1');$statement->execute([$revisionId,$pageId]);$revision=$statement->fetch();if(!$revision)return null;$snapshot=json_decode((string)$revision['snapshot'],true);$revision['snapshot']=is_array($snapshot)?$snapshot:[];return$revision;
     }
 
     public function contactForm(string $uid,string $locale,string $fallback):?array
@@ -766,6 +935,16 @@ final class CmsRepository
     private function formSubmissionCounts(?array$facilityIds=null):array{$where=['deleted_at IS NULL'];$parameters=[];$this->facilityScope($where,$parameters,'facility_id',$facilityIds);$statement=$this->db->prepare('SELECT status,COUNT(*) total FROM form_submissions WHERE '.implode(' AND ',$where).' GROUP BY status');$statement->execute($parameters);$rows=$statement->fetchAll();$counts=['all'=>0,'new'=>0,'read'=>0,'handled'=>0,'spam'=>0,'archived'=>0];foreach($rows as$row){$counts[$row['status']]=(int)$row['total'];$counts['all']+=(int)$row['total'];}return$counts;}
     private function submissionSender(array$payload):string{foreach(['name','full_name','email']as$key)if(trim((string)($payload[$key]??''))!=='')return mb_substr((string)$payload[$key],0,120);return'Website visitor';}
     private function submissionPreview(array$payload):string{foreach(['message','enquiry','question','email']as$key)if(trim((string)($payload[$key]??''))!=='')return mb_substr(preg_replace('/\s+/u',' ',(string)$payload[$key])??'',0,180);foreach($payload as$value)if(is_string($value)&&trim($value)!=='')return mb_substr($value,0,180);return'No preview available';}
+    private function assertBuilderSection(int$pageId,string$uid):void
+    {
+        if(!preg_match('/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/D',strtolower($uid)))throw new \RuntimeException('Choose a valid page section.');$statement=$this->db->prepare('SELECT 1 FROM content_blocks WHERE page_id=? AND uid=? AND archived_at IS NULL LIMIT 1');$statement->execute([$pageId,$uid]);if(!$statement->fetchColumn())throw new \RuntimeException('The selected page section no longer exists.');
+    }
+
+    private function builderComparable(array$block):string
+    {
+        $value=['uid'=>(string)($block['uid']??''),'type'=>(string)($block['type']??''),'source'=>(string)($block['source']??$block['source_theme']??''),'global_section_id'=>(int)($block['global_section_id']??0)?:null,'global_version'=>(int)($block['global_version']??0),'visible'=>(bool)($block['visible']??false),'visible_from'=>(string)($block['visible_from']??''),'visible_until'=>(string)($block['visible_until']??''),'layout'=>PageBuilder::sanitizeLayout($block['layout']??[]),'appearance'=>PageBuilder::sanitizeAppearance($block['appearance']??[]),'shared'=>(array)($block['shared']??[]),'localized'=>(array)($block['localized']??[])];$sort=function(array&$items)use(&$sort):void{ksort($items);foreach($items as&$item)if(is_array($item))$sort($item);unset($item);};$sort($value);return json_encode($value,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)?:'';
+    }
+
     private function audit(int$userId,string$event,string$type,int$id,array$context):void{$this->db->prepare('INSERT INTO activity_log (user_id,event,subject_type,subject_id,context,created_at) VALUES (?,?,?,?,?,NOW())')->execute([$userId?:null,$event,$type,$id,json_encode($context,JSON_UNESCAPED_SLASHES)]);}
     private function uuid():string{$bytes=random_bytes(16);$bytes[6]=chr((ord($bytes[6])&15)|64);$bytes[8]=chr((ord($bytes[8])&63)|128);$hex=bin2hex($bytes);return substr($hex,0,8).'-'.substr($hex,8,4).'-'.substr($hex,12,4).'-'.substr($hex,16,4).'-'.substr($hex,20);}
 
@@ -797,6 +976,22 @@ final class CmsRepository
     private function activeCategoryExists(int $id): bool
     {
         $statement=$this->db->prepare('SELECT 1 FROM categories WHERE id=? AND archived_at IS NULL');$statement->execute([$id]);return(bool)$statement->fetchColumn();
+    }
+
+    private function validPostMedia(int $id,string $kind,int $facilityId):?int
+    {
+        if(!$id)return null;if(!in_array($kind,['image','audio','video'],true))throw new \InvalidArgumentException('Unsupported post media type.');$statement=$this->db->prepare('SELECT 1 FROM media WHERE id=? AND status="active" AND mime_type LIKE ? AND (facility_id IS NULL OR facility_id=?) LIMIT 1');$statement->execute([$id,$kind.'/%',$facilityId]);if(!$statement->fetchColumn())throw new \RuntimeException('Choose an active '.$kind.' file from this facility media library.');return$id;
+    }
+
+    private function savePostTags(int $postId,array $localized):void
+    {
+        $this->db->prepare('DELETE FROM post_tag_map WHERE post_id=?')->execute([$postId]);$enabled=array_fill_keys(array_map('strval',$this->db->query('SELECT locale FROM languages WHERE enabled=1')->fetchAll(\PDO::FETCH_COLUMN)),true);$upsert=$this->db->prepare('INSERT INTO post_tags (locale,name,slug,created_at,updated_at) VALUES (?,?,?,NOW(),NOW()) ON DUPLICATE KEY UPDATE name=VALUES(name),updated_at=NOW()');$find=$this->db->prepare('SELECT id FROM post_tags WHERE locale=? AND slug=? LIMIT 1');$map=$this->db->prepare('INSERT INTO post_tag_map (post_id,tag_id,sort_order) VALUES (?,?,?)');
+        foreach($localized as$locale=>$raw){$locale=(string)$locale;if(!isset($enabled[$locale]))continue;$names=preg_split('/[,;\r\n]+/u',(string)$raw,-1,PREG_SPLIT_NO_EMPTY)?:[];$seen=[];$order=0;foreach($names as$name){$name=mb_substr(trim(preg_replace('/\s+/u',' ',$name)??''),0,100);if($name==='')continue;$slug=$this->tagSlug($name);if($slug===''||isset($seen[$slug]))continue;$seen[$slug]=true;$upsert->execute([$locale,$name,$slug]);$find->execute([$locale,$slug]);$tagId=(int)$find->fetchColumn();if($tagId)$map->execute([$postId,$tagId,$order++]);if($order>=30)break;}}
+    }
+
+    private function tagSlug(string $name):string
+    {
+        $ascii=iconv('UTF-8','ASCII//TRANSLIT//IGNORE',$name);$slug=strtolower($ascii!==false?$ascii:$name);$slug=preg_replace('/[^a-z0-9]+/','-',$slug)??'';return trim(mb_substr($slug,0,100),'-');
     }
 
     private function assertPageParent(int $pageId,int $parentId,int$facilityId):void

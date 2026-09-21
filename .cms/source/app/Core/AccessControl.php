@@ -162,6 +162,14 @@ final class AccessControl
         return $statement->fetchAll();
     }
 
+    public function builderCollaborators(?int $facilityId = null): array
+    {
+        $scope = $facilityId ? ' AND (EXISTS(SELECT 1 FROM user_facilities uf WHERE uf.user_id=u.id AND uf.facility_id=?) OR EXISTS(SELECT 1 FROM live_chat_team_users tu INNER JOIN live_chat_teams tm ON tm.id=tu.team_id AND tm.active=1 INNER JOIN team_facilities tf ON tf.team_id=tu.team_id WHERE tu.user_id=u.id AND tf.facility_id=?) OR EXISTS(SELECT 1 FROM user_roles ur_owner INNER JOIN roles r_owner ON r_owner.id=ur_owner.role_id AND r_owner.active=1 INNER JOIN role_permissions rp_owner ON rp_owner.role_id=r_owner.id INNER JOIN permissions p_owner ON p_owner.id=rp_owner.permission_id AND p_owner.slug="system.owner" WHERE ur_owner.user_id=u.id))' : '';
+        $statement = $this->db->prepare('SELECT DISTINCT u.id,u.name,u.email,u.job_title FROM users u INNER JOIN user_roles ur ON ur.user_id=u.id INNER JOIN roles r ON r.id=ur.role_id AND r.active=1 INNER JOIN role_permissions rp ON rp.role_id=r.id INNER JOIN permissions p ON p.id=rp.permission_id WHERE u.active=1 AND u.is_demo=0 AND p.slug IN ("content.pages.collaborate","system.owner")'.$scope.' ORDER BY u.name,u.id');
+        $statement->execute($facilityId ? [$facilityId,$facilityId] : []);
+        return $statement->fetchAll();
+    }
+
     public function saveUser(array $input, int $actorId): int
     {
         return $this->writeLocked(fn(): int => $this->saveUserLocked($input, $actorId));
@@ -300,8 +308,14 @@ final class AccessControl
         if(str_starts_with($path,'/system/access'))return $method==='GET'?'users.view':(str_contains($path,'/roles')?'roles.manage':'users.manage');
         if(str_starts_with($path,'/content/media')||str_starts_with($path,'/api/media'))return str_contains($path,'/delete')||str_contains($path,'/trash')||str_contains($path,'/restore')?'content.media.delete':'content.media.manage';
         if($path==='/api/content/builder/media')return'content.media.manage';
+        if(preg_match('#^/api/content/builder/\d+/collaboration$#',$path))return'content.pages.collaborate';
         if(str_starts_with($path,'/content/pages')){if($method==='GET')return str_ends_with($path,'/new')||str_ends_with($path,'/edit')?'content.pages.edit':'content.pages.view';if(str_ends_with($path,'/delete')||str_ends_with($path,'/archive')||str_contains($path,'/trash/'))return'content.pages.delete';return'content.pages.edit';}
-        if(str_starts_with($path,'/content/builder'))return $method==='GET'?'content.pages.edit':(str_contains($path,'/media')?'content.media.manage':'content.pages.edit');
+        if(str_starts_with($path,'/content/builder')){
+            if(str_contains($path,'/media'))return'content.media.manage';
+            if(preg_match('#^/content/builder/\d+/ai$#',$path))return'content.pages.ai';
+            if($method==='GET'||preg_match('#/(?:sections/[a-f0-9-]+/(?:workflow|comments|lock|unlock)|comments/\d+/resolve|revisions/compare)$#',$path))return'content.pages.collaborate';
+            return'content.pages.edit';
+        }
         if(str_starts_with($path,'/content/posts')){if($method==='GET')return str_ends_with($path,'/new')||str_ends_with($path,'/edit')?'content.posts.edit':'content.posts.view';if(str_ends_with($path,'/archive'))return'content.posts.delete';return'content.posts.edit';}
         if(str_starts_with($path,'/content/categories')||str_starts_with($path,'/content/navigation'))return'content.navigation.manage';
         if($path==='/seo'||str_starts_with($path,'/seo/'))return'content.seo.manage';
@@ -310,7 +324,7 @@ final class AccessControl
         if(str_starts_with($path,'/forms/submissions')||str_starts_with($path,'/api/forms/submissions'))return str_contains($path,'/export')?'forms.export':($method==='GET'?'forms.view':'forms.manage');
         if(str_starts_with($path,'/surveys')||str_starts_with($path,'/api/surveys')){if(str_contains($path,'/export.'))return'surveys.export';if(str_contains($path,'/anonymize'))return'surveys.anonymize';if(str_contains($path,'/responses'))return'surveys.responses';if(str_contains($path,'/statistics')||$method==='GET')return'surveys.view';return'surveys.manage';}
         if(str_starts_with($path,'/conversations')||str_starts_with($path,'/api/operator/'))return $method==='GET'?'chat.view':'chat.manage';
-        if($path==='/ai')return'ai.manage';
+        if($path==='/ai'||str_starts_with($path,'/ai/providers'))return'ai.manage';
         if(str_starts_with($path,'/appearance'))return'appearance.manage';
         if(str_starts_with($path,'/system/extensions')||str_starts_with($path,'/marketplace')||str_starts_with($path,'/api/marketplace'))return'extensions.manage';
         if(str_starts_with($path,'/system/')||$path==='/license')return'system.manage';

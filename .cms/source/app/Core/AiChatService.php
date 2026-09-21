@@ -8,7 +8,8 @@ use RuntimeException;
 
 final class AiChatService
 {
-    public function __construct(private readonly AiRepository $repository, private readonly Secrets $secrets, private readonly ?CmsRepository $cms = null) {}
+    private readonly AiProviderClient $client;
+    public function __construct(private readonly AiRepository $repository, private readonly Secrets $secrets, private readonly ?CmsRepository $cms = null,?AiProviderClient$client=null){$this->client=$client??new AiProviderClient();}
 
     public function reply(string $message, string $locale, string $conversation, string $visitorName = '', bool $forceHuman = false, ?string $visitorIp = null): array
     {
@@ -23,15 +24,20 @@ final class AiChatService
         $state = $this->repository->conversationStatus($conversation);
         if (($state['channel'] ?? '') === 'human' || in_array($state['status'] ?? '', ['queued', 'assigned'], true)) return ['message' => null, 'handoff' => true, 'conversation' => $conversation];
         if ($forceHuman || $this->requiresHuman($message)) return $this->handoff($conversation, $locale);
-        $provider = $this->repository->provider('openai');
+        $provider = $this->repository->preferredProvider('chat');
         if (!$provider || empty($provider['api_key_encrypted'])) return $this->handoff($conversation, $locale);
+        $usage=0;
         try {
             $context = $this->repository->context($message, $locale);
-            $answer = $this->openAi($provider, $this->secrets->decrypt((string) $provider['api_key_encrypted']), $message, $context);
+            $knowledge = $context ? "\n\nUse only this website knowledge when it helps. If it does not answer the question, say so briefly and offer a human handoff:\n" . implode("\n---\n", $context) : '';
+            $system='You are a helpful, concise website assistant. Never invent facts, fees, policies, dates, or service availability.'.$knowledge;
+            $usage=$this->repository->beginUsage($provider,'chat',null,mb_strlen($system)+mb_strlen($message),400);
+            $result=$this->client->generate($provider,$this->secrets->decrypt((string)$provider['api_key_encrypted']),$system,$message,false,400);$answer=$result['text'];
             if ($answer === '') return $this->handoff($conversation, $locale);
+            $this->repository->finishUsage($usage,true,$result['usage']);
             $this->repository->message($conversation, 'assistant', $answer, (string) $provider['slug']);
             return ['message' => $answer, 'handoff' => false, 'conversation' => $conversation];
-        } catch (\Throwable) { return $this->handoff($conversation, $locale); }
+        } catch (\Throwable$error) { if($usage)$this->repository->finishUsage($usage,false,null,$error->getCode()===429?'usage_limit':'provider_error');return $this->handoff($conversation, $locale); }
     }
 
     public function state(string $conversation): ?array
@@ -54,14 +60,5 @@ final class AiChatService
         };
         if ($this->repository->queueForHuman($conversation)) $this->repository->message($conversation, 'system', $message);
         return ['message' => $message, 'handoff' => true, 'conversation' => $conversation];
-    }
-    private function openAi(array $provider, string $key, string $message, array $context): string
-    {
-        $knowledge = $context ? "\n\nUse only this website knowledge when it helps. If it does not answer the question, say so briefly and offer a human handoff:\n" . implode("\n---\n", $context) : '';
-        $payload = json_encode(['model' => $provider['default_model'], 'messages' => [['role' => 'system', 'content' => 'You are a helpful, concise website assistant. Never invent facts, fees, policies, dates, or service availability.' . $knowledge], ['role' => 'user', 'content' => $message]], 'temperature' => 0.2, 'max_tokens' => 400], JSON_THROW_ON_ERROR);
-        $context = stream_context_create(['http' => ['method' => 'POST', 'header' => "Content-Type: application/json\r\nAuthorization: Bearer {$key}\r\n", 'content' => $payload, 'timeout' => 20, 'ignore_errors' => true]]);
-        $raw = @file_get_contents(rtrim((string) $provider['base_url'], '/') . '/chat/completions', false, $context);
-        $json = is_string($raw) ? json_decode($raw, true) : null;
-        return trim((string) ($json['choices'][0]['message']['content'] ?? ''));
     }
 }

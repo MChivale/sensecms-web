@@ -1,0 +1,47 @@
+"""Non-content-writing production acceptance for the Core Page Builder workspace."""
+from http.cookiejar import CookieJar
+import json
+from pathlib import Path
+import re
+import subprocess
+import urllib.error
+import urllib.parse
+import urllib.request
+
+web=Path('/home/sensecms.com/web');base='https://www.sensecms.com';assert json.loads((web/'storage/installed.json').read_text())['base_url']==base;jar=CookieJar();client=urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+def request(path,fields=None):
+    data=urllib.parse.urlencode(fields).encode() if fields is not None else None;headers={'Accept':'application/json'} if fields is not None or path.startswith('/api/') else {}
+    try:
+        with client.open(urllib.request.Request(base+path,data=data,headers=headers),timeout=30)as response:return response.status,response.read(),response.headers
+    except urllib.error.HTTPError as error:return error.code,error.read(),error.headers
+def request_json(path,payload):
+    data=json.dumps(payload,separators=(',',':')).encode();headers={'Accept':'application/json','Content-Type':'application/json'}
+    try:
+        with client.open(urllib.request.Request(base+path,data=data,headers=headers),timeout=30)as response:return response.status,json.loads(response.read()),response.headers
+    except urllib.error.HTTPError as error:return error.code,json.loads(error.read()),error.headers
+status,body,_=request('/login');assert status==200;csrf=re.search(rb'name="csrf" value="([a-f0-9]{64})"',body)[1].decode();sid=next(cookie.value for cookie in jar if cookie.name=='sensecms_session');captcha=subprocess.run(['runuser','-u','sensecms','--','php8.5','-r','session_save_path($argv[1]);session_id($argv[2]);session_start(["read_and_close"=>true]);echo $_SESSION["sensecms_captcha_login_code"]??"";',str(web/'storage/sessions'),sid],capture_output=True,check=True).stdout.decode();owner=json.loads(Path('/root/sensecms-private/owner.json').read_text());status,body,_=request('/login',{'csrf':csrf,'email':owner['email'],'password':owner['password'],'captcha':captcha});del owner,captcha;assert status==200 and json.loads(body)['ok']
+try:
+    status,page,_=request('/content/builder');assert status==200,status
+    for marker in (b'data-page-builder',b'data-library-tab="inspector"',b'data-builder-view="live"',b'data-builder-live-frame',b'data-library-tab="outline"',b'data-builder-outline',b'data-builder-copy-selected',b'data-builder-paste',b'data-library-tab="patterns"',b'data-builder-patterns',b'data-library-tab="layouts"',b'data-builder-layouts',b'data-builder-layout-dialog',b'data-builder-global-library',b'data-library-tab="quality"',b'data-builder-quality-open',b'data-library-tab="review"',b'data-builder-review',b'data-builder-compare',b'data-builder-revision-comparison',b'data-library-tab="ai"',b'data-builder-ai',b'AI creates a proposal',b'collection_options',b'/theme/sensecms-unsaved-guard.js?v=20260920-2',b'/theme/sensecms-page-builder.css?v=20260921-ai-1',b'/theme/sensecms-page-builder.js?v=20260921-ai-1'):assert marker in page,marker
+    payload=json.loads(re.search(rb'<script[^>]+data-builder-payload[^>]*>(.*?)</script>',page,re.S)[1]);assert len(payload['patterns'])==11 and payload['patterns'][0]['label']=='Landing page' and payload['patterns'][-1]['label']=='FAQ';assert len(payload['layouts'])==9 and payload['layouts'][0]['key']=='container' and payload['layouts'][-1]['key']=='full-width';assert list(payload['appearance'])==['variant','surface','spacing','radius','align'] and payload['appearance']['variant']['options']['spotlight']=='Spotlight';assert isinstance(payload['quality']['score'],int) and set(payload['quality']['counts'])=={'error','warning','advice'};assert len(payload['catalog'])>=17 and all(section in payload['catalog'] for pattern in payload['patterns'] for section in pattern['sections'])
+    assert payload['permissions']['edit'] is True and isinstance(payload['permissions']['review'],bool) and isinstance(payload['collaboration']['workflow'],(dict,list)) and isinstance(payload['collaborators'],list)
+    page_id=payload['page']['id'];section_uid=payload['blocks'][0]['uid']
+    status,collaboration,_=request(f'/api/content/builder/{page_id}/collaboration');assert status==200 and json.loads(collaboration)['ok']
+    lock_held=False
+    try:
+        status,locked,_=request_json(f'/content/builder/{page_id}/sections/{section_uid}/lock',{'csrf':payload['csrf']});assert status==200 and locked['ok'] and locked['data']['locks'][section_uid]['is_mine'];lock_held=True
+    finally:
+        if lock_held:
+            status,released,_=request_json(f'/content/builder/{page_id}/sections/{section_uid}/unlock',{'csrf':payload['csrf']});assert status==200 and released['ok'] and section_uid not in released['data']['locks'];lock_held=False
+    if len(payload['revisions'])>=2:
+        status,comparison,_=request_json(f'/content/builder/{page_id}/revisions/compare',{'csrf':payload['csrf'],'from':payload['revisions'][1]['id'],'to':payload['revisions'][0]['id']});assert status==200 and comparison['ok'] and set(comparison['data']['diff']['summary'])=={'added','removed','changed','moved'}
+    status,script,headers=request('/theme/sensecms-page-builder.js?v=20260921-ai-1');assert status==200 and b'function renderOutline()' in script and b'function pasteClipboard()' in script and b'function renderPatterns()' in script and b'function insertPattern(pattern)' in script and b'function applyLayoutPreset' in script and b'function openLayout' in script and b'function switchBuilderView' in script and b'function renderInspector' in script and b'function appearanceGroup' in script and b'function loadQuality' in script and b'function renderQuality' in script and b'function contentMultiselectNode' in script and b'function renderReview()' in script and b'function reserveSection(' in script and b'function renderRevisionComparison(' in script and b'function renderAiProposal' in script and b'function runAiProposal' in script and b'collectionOptions.sources' in script and b'guard?.confirmLeave' in script and b'/quality' in script and b'/clipboard' in script and b'/collaboration' in script and b'/ai' in script and 'javascript' in headers.get_content_type()
+    status,guard,headers=request('/theme/sensecms-unsaved-guard.js?v=20260920-2');assert status==200 and b'confirmLeave:open' in guard and b'if(url.href===location.href)return' not in guard and 'javascript' in headers.get_content_type()
+    status,style,headers=request('/theme/sensecms-page-builder.css?v=20260921-ai-1');assert status==200 and b'[data-builder-global-library]' in style and b'.sensecms-builder-outline-item' in style and b'.sensecms-builder-pattern-sequence' in style and b'.sensecms-builder-layout-card' in style and b'.sensecms-builder-live-stage' in style and b'.sensecms-builder-inspector' in style and b'.sensecms-builder-appearance-fields' in style and b'.sensecms-builder-quality-summary' in style and b'.sensecms-builder-content-picker' in style and b'.sensecms-builder-review-workflow' in style and b'.sensecms-builder-revision-comparison' in style and b'.sensecms-builder-ai' in style and b'.sensecms-builder-block.is-edit-locked' in style and b'overflow-x:hidden' in style and 'text/css' in headers.get_content_type()
+    status,bridge,headers=request('/theme/sensecms-builder-preview.js?v=20260920-live-1');assert status==200 and b'sensecms-builder-ready' in bridge and b'sensecms-builder-action' in bridge and 'javascript' in headers.get_content_type()
+    status,bridge_style,headers=request('/theme/sensecms-builder-preview.css?v=20260920-live-1');assert status==200 and b'is-sensecms-builder-selected' in bridge_style and 'text/css' in headers.get_content_type()
+    status,live,headers=request(payload['page']['live_preview_url']+'?locale=en');csp=headers.get('Content-Security-Policy','');live_ok=status==200 and b'data-sensecms-builder-preview' in live and b'/theme/sensecms-builder-preview.js?v=20260920-live-1' in live and b'data-sensecms-builder-uid=' in live and headers.get('Cache-Control')=='private, no-store' and "frame-ancestors 'self'" in csp and "frame-ancestors 'none'" not in csp and headers.get('X-Frame-Options','').upper()!='DENY';assert live_ok,(status,headers.get('Cache-Control'),csp,headers.get('X-Frame-Options'),b'data-sensecms-builder-preview' in live,b'data-sensecms-builder-uid=' in live)
+    status,ai_page,_=request('/ai');assert status==200 and b'sensecms-ai-provider-workspace' in ai_page and b'OpenAI Responses API' in ai_page and b'Anthropic Messages API' in ai_page and b'Google Gemini API' in ai_page and b'Provider-neutral Core orchestration' in ai_page and b'Usage guardrails' in ai_page and b'name="daily_request_limit"' in ai_page and b'name="monthly_cost_limit"' in ai_page and b'Optional until the provider is enabled' in ai_page and b'/theme/sensecms-content-management.css?v=20260921-ai-budgets-1' in ai_page;assert b'api_key_encrypted' not in ai_page and not re.search(rb'type="password"[^>]+value=',ai_page)
+    status,ai_style,headers=request('/theme/sensecms-content-management.css?v=20260921-ai-budgets-1');assert status==200 and b'.sensecms-ai-usage' in ai_style and b'.sensecms-ai-budget-fields' in ai_style and 'text/css' in headers.get_content_type()
+finally:request('/logout',{'csrf':csrf})
+print('PASS Production Core Page Builder AI, provider-neutral configuration, collaboration, Quality Inspector, Live Canvas, portable appearance, layouts, navigator, patterns and private clipboard UI are healthy.')

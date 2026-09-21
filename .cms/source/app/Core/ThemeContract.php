@@ -83,7 +83,7 @@ final class ThemeContract
         if(!is_file($theme['_path'].'/views/page.php')&&$parent==='')throw new RuntimeException("Theme {$slug} does not provide a public page view.");
     }
 
-    private static function resolvedPaths(array$theme):array{$theme['_view_path']=$theme['_path'].'/views/page.php';return$theme;}
+    private static function resolvedPaths(array$theme):array{$theme['supported_blocks']=array_values(array_unique(array_merge(PageBuilder::systemTypes(),(array)($theme['supported_blocks']??[]))));$theme['_view_path']=$theme['_path'].'/views/page.php';return$theme;}
     private static function mergeNamed(array$base,array$child,string$key):array{$map=[];foreach(array_merge($base,$child)as$item)if(is_array($item)&&isset($item[$key]))$map[(string)$item[$key]]=$item;return array_values($map);}
     private static function asset(string$value,string$label):string{$value=trim($value);if($value===''||(str_starts_with($value,'/')&&!str_starts_with($value,'//')&&preg_match('#^/[A-Za-z0-9_./%+-]+$#',$value)))return$value;throw new RuntimeException($label.' must use a safe internal asset path.');}
 }

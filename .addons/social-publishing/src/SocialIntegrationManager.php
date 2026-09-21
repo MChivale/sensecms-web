@@ -20,6 +20,7 @@ final class SocialIntegrationManager
 
     public function catalog(): array
     {
+        $presentation=['linkedin'=>[10,'LinkedIn','linkedin','#0a66c2',['text','link']],'x'=>[20,'X (Twitter)','twitter','#111827',['text','link']],'facebook'=>[30,'Facebook','facebook','#1877f2',['text','link','image']],'telegram_channels'=>[40,'Telegram','send','#229ed9',['text','link']],'youtube'=>[80,'YouTube','youtube','#ff0033',['video']],'tiktok'=>[90,'TikTok','music-2','#111827',['image']],'pinterest'=>[100,'Pinterest','pin','#e60023',['image']],'bluesky'=>[110,'Bluesky','cloud','#1185fe',['text','link']],'mastodon'=>[120,'Mastodon','messages-square','#6364ff',['text','link']]];
         $statement = $this->db->query("SELECT slug,install_path FROM extension_packages WHERE type='plugin' AND active=1 AND install_path IS NOT NULL ORDER BY name,slug");
         $result = [];
         foreach ($statement->fetchAll() as $row) {
@@ -27,15 +28,19 @@ final class SocialIntegrationManager
                 [$manifest] = $this->manifest((string) $row['slug'], (string) $row['install_path']);
                 $connections = $this->connections((string) $row['slug']);
                 $connection = $connections[0] ?? null;
-                $publisher = $manifest['social_publisher'];
+                $publisher = $manifest['social_publisher'];$platform=(string)$publisher['platform'];$visual=$presentation[$platform]??[900,(string)($publisher['label']??$manifest['name']??$row['slug']),(string)($manifest['icon']??'send'),'#64748b',['text']];
                 $result[] = [
                     'slug' => (string) $row['slug'],
                     'name' => mb_substr((string) ($manifest['name'] ?? $row['slug']), 0, 180),
-                    'platform' => (string) $publisher['platform'],
-                    'label' => mb_substr((string) ($publisher['label'] ?? $manifest['name'] ?? $row['slug']), 0, 100),
-                    'icon' => (string) ($manifest['icon'] ?? 'send'),
+                    'platform' => $platform,
+                    'label' => mb_substr((string)$visual[1],0,100),
+                    'icon' => (string)$visual[2],
+                    'brand_color'=>(string)$visual[3],
+                    'order'=>(int)$visual[0],
+                    'capabilities'=>(array)$visual[4],
                     'config_url' => (string) ($manifest['config_url'] ?? ''),
                     'max_message_length' => max(1,min(5000,(int)($publisher['max_message_length']??5000))),
+                    'editor_options' => (bool)($publisher['editor_options']??false),
                     'connected' => $connections !== [],
                     'connected_count' => count($connections),
                     'connections' => $connections,
@@ -49,7 +54,29 @@ final class SocialIntegrationManager
                 continue;
             }
         }
-        return $result;
+        usort($result,static fn(array$a,array$b):int=>[$a['order'],$a['label']]<=>[$b['order'],$b['label']]);return $result;
+    }
+
+    public function editor(string $slug, int $connectionId): array
+    {
+        $runtime=$this->active($slug,$connectionId);$provider=$runtime['provider'];
+        if(!method_exists($provider,'editor'))return[];
+        $result=$provider->editor($runtime['credentials']);
+        if(!is_array($result))throw new RuntimeException('The social publisher returned invalid editor options.');
+        if(is_array($result['credentials']??null)){$this->updateCredentials($slug,$connectionId,$result['credentials']);unset($result['credentials']);}
+        return$this->editorDefinition($result);
+    }
+
+    public function normalizeOptions(string $slug,int $connectionId,array$input):array
+    {
+        $runtime=$this->active($slug,$connectionId);$provider=$runtime['provider'];
+        if(!method_exists($provider,'options'))return[];
+        $result=$provider->options($runtime['credentials'],$input);
+        if(!is_array($result)||!is_array($result['options']??null))throw new RuntimeException('The social publisher rejected its publishing options.');
+        if(is_array($result['credentials']??null))$this->updateCredentials($slug,$connectionId,$result['credentials']);
+        $options=$result['options'];$encoded=json_encode($options,JSON_UNESCAPED_SLASHES|JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR);
+        if(strlen($encoded)>8192)throw new RuntimeException('The social publishing options are too large.');
+        return$options;
     }
 
     public function save(string $slug, string $externalId, string $displayName, array $credentials): array
@@ -169,6 +196,15 @@ final class SocialIntegrationManager
         if (!is_object($provider) || !method_exists($provider, 'publish')) throw new RuntimeException('The social publisher handler is invalid.');
         if(method_exists($provider,'initialize'))$provider->initialize($this->root);
         return $provider;
+    }
+
+    private function editorDefinition(array$data):array
+    {
+        $result=['account'=>[],'fields'=>[],'rules'=>[]];$account=is_array($data['account']??null)?$data['account']:[];
+        foreach(['title'=>100,'subtitle'=>240]as$key=>$limit){$value=trim((string)($account[$key]??''));if($value!=='')$result['account'][$key]=mb_substr($value,0,$limit);}
+        foreach((array)($data['fields']??[])as$field){if(!is_array($field))continue;$name=(string)($field['name']??'');$type=(string)($field['type']??'');$label=trim((string)($field['label']??''));if(!preg_match('/^[a-z][a-z0-9_]{0,31}$/D',$name)||!in_array($type,['select','checkbox','media'],true)||$label==='')throw new RuntimeException('The social publisher editor definition is invalid.');$item=['name'=>$name,'type'=>$type,'label'=>mb_substr($label,0,120),'help'=>mb_substr(trim((string)($field['help']??'')),0,500),'required'=>(bool)($field['required']??false),'disabled'=>(bool)($field['disabled']??false)];if($type==='select'){foreach((array)($field['options']??[])as$option){if(!is_array($option))continue;$value=(string)($option['value']??'');$text=trim((string)($option['label']??''));if($value===''||strlen($value)>100||preg_match('/[\x00-\x1f\x7f]/',$value)||$text==='')continue;$item['options'][]=['value'=>$value,'label'=>mb_substr($text,0,120)];}if(empty($item['options']))throw new RuntimeException('The social publisher has no available publishing option.');}elseif($type==='media'){$kind=(string)($field['kind']??'');if(!in_array($kind,['video'],true))throw new RuntimeException('The social publisher media definition is invalid.');$item['kind']=$kind;$item['accept_mime']=array_values(array_filter(array_unique(array_map('strval',(array)($field['accept_mime']??[]))),static fn(string$mime):bool=>preg_match('#^(?:image|audio|video)/[a-z0-9.+-]+$#D',$mime)===1));}$link=is_array($field['link']??null)?$field['link']:[];$url=(string)($link['url']??'');if($url!==''&&filter_var($url,FILTER_VALIDATE_URL)&&str_starts_with(strtolower($url),'https://'))$item['link']=['label'=>mb_substr(trim((string)($link['label']??'Learn more')),0,80),'url'=>$url];$result['fields'][]=$item;}
+        foreach((array)($data['rules']??[])as$rule){if(!is_array($rule))continue;$type=(string)($rule['type']??'');$message=mb_substr(trim((string)($rule['message']??'')),0,240);if($type==='at_least_one'&&preg_match('/^[a-z][a-z0-9_]{0,31}$/D',(string)($rule['when']??''))){$fields=array_values(array_filter(array_map('strval',(array)($rule['fields']??[])),static fn(string$value):bool=>preg_match('/^[a-z][a-z0-9_]{0,31}$/D',$value)===1));if($fields)$result['rules'][]=['type'=>$type,'when'=>(string)$rule['when'],'fields'=>$fields,'message'=>$message];}elseif($type==='incompatible'&&preg_match('/^[a-z][a-z0-9_]{0,31}$/D',(string)($rule['field']??''))&&preg_match('/^[a-z][a-z0-9_]{0,31}$/D',(string)($rule['with']??''))){$result['rules'][]=['type'=>$type,'field'=>(string)$rule['field'],'with'=>(string)$rule['with'],'value'=>(string)($rule['value']??''),'message'=>$message];}}
+        return$result;
     }
 
     private function path(string $installPath): ?string

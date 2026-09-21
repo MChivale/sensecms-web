@@ -136,7 +136,8 @@ try {
             if ($path === '/account') $reply(['redirect' => '/settings']);
             if (preg_match('#^/extension-assets/(addon|plugin)/([a-z0-9-]+)/(.+)$#D', $path, $asset) && in_array($_SERVER['REQUEST_METHOD'], ['GET','HEAD'], true)) App\Http\ExtensionAssetController::serve($root, $asset[1], $asset[2], $asset[3]);
             $_SERVER['SENSE_CSP_NONCE'] = base64_encode(random_bytes(24));
-            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . $_SERVER['SENSE_CSP_NONCE'] . "'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors " . ($managedPage ? "'self'" : "'none'"));
+            $sameOriginFrame = $managedPage || preg_match('#^/content/builder/[1-9][0-9]*/live-preview$#D', $path) === 1;
+            header("Content-Security-Policy: default-src 'self'; script-src 'self' 'nonce-" . $_SERVER['SENSE_CSP_NONCE'] . "'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors " . ($sameOriginFrame ? "'self'" : "'none'"));
             require $root . '/app/workspace.php';
             exit;
         }

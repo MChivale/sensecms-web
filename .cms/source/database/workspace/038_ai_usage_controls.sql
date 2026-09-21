@@ -1,0 +1,23 @@
+CREATE TABLE IF NOT EXISTS ai_usage_events (
+    id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    provider_id BIGINT UNSIGNED NOT NULL,
+    provider_slug VARCHAR(80) NOT NULL,
+    model VARCHAR(150) NOT NULL,
+    purpose ENUM('builder','chat','verification') NOT NULL,
+    user_id BIGINT UNSIGNED NULL,
+    status ENUM('requested','completed','failed') NOT NULL DEFAULT 'requested',
+    reserved_input_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+    reserved_output_tokens INT UNSIGNED NOT NULL DEFAULT 0,
+    input_tokens INT UNSIGNED NULL,
+    output_tokens INT UNSIGNED NULL,
+    input_cost_per_million DECIMAL(18,6) NOT NULL DEFAULT 0,
+    output_cost_per_million DECIMAL(18,6) NOT NULL DEFAULT 0,
+    estimated_cost_usd DECIMAL(18,6) NOT NULL DEFAULT 0,
+    actual_cost_usd DECIMAL(18,6) NULL,
+    error_code VARCHAR(80) NULL,
+    created_at DATETIME NOT NULL,
+    completed_at DATETIME NULL,
+    INDEX ai_usage_provider_day (provider_id, created_at),
+    INDEX ai_usage_user_rate (user_id, created_at),
+    INDEX ai_usage_purpose (purpose, created_at)
+);

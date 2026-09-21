@@ -85,6 +85,24 @@ $definitions = array_replace([
         'fields'=>[['key'=>'admin_label','type'=>'text','label'=>'Administrative label','max'=>120],['key'=>'html','type'=>'code','label'=>'HTML','required'=>true,'max'=>20000,'wide'=>true]],
         'defaults'=>['admin_label'=>'Custom content','html'=>'<section><h2>Add your content</h2><p>Use safe semantic HTML.</p></section>'],
     ],
+    'separator' => [
+        'label'=>'Separator','description'=>'A semantic divider with controlled spacing and visual weight.','icon'=>'minus','group'=>'Structure',
+        'shared_fields'=>[
+            ['key'=>'style','type'=>'select','label'=>'Line style','options'=>['solid'=>'Solid','dashed'=>'Dashed','dotted'=>'Dotted']],
+            ['key'=>'weight','type'=>'number','label'=>'Line weight (px)','min'=>1,'max'=>8],
+            ['key'=>'spacing','type'=>'number','label'=>'Vertical spacing (px)','min'=>0,'max'=>240],
+        ],
+        'shared_defaults'=>['style'=>'solid','weight'=>1,'spacing'=>48],
+    ],
+    'spacer' => [
+        'label'=>'Spacer','description'=>'Controlled responsive whitespace without empty text or custom HTML.','icon'=>'move-vertical','group'=>'Structure',
+        'shared_fields'=>[
+            ['key'=>'desktop','type'=>'number','label'=>'Desktop height (px)','min'=>0,'max'=>480],
+            ['key'=>'tablet','type'=>'number','label'=>'Tablet height (px)','min'=>0,'max'=>360],
+            ['key'=>'mobile','type'=>'number','label'=>'Mobile height (px)','min'=>0,'max'=>240],
+        ],
+        'shared_defaults'=>['desktop'=>96,'tablet'=>72,'mobile'=>48],
+    ],
 ], $layouts);
 
 $localizedDefaults = require __DIR__ . '/page-builder-localized-defaults.php';

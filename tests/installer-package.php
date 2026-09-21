@@ -30,7 +30,7 @@ try {
     $assert($first['files'] === count($inventory['files']), 'Built inventory covers every source file');
     foreach ($inventory['files'] as $name => $hash) if (!hash_equals($hash, hash_file('sha256', $source . '/' . $name))) throw new RuntimeException('Source hash mismatch.');
     $assert(true, 'Every packaged file matches the current source');
-    foreach (['lang/en.json', 'lang/cms/en.json', 'config/page-builder-layouts.json', 'public/theme/sensecms-themes.js', 'public/theme/sensecms-themes.css', 'app/Installer/WorkspaceMigration.php'] as $name) $assert(isset($inventory['files'][$name]), 'Required Workspace resource included: ' . $name);
+    foreach (['lang/en.json', 'lang/cms/en.json', 'config/page-builder-layouts.json', 'public/theme/sensecms-themes.js', 'public/theme/sensecms-themes.css', 'public/assets/lib/quill/LICENSE.txt', 'app/Installer/WorkspaceMigration.php'] as $name) $assert(isset($inventory['files'][$name]), 'Required Workspace resource included: ' . $name);
     $assert(!preg_grep('#^(storage|themes|plugins|addons|modules|\.cfg|tests)/#', array_keys($inventory['files'])), 'Runtime state and optional packages stay outside distribution');
     $again = InstallerBuilder::build($source, $temp . '/again.zip');
     $assert($first['sha256'] === $again['sha256'], 'Same source produces byte-identical ZIPs');
@@ -48,7 +48,7 @@ try {
     $assert(InstallerBuilder::verify($temp . '/isolated.zip')['files'] === $inventory['files'], 'Root private data is never scanned into the archive');
     unlink($fixture . '/storage/installed.json');
     $reject(fn() => InstallerBuilder::build($fixture, $fixture . '/embedded.zip'), 'Build output inside source is rejected');
-    foreach (['public/diagnostic.php'=>'<?php echo 1;', 'config/.env'=>'PRIVATE', 'config/local.pem'=>'PRIVATE', 'lang/broken.json'=>'{', 'app/key.php'=>"<?php // -----BEGIN PRIVATE KEY-----"] as $name => $contents) {
+    foreach (['public/diagnostic.php'=>'<?php echo 1;', 'public/notes.txt'=>'UNEXPECTED', 'config/.env'=>'PRIVATE', 'config/local.pem'=>'PRIVATE', 'lang/broken.json'=>'{', 'app/key.php'=>"<?php // -----BEGIN PRIVATE KEY-----"] as $name => $contents) {
         file_put_contents($fixture . '/' . $name, $contents);
         try { $reject(fn() => InstallerBuilder::build($fixture, $temp . '/rejected.zip'), 'Unsafe or malformed source rejected: ' . $name); }
         finally { unlink($fixture . '/' . $name); }

@@ -26,8 +26,8 @@ return static function (string $method,string $path,ExtensionContext $context):b
     }
     if ($method==='GET' && preg_match('#^/content/posts(?:/\d+/edit|/new)?$#D',$path) && $context->auth->check() && $context->access->allows('social.publish')) {
         ob_start(static function(string $html):string {
-            $head='<link rel="stylesheet" href="/extension-assets/addon/social-publishing/social.css?v=0.2.2">';
-            $body='<script src="/extension-assets/addon/social-publishing/editor.js?v=0.2.2" defer></script>';
+            $head='<link rel="stylesheet" href="/extension-assets/addon/social-publishing/social.css?v=0.5.2">';
+            $body='<script src="/extension-assets/addon/social-publishing/editor.js?v=0.5.2" defer></script>';
             $html=str_replace('</head>',$head.'</head>',$html);
             return str_replace('</body>',$body.'</body>',$html);
         });
@@ -42,6 +42,7 @@ return static function (string $method,string $path,ExtensionContext $context):b
         $controller=new SocialController($context,__DIR__);
         if ($method==='GET' && $path==='/social-publishing') $controller->page();
         if ($method==='GET' && $path==='/api/social-publishing/editor') $controller->editor();
+        if ($method==='GET' && $path==='/api/social-publishing/media') $controller->media();
         if ($method==='GET' && $path==='/api/social-publishing/deliveries') $controller->deliveries();
         if ($method==='POST' && preg_match('#^/api/social-publishing/deliveries/(\d+)/retry$#D',$path,$matches)) $controller->retry((int)$matches[1]);
         http_response_code(404);header('Content-Type: application/json');echo json_encode(['ok'=>false,'message'=>'Social Publishing endpoint not found.']);exit;

@@ -40,12 +40,12 @@ assert status == 200 and json.loads(body)['ok'], 'Owner login failed'
 try:
     status, overview, _ = request('/social-publishing')
     assert status == 200, 'Social Publishing overview unavailable'
-    for marker in (b'sensecms-unified-workspace', b'LinkedIn profile', b'0.2.1'):
+    for marker in (b'sensecms-unified-workspace', b'LinkedIn profile', b'0.3.0'):
         assert marker in overview, f'Overview marker missing: {marker.decode()}'
     status, page, _ = request('/social-publishing/linkedin')
     assert status == 200, 'LinkedIn Publisher page unavailable'
     csrf = re.search(rb'name="csrf" value="([a-f0-9]{64})"', page)[1].decode()
-    for marker in (b'social-linkedin-page', b'Add LinkedIn profile', b'data-linkedin-oauth-modal', b'0.1.1'):
+    for marker in (b'social-linkedin-page', b'Add LinkedIn profile', b'data-linkedin-oauth-modal', b'social-account-meta', b'social-steps', b'social-panel-footer', b'social-disconnect', b'0.1.2'):
         assert marker in page, f'LinkedIn page marker missing: {marker.decode()}'
     status, body, _ = request('/social-publishing/linkedin/status')
     data = json.loads(body)
@@ -54,9 +54,9 @@ try:
     editor = json.loads(body)
     provider = next(item for item in editor['data']['providers'] if item['slug'] == 'linkedin-publisher')
     assert provider['max_message_length'] == 3000 and len(provider['connections']) == data['data']['connected_count'], 'LinkedIn editor provider contract is invalid'
-    status, css, headers = request('/extension-assets/plugin/linkedin-publisher/linkedin.css?v=0.1.1')
+    status, css, headers = request('/extension-assets/plugin/linkedin-publisher/linkedin.css?v=0.1.2')
     assert status == 200 and b'.linkedin-oauth-modal' in css and 'text/css' in headers.get_content_type(), 'LinkedIn stylesheet unavailable or invalid'
-    status, script, headers = request('/extension-assets/plugin/linkedin-publisher/linkedin.js?v=0.1.1')
+    status, script, headers = request('/extension-assets/plugin/linkedin-publisher/linkedin.js?v=0.1.2')
     assert status == 200 and b'sensecms.linkedin.oauth' in script and 'javascript' in headers.get_content_type(), 'LinkedIn script unavailable or invalid'
 finally:
     try:

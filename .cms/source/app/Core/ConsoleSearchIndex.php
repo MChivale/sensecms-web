@@ -139,7 +139,7 @@ final class ConsoleSearchIndex
             ['My profile','Display name, profile photo and personal identity.','/profile','Workspace','user-round','console.access',['avatar','account']],
             ['My settings','Personal settings, e-mail address and password security.','/settings','Workspace','settings-2','console.access',['account','password']],
             ['Editorial workflow','Review, approve and publish accountable multilingual content.','/content/workflow','Content','git-pull-request-arrow','content.workflow.view',['approval','publishing','review']],
-            ['Page Builder','Compose pages from portable multilingual sections and modules.','/content/builder','Content','panels-top-left','content.pages.edit',['sections','modules','builder']],
+            ['Page Builder','Compose, discuss and review portable multilingual sections.','/content/builder','Content','panels-top-left','content.pages.collaborate',['sections','modules','builder','review','comments']],
             ['Media Library','Search, organize, tag and safely manage reusable files.','/content/media','Content','images','content.media.manage',['images','video','files','folders']],
             ['Pages','Manage page status, hierarchy, translations and trash.','/content/pages','Content','files','content.pages.view',['page','archive','trash']],
             ['Create page','Create a new multilingual page.','/content/pages/new','Content','file-plus-2','content.pages.edit',['new page','add page']],

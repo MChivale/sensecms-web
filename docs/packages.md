@@ -58,10 +58,11 @@ credentials, checks public/panel/API behavior, never installs Core, and logs out
 
 ## Prepared development packages
 
-The current source and official distribution inventory contains `addon:calendar` 1.0.0,
-`theme:sensecms` 1.0.0, `plugin:telegram-notifications` 1.0.0,
-`plugin:google-analytics` 0.1.2 and `plugin:google-calendar`,
-`plugin:microsoft-365-calendar`, `plugin:apple-calendar` 0.1.1.
+The current source contains `addon:calendar` 1.0.0, `theme:sensecms` 1.0.11,
+`plugin:telegram-notifications` 1.0.0, `plugin:google-analytics` 0.1.2 and
+`plugin:google-calendar`, `plugin:microsoft-365-calendar`, `plugin:apple-calendar`
+0.1.1. The official public distribution deliberately retains the accepted
+`theme:sensecms` 1.0.0 artifact; product-site presentation releases are not promoted.
 All seven signed packages support Core >=0.1.0 <2.0.0. Calendar integrations likewise
 support Calendar >=0.1.0 <2.0.0, allowing dependency-safe transition before Core changes.
 Version numbers do not by themselves promote the development channel to Stable.
@@ -74,8 +75,9 @@ Free/paid assignments follow the approved Eduvixo catalogue mapping described be
 The original private release set contains theme 0.3.2; it is retained unchanged.
 The accepted 2026-09-13 set is retained privately at
 `/root/sense-release-1.0-eDoxsJCH/packages`. Official downloads point to those exact
-accepted bytes. Only theme 1.0.0 is retained in the installed theme list; older signed
-themes remain outside runtime in operator recovery backups, not public offers.
+accepted bytes. The official product website retains signed theme 1.0.0 through
+1.0.11, with 1.0.11 available as the product-site presentation source. The public offer remains the exact accepted 1.0.0
+artifact; older pre-1.0 signed themes remain outside runtime in operator recovery backups.
 
 To prepare all implemented packages, set `SENSE_PACKAGE_SIGNING_KEY_FILE` to the
 protected publisher key and run `php scripts/build-packages.php <new-directory>`.
@@ -346,8 +348,11 @@ above. General independently installable **module** runtime/lifecycle is not yet
 implemented; manifest support alone does not constitute runtime support.
 
 The administration's Core sections tab lists built-in page-builder components, not
-installable module packages. Themes limit their supported sections; the official
-product theme supports text, custom HTML and contact forms. Builder presets use
+installable module packages. Every compatible theme receives and must render the
+complete Core section standard; `supported_blocks` is retained as descriptive package
+metadata and cannot remove portable Core editing capabilities. Themes may change the
+presentation and may add their own sections without replacing the Core field contracts.
+The official product theme renders all fifteen Core sections. Builder presets use
 generic EN/KM/ZH starter copy and no old theme-specific images. Legacy component
 keys such as `admissions` and `programs` remain stable while their visible names are
 Process steps and Services. Blank required media is permitted in starter presets,

@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "type": "plugin",
+  "slug": "tiktok-publisher",
+  "name": "Sense CMS TikTok Publisher",
+  "version": "0.1.3",
+  "requires": {
+    "php": {"min": "8.5.0", "max_exclusive": "9.0.0"},
+    "core": {"min": "1.0.0", "max_exclusive": "2.0.0"}
+  },
+  "dependencies": {"addon:social-publishing": {"min": "0.3.0", "max_exclusive": "1.0.0"}},
+  "publisher": {"key_id": "sensecms-release", "name": "QUANT Software House Limited"}
+}

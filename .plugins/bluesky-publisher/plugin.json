@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Bluesky Publisher",
   "slug": "bluesky-publisher",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Publishes reviewed Sense CMS posts to connected Bluesky accounts through AT Protocol OAuth.",
@@ -36,6 +36,7 @@
     "/social-publishing/bluesky/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.1.4", "summary": "Restore expired-token refresh and validate post payloads before consuming refresh credentials."},
     {"version": "0.1.3", "summary": "Close the OAuth window after return even when the provider has isolated it from the opener."},
     {"version": "0.1.2", "summary": "Align versioned administration assets with the PDS-cluster compatibility release."},
     {"version": "0.1.1", "summary": "Support Bluesky-operated PDS clusters while retaining strict endpoint validation."},

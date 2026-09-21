@@ -15,7 +15,7 @@ final class PublicTheme
     {
         $headers = ['Content-Type' => 'text/html; charset=UTF-8', 'Cache-Control' => 'no-cache',
             'X-Content-Type-Options' => 'nosniff', 'Referrer-Policy' => 'strict-origin-when-cross-origin',
-            'Content-Security-Policy' => "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"];
+            'Content-Security-Policy' => "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' https: data:; media-src 'self' https: blob:; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'"];
         if (!in_array($method, ['GET', 'HEAD'], true)) return [405, $headers + ['Allow' => 'GET, HEAD'], 'Method not allowed.'];
         if (str_starts_with($path, '/theme-assets/')) {
             $name = substr($path, 14);
@@ -38,7 +38,8 @@ final class PublicTheme
         if ($path === '/robots.txt') return [200, ['Content-Type' => 'text/plain; charset=UTF-8'], $method === 'HEAD' ? '' : "User-agent: *\nDisallow: /install\nDisallow: /login\nDisallow: /dashboard\nDisallow: /settings\nDisallow: /license\nSitemap: $baseUrl/sitemap.xml\n"];
         if ($path === '/sitemap.xml') {
             $body = '<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-            foreach (array_keys($pages) as $route) $body .= '<url><loc>' . htmlspecialchars($baseUrl . $route, ENT_XML1, 'UTF-8') . '</loc></url>';
+            $descriptorFile=$this->root.'/theme.json';$descriptor=is_file($descriptorFile)?json_decode((string)file_get_contents($descriptorFile),true,64,JSON_THROW_ON_ERROR):[];$updated=(string)($descriptor['content_updated_at']??'');$updatedAt=preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})$/D',$updated)&&strtotime($updated)!==false?date(DATE_ATOM,(int)strtotime($updated)):'';
+            foreach (array_keys($pages) as $route) $body .= '<url><loc>' . htmlspecialchars($baseUrl . $route, ENT_XML1, 'UTF-8') . '</loc>' . ($updatedAt!==''?'<lastmod>'.htmlspecialchars($updatedAt,ENT_XML1,'UTF-8').'</lastmod>':'') . '</url>';
             return [200, ['Content-Type' => 'application/xml; charset=UTF-8'], $method === 'HEAD' ? '' : $body . '</urlset>'];
         }
         $page = $pages[$path] ?? ['title' => 'Page not found', 'description' => 'This page does not exist.', 'kind' => '404'];

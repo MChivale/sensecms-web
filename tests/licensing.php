@@ -114,6 +114,8 @@ try {
     $assert($service->socialHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/social/linkedin/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'LinkedIn onboarding exports validated canonical installation identity');
     $assert($service->socialHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/social/bluesky/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'Bluesky onboarding exports validated canonical installation identity');
     $assert($service->socialHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/social/pinterest/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'Pinterest onboarding exports validated canonical installation identity');
+    $assert($service->socialHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/social/tiktok/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'TikTok onboarding exports validated canonical installation identity');
+    $assert($service->socialHeaders('https://WWW.SenseCMS.com/','https://www.sensecms.com/api/social/youtube/v1')===['Authorization: Bearer '.$record['key'],'X-SenseCMS-Domain: https://www.sensecms.com'],'YouTube onboarding exports validated canonical installation identity');
     $reject(fn()=>$service->socialHeaders('https://www.sensecms.com','https://attacker.example'),'Social onboarding credential export refuses third party');
     $assert(!str_contains((string) file_get_contents($temp . '/license.lic'), $record['key']), 'license not stored in plaintext');
     $reject(fn() => $service->enforce('https://sensecms.com'), 'cache domain mismatch');

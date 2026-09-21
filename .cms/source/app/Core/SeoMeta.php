@@ -107,14 +107,15 @@ final class SeoMeta
         $baseUrl = rtrim(self::first($global['site_url'] ?? '', $context['base_url'] ?? ''), '/');
         $currentPath = (string) ($context['current_path'] ?? '/');
         $canonical = self::absolute(self::first($document['canonical'] ?? '', $currentPath), $baseUrl);
-        $image = self::absolute(self::first($document['og_image'] ?? '', $global['default_social_image'] ?? '', $context['fallback_image'] ?? ''), $baseUrl);
+        $fallbackImage=self::first($context['fallback_image']??'');$usingFallback=self::first($document['og_image']??'',$global['default_social_image']??'')===''&&$fallbackImage!=='';
+        $image = self::absolute(self::first($document['og_image'] ?? '', $global['default_social_image'] ?? '', $fallbackImage), $baseUrl);
         $twitterImage = self::absolute(self::first($document['twitter_image'] ?? '', $image), $baseUrl);
         $logo = self::absolute(self::first($global['organization_logo'] ?? '', $context['logo'] ?? ''), $baseUrl);
         $imageAlt = self::first($document['og_image_alt'] ?? '', $localized['default_social_image_alt'] ?? '', $global['default_social_image_alt'] ?? '', $rawTitle);
         $twitterAlt = self::first($document['twitter_image_alt'] ?? '', $imageAlt);
-        $width = (int) ($document['og_image_width'] ?: $global['default_image_width']);
-        $height = (int) ($document['og_image_height'] ?: $global['default_image_height']);
-        $imageType = self::first($document['og_image_type'] ?? '', $global['default_image_type'] ?? '');
+        $width = (int) ($document['og_image_width'] ?: ($usingFallback ? ($context['fallback_image_width'] ?? 0) : 0) ?: $global['default_image_width']);
+        $height = (int) ($document['og_image_height'] ?: ($usingFallback ? ($context['fallback_image_height'] ?? 0) : 0) ?: $global['default_image_height']);
+        $imageType = self::first($document['og_image_type'] ?? '', $usingFallback ? ($context['fallback_image_type'] ?? '') : '', $global['default_image_type'] ?? '');
         $author = self::first($document['author'] ?? '', $global['author'] ?? '', $siteName);
         $publisher = self::first($global['publisher'] ?? '', $siteName);
         $alternates = [];
@@ -131,8 +132,9 @@ final class SeoMeta
         if (($context['profile']['address'] ?? '') !== '') $organization['address'] = ['@type'=>'PostalAddress','streetAddress'=>$context['profile']['address'],'addressCountry'=>$global['country_code'] ?: null];
         $webPage = ['@type'=>$type==='post'?'WebPage':$document['schema_type'],'@id'=>$pageId,'url'=>$canonical,'name'=>$title,'description'=>$description,'inLanguage'=>$locale,'isPartOf'=>['@id'=>$websiteId],'about'=>['@id'=>$orgId]];
         if ($image !== '') $webPage['primaryImageOfPage'] = ['@type'=>'ImageObject','url'=>$image,'caption'=>$imageAlt,'width'=>$width ?: null,'height'=>$height ?: null];
-        $graph = [$organization, ['@type'=>'WebSite','@id'=>$websiteId,'url'=>$baseUrl,'name'=>$siteName,'publisher'=>['@id'=>$orgId],'inLanguage'=>$locale], $webPage];
-        if ($type === 'post' || $document['og_type'] === 'article') $graph[] = ['@type'=>$document['schema_type'],'headline'=>$rawTitle,'description'=>$description,'url'=>$canonical,'mainEntityOfPage'=>['@id'=>$pageId],'image'=>$image !== '' ? [$image] : [],'author'=>['@type'=>'Person','name'=>$author],'publisher'=>['@id'=>$orgId],'datePublished'=>$content['published_at'] ?? null,'dateModified'=>$content['updated_at'] ?? null,'inLanguage'=>$locale];
+        $graph = [$organization, ['@type'=>'WebSite','@id'=>$websiteId,'url'=>$baseUrl,'name'=>$siteName,'publisher'=>['@id'=>$orgId],'inLanguage'=>$locale], $webPage];$associated=[];
+        foreach([['video_url','VideoObject','video'],['audio_url','AudioObject','audio']]as[$key,$schema,$suffix]){$url=self::absolute((string)($content[$key]??''),$baseUrl);if($url==='')continue;$id=$canonical.'#'.$suffix;$media=['@type'=>$schema,'@id'=>$id,'name'=>$rawTitle,'description'=>$description,'contentUrl'=>$url,'inLanguage'=>$locale,'uploadDate'=>$content['published_at']??null];if($schema==='VideoObject'&&$image!=='')$media['thumbnailUrl']=[$image];$graph[]=$media;$associated[]=['@id'=>$id];}
+        if ($type === 'post' || $document['og_type'] === 'article'){$article=['@type'=>$document['schema_type'],'headline'=>$rawTitle,'description'=>$description,'url'=>$canonical,'mainEntityOfPage'=>['@id'=>$pageId],'image'=>$image !== '' ? [$image] : [],'author'=>['@type'=>'Person','name'=>$author],'publisher'=>['@id'=>$orgId],'datePublished'=>$content['published_at'] ?? null,'dateModified'=>$content['updated_at'] ?? null,'inLanguage'=>$locale];if($associated)$article['associatedMedia']=$associated;$graph[]=$article;}
         return array_replace($document, [
             'site_name'=>$siteName,'site_url'=>$baseUrl,'raw_title'=>$rawTitle,'title'=>$title,'description'=>$description,
             'keywords'=>self::first($document['keywords'] ?? '', $localized['default_keywords'] ?? ''),'canonical'=>$canonical,

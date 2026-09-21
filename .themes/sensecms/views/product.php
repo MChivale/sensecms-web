@@ -3,7 +3,7 @@ declare(strict_types=1);
 ?>
 <section class="platform-hero">
     <div class="container">
-        <nav class="subpage-breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a><span aria-hidden="true">/</span><span>Platform</span></nav>
+        <?php $renderBreadcrumb(); ?>
         <div class="subpage-intro">
             <div>
                 <span class="eyebrow">THE SENSE CMS PLATFORM</span>

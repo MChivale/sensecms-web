@@ -24,9 +24,10 @@ return new class {
 
     public function publish(array $credentials,array $payload): array
     {
-        $credentials=$this->fresh($credentials);$message=trim((string)($payload['message']??''));$url=trim((string)($payload['url']??''));
+        $message=trim((string)($payload['message']??''));$url=trim((string)($payload['url']??''));
         if($message===''||mb_strlen($message)>250)throw new RuntimeException('The X message is empty or too long.');
         if(!$this->https($url))throw new RuntimeException('The X destination URL is invalid.');
+        $credentials=$this->fresh($credentials);
         $body=json_encode(['text'=>$message."\n\n".$url],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);
         try{$data=$this->request('POST','https://api.x.com/2/tweets',$body,$credentials['access_token']);}
         catch(RuntimeException$error){if($error->getCode()!==401)throw$error;$credentials=$this->fresh($credentials,true);$data=$this->request('POST','https://api.x.com/2/tweets',$body,$credentials['access_token']);}

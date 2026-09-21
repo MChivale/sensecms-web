@@ -24,8 +24,9 @@ return new class {
 
     public function publish(array$credentials,array$payload): array
     {
-        $credentials=$this->fresh($credentials);$message=trim((string)($payload['message']??''));$url=trim((string)($payload['url']??''));$title=trim((string)($payload['title']??''));$excerpt=trim(strip_tags((string)($payload['excerpt']??'')));
+        $message=trim((string)($payload['message']??''));$url=trim((string)($payload['url']??''));$title=trim((string)($payload['title']??''));$excerpt=trim(strip_tags((string)($payload['excerpt']??'')));
         if($message===''||mb_strlen($message)>300)throw new RuntimeException('The Bluesky message is empty or too long.');if(!$this->https($url))throw new RuntimeException('The Bluesky destination URL is invalid.');
+        $credentials=$this->fresh($credentials);
         $record=['$type'=>'app.bsky.feed.post','text'=>$message,'createdAt'=>gmdate('Y-m-d\TH:i:s\Z'),'embed'=>['$type'=>'app.bsky.embed.external','external'=>['uri'=>$url,'title'=>mb_substr($title!==''?$title:$message,0,300),'description'=>mb_substr($excerpt,0,1000)]]];
         $body=json_encode(['repo'=>$credentials['did'],'collection'=>'app.bsky.feed.post','record'=>$record],JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES|JSON_THROW_ON_ERROR);[$data,$nonce]=$this->request('POST','/xrpc/com.atproto.repo.createRecord',$body,$credentials);$uri=(string)($data['uri']??'');
         if(!preg_match('~^at://'.preg_quote($credentials['did'],'~').'/app\.bsky\.feed\.post/([A-Za-z0-9._:-]{1,255})$~D',$uri,$match)||!is_string($data['cid']??null)||$data['cid']==='')throw new RuntimeException('Bluesky returned an invalid publication identifier.');
@@ -45,7 +46,7 @@ return new class {
 
     private function client(): BlueskyOnboardingClient
     {
-        if($this->root===''||!is_dir($this->root))throw new RuntimeException('The Bluesky provider runtime is unavailable.');$runtime=new Runtime($this->root);$config=require$this->root.'/config/workspace.php';return new BlueskyOnboardingClient($runtime->license(),(string)($config['integrations']['bluesky_social_broker_url']??''),(string)$config['base_url']);
+        if($this->root===''||!is_dir($this->root))throw new RuntimeException('The Bluesky provider runtime is unavailable.');$runtime=new Runtime($this->root);$installed=$runtime->read('installed');$root=$this->root;$baseUrl=$runtime->baseUrl();$config=require$root.'/config/workspace.php';return new BlueskyOnboardingClient($runtime->license(),(string)($config['integrations']['bluesky_social_broker_url']??''),(string)$config['base_url']);
     }
 
     private function request(string$method,string$path,string$payload,array$credentials): array

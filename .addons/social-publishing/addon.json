@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Social Publishing",
   "slug": "social-publishing",
-  "version": "0.2.2",
+  "version": "0.5.2",
   "author": "QUANT Software House Limited",
   "type": "addon",
   "description": "Review-first publishing of Sense CMS posts through independently installed social network connectors, with an idempotent queue, retries and delivery history.",
@@ -20,6 +20,12 @@
   "group": "Content distribution",
   "release_channel": "development",
   "changelog": [
+    {"version": "0.5.2", "summary": "Rehydrate post destination controls after AJAX navigation between the post list, creation and editing views."},
+    {"version": "0.5.1", "summary": "Use the installed release version for Social Publishing workspace assets to prevent stale UI caches."},
+    {"version": "0.5.0", "summary": "Add ordered provider accordions, brand identities, planned destinations and post media distribution controls."},
+    {"version": "0.4.1", "summary": "Generate default delivery messages within each provider's declared character limit."},
+    {"version": "0.4.0", "summary": "Add a permission-scoped Media Library picker for video publishing providers."},
+    {"version": "0.3.0", "summary": "Persist provider-specific publishing choices, render live destination controls and track asynchronous provider processing."},
     {"version": "0.2.2", "summary": "Bind every queued provider delivery to a stable revision key for broker-side idempotency."},
     {"version": "0.2.1", "summary": "Expose provider-specific message limits and safely persist rotated social credentials."},
     {"version": "0.2.0", "summary": "Support multiple independently selected social destinations per provider, post and delivery history."},
@@ -30,11 +36,13 @@
   "routes": [
     "/social-publishing",
     "/api/social-publishing/editor",
+    "/api/social-publishing/media",
     "/api/social-publishing/deliveries",
     "/api/social-publishing/deliveries/{id}/retry"
   ],
   "migrations": [
     {"id": "social-publishing-0.1.0", "up": "migrations/up.sql", "down": "migrations/down.sql"},
-    {"id": "social-publishing-0.2.0-multi-connections", "up": "migrations/multi-connections-up.sql", "down": "migrations/multi-connections-down.sql"}
+    {"id": "social-publishing-0.2.0-multi-connections", "up": "migrations/multi-connections-up.sql", "down": "migrations/multi-connections-down.sql"},
+    {"id": "social-publishing-0.3.0-provider-options", "up": "migrations/provider-options-up.sql", "down": "migrations/provider-options-down.sql"}
   ]
 }

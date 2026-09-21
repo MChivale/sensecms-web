@@ -5,7 +5,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 
 const root = path.resolve(__dirname, '..');
-const providers = ['facebook', 'x', 'linkedin', 'bluesky', 'mastodon'];
+const providers = ['facebook', 'x', 'linkedin', 'bluesky', 'mastodon', 'youtube'];
 
 for (const provider of providers) {
     const events = {};

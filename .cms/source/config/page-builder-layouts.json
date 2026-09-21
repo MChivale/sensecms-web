@@ -521,13 +521,113 @@
             "cta_url": "#moments"
         }
     },
-    "news": {
-        "label": "Latest stories",
-        "description": "Dynamic cards populated from published posts.",
-        "icon": "newspaper",
-        "group": "Dynamic content",
-        "singleton": true,
-        "fields": [
+  "news": {
+    "label": "Dynamic collection",
+    "description": "Live cards populated from published posts or pages with controlled filters and ordering.",
+    "icon": "database-zap",
+    "group": "Dynamic content",
+    "shared_fields": [
+      {
+        "key": "source",
+        "type": "select",
+        "label": "Content source",
+        "options": {
+          "posts": "Posts",
+          "pages": "Pages"
+        },
+        "wide": true
+      },
+      {
+        "key": "selection",
+        "type": "select",
+        "label": "Selection",
+        "options": {
+          "automatic": "Automatic",
+          "selected": "Selected items"
+        }
+      },
+      {
+        "key": "category_id",
+        "type": "content-select",
+        "label": "Post category",
+        "options_source": "categories",
+        "empty_label": "All categories",
+        "show_when": {
+          "source": "posts",
+          "selection": "automatic"
+        }
+      },
+      {
+        "key": "selected_ids",
+        "type": "content-multiselect",
+        "label": "Selected content",
+        "options_source_field": "source",
+        "max": 12,
+        "wide": true,
+        "show_when": {
+          "selection": "selected"
+        }
+      },
+      {
+        "key": "order",
+        "type": "select",
+        "label": "Order",
+        "options": {
+          "newest": "Newest first",
+          "oldest": "Oldest first",
+          "title_asc": "Title A–Z",
+          "title_desc": "Title Z–A"
+        },
+        "show_when": {
+          "selection": "automatic"
+        }
+      },
+      {
+        "key": "limit",
+        "type": "number",
+        "label": "Maximum items",
+        "min": 1,
+        "max": 12
+      },
+      {
+        "key": "presentation",
+        "type": "select",
+        "label": "Presentation",
+        "options": {
+          "cards": "Cards",
+          "list": "Editorial list",
+          "compact": "Compact list"
+        }
+      },
+      {
+        "key": "show_image",
+        "type": "checkbox",
+        "label": "Show images"
+      },
+      {
+        "key": "show_excerpt",
+        "type": "checkbox",
+        "label": "Show excerpts"
+      },
+      {
+        "key": "show_date",
+        "type": "checkbox",
+        "label": "Show publication dates"
+      }
+    ],
+    "shared_defaults": {
+      "source": "posts",
+      "selection": "automatic",
+      "category_id": "",
+      "selected_ids": [],
+      "order": "newest",
+      "limit": 3,
+      "presentation": "cards",
+      "show_image": true,
+      "show_excerpt": true,
+      "show_date": true
+    },
+    "fields": [
             {
                 "key": "eyebrow",
                 "type": "text",
@@ -553,9 +653,9 @@
         "defaults": {
             "eyebrow": "What’s new",
             "title": "Latest stories and updates.",
-            "text": "Read our latest news, project stories and announcements."
-        }
-    },
+      "text": "Choose a live content source, filter and order. The collection updates automatically when content is published."
+    }
+  },
     "cta": {
         "label": "Final call to action",
         "description": "High-impact closing section with contact panel.",

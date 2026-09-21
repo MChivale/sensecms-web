@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use App\Core\Auth;
 use App\Core\AiChatService;
+use App\Core\AiContentService;
+use App\Core\AiProviderClient;
 use App\Core\AiLicenseService;
 use App\Core\AiRepository;
 use App\Core\CmsRepository;
@@ -47,7 +49,8 @@ if (!in_array($path, ['/login', '/license', '/forgot-password', '/reset-password
 }
 $events = new EventBus();
 $cms = new CmsRepository($db, $events, $runtime);
-$emailSystem = new EmailSystem($db,$cms,new Secrets((string)$config['secrets_key']),$config,(string)$config['base_url']);
+$secrets=new Secrets((string)$config['secrets_key']);
+$emailSystem = new EmailSystem($db,$cms,$secrets,$config,(string)$config['base_url']);
 $facilities = new FacilityRepository($db);
 $auth = new Auth($db);
 $access = new AccessControl($db,$auth);
@@ -67,8 +70,9 @@ $public = new PublicController($cms, $facilities, $themes, $plugins, $addons, $c
 $publicSearch = new PublicSearchController($cms, $facilities, $config);
 $publicFacilities = new PublicFacilityController($facilities,$cms,$config);
 $aiRepository = new AiRepository($db);
-$dashboard = new DashboardController($auth, $access, $workflow, $media, $surveys, $cms, $facilities, $themes, $plugins, $addons, $packages, $marketplaceGovernance, $consoleSearch, $aiRepository, $license, new App\Core\SystemUpdate($db,$root,$config),$emailSystem);
-$aiChat = new AiChatController(new AiChatService($aiRepository, new Secrets($config['secrets_key']), $cms), $cms);
+$aiClient=new AiProviderClient();$aiContent=new AiContentService($aiRepository,$secrets,$aiClient);
+$dashboard = new DashboardController($auth, $access, $workflow, $media, $surveys, $cms, $facilities, $themes, $plugins, $addons, $packages, $marketplaceGovernance, $consoleSearch, $aiRepository, $license, new App\Core\SystemUpdate($db,$root,$config),$emailSystem,$aiContent);
+$aiChat = new AiChatController(new AiChatService($aiRepository,$secrets,$cms,$aiClient),$cms);
 $liveChat = new LiveChatController($auth, $aiRepository);
 $login = new AuthController($auth, $cms, (string) $config['base_url'], (array) ($config['demo'] ?? []),$emailSystem);
 $licenseController = new LicenseController($auth, $license, $config, $cms);
@@ -120,9 +124,23 @@ if ($method === 'POST' && $path === '/content/facilities') $dashboard->saveFacil
 if ($method === 'POST' && $path === '/content/facilities/geolocation') $dashboard->saveFacilityGeolocation();
 if ($method === 'POST' && preg_match('#^/content/facilities/(\d+)/(archive|restore|primary)$#', $path, $matches)) $dashboard->facilityAction((int)$matches[1],$matches[2]);
 if ($method === 'GET' && $path === '/content/builder') $dashboard->pageBuilder();
+if ($method === 'GET' && preg_match('#^/content/builder/(\d+)/live-preview$#', $path, $matches)) $public->builderPreview((int) $matches[1], $auth->id() ?? 0);
 if ($method === 'POST' && preg_match('#^/content/builder/(\d+)$#', $path, $matches)) $dashboard->savePageBuilder((int) $matches[1]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/draft$#', $path, $matches)) $dashboard->savePageBuilderDraft((int) $matches[1]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/quality$#', $path, $matches)) $dashboard->inspectPageBuilder((int) $matches[1]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/ai$#', $path, $matches)) $dashboard->proposePageBuilderAi((int) $matches[1]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/draft/discard$#', $path, $matches)) $dashboard->discardPageBuilderDraft((int) $matches[1]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/clipboard$#', $path, $matches)) $dashboard->copyPageBuilderSections((int) $matches[1]);
+if ($method === 'POST' && $path === '/content/builder/clipboard/clear') $dashboard->clearPageBuilderClipboard();
 if ($method === 'POST' && $path === '/content/builder/media') $dashboard->uploadPageBuilderMedia();
 if ($method === 'GET' && $path === '/api/content/builder/media') $dashboard->pageBuilderMedia();
+if ($method === 'GET' && preg_match('#^/api/content/builder/(\d+)/collaboration$#', $path, $matches)) $dashboard->pageBuilderCollaboration((int) $matches[1]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/sections/([a-f0-9-]+)/workflow$#', $path, $matches)) $dashboard->savePageBuilderSectionWorkflow((int) $matches[1], (string) $matches[2]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/sections/([a-f0-9-]+)/comments$#', $path, $matches)) $dashboard->addPageBuilderSectionComment((int) $matches[1], (string) $matches[2]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/comments/(\d+)/resolve$#', $path, $matches)) $dashboard->resolvePageBuilderComment((int) $matches[1], (int) $matches[2]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/sections/([a-f0-9-]+)/lock$#', $path, $matches)) $dashboard->lockPageBuilderSection((int) $matches[1], (string) $matches[2]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/sections/([a-f0-9-]+)/unlock$#', $path, $matches)) $dashboard->unlockPageBuilderSection((int) $matches[1], (string) $matches[2]);
+if ($method === 'POST' && preg_match('#^/content/builder/(\d+)/revisions/compare$#', $path, $matches)) $dashboard->comparePageBuilderRevisions((int) $matches[1]);
 if ($method === 'GET' && $path === '/content/media') $dashboard->mediaLibrary();
 if ($method === 'GET' && $path === '/api/media') $dashboard->mediaData();
 if ($method === 'GET' && preg_match('#^/api/media/(\d+)$#', $path, $matches)) $dashboard->mediaDetail((int)$matches[1]);
@@ -227,6 +245,8 @@ if ($method === 'POST' && $path === '/system/captcha') $dashboard->saveCaptcha()
 if ($method === 'GET' && $path === '/system/languages') $dashboard->languages();
 if ($method === 'POST' && $path === '/system/languages') $dashboard->saveLanguage();
 if ($method === 'GET' && $path === '/ai') $dashboard->ai();
+if ($method === 'POST' && $path === '/ai/providers') $dashboard->saveAiProvider();
+if ($method === 'POST' && preg_match('#^/ai/providers/(\d+)/verify$#',$path,$matches)) $dashboard->verifyAiProvider((int)$matches[1]);
 if ($method === 'GET' && $path === '/conversations') $dashboard->conversations();
 if ($method === 'GET' && $path === '/conversations/configuration') $dashboard->liveChatConfiguration();
 if ($method === 'POST' && $path === '/conversations/configuration') $dashboard->saveLiveChatConfiguration();

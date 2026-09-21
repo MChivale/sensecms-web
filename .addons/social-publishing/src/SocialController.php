@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SenseCMS\Social;
 
 use App\Core\ExtensionContext;
+use App\Core\MediaLibrary;
 use RuntimeException;
 
 final class SocialController
@@ -27,7 +28,7 @@ final class SocialController
             'socialCanManage'=>$this->context->access->allows('social.settings.manage'),
             'csrf'=>$this->context->auth->csrf(),
             'extensionActive'=>'/social-publishing',
-            'extensionStyles'=>['/extension-assets/addon/social-publishing/social.css?v=0.2.2'],
+            'extensionStyles'=>['/extension-assets/addon/social-publishing/social.css?v=0.5.2'],
         ]);
     }
 
@@ -41,6 +42,18 @@ final class SocialController
             $this->context->access->assert('content.posts.edit',(int)$facility);
         }
         $this->json(true,'Social publishing destinations loaded.',$this->repository->editorState($postId));
+    }
+
+    public function media(): never
+    {
+        $this->context->access->assert('social.publish');
+        $postId=max(0,(int)($_GET['post_id']??0));$facilityId=max(0,(int)($_GET['facility_id']??0));
+        if($postId){$statement=$this->context->db->prepare('SELECT facility_id FROM posts WHERE id=?');$statement->execute([$postId]);$facilityId=(int)($statement->fetchColumn()?:0);if(!$facilityId)$this->json(false,'The post was not found.',null,404);}
+        if($facilityId)$this->context->access->assert('content.posts.edit',$facilityId);
+        $scope=$facilityId?[$facilityId]:$this->context->access->facilityIds();
+        $filters=['q'=>mb_substr(trim((string)($_GET['q']??'')),0,120),'kind'=>'video','status'=>'active'];
+        $library=new MediaLibrary($this->context->db,$this->context->root.'/public');$data=$library->listing($filters,$scope,max(1,(int)($_GET['page']??1)),60);
+        $this->json(true,'Publishing videos loaded.',$data);
     }
 
     public function deliveries(): never

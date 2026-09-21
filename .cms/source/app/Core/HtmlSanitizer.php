@@ -6,8 +6,8 @@ namespace App\Core;
 
 final class HtmlSanitizer
 {
-    private const ALLOWED = ['a','abbr','article','aside','b','blockquote','br','caption','cite','code','dd','details','div','dl','dt','em','figcaption','figure','h2','h3','h4','h5','h6','hr','i','img','li','mark','ol','p','pre','section','small','span','strong','sub','summary','sup','table','tbody','td','tfoot','th','thead','tr','u','ul'];
-    private const ATTRIBUTES = ['alt','aria-label','class','colspan','height','href','loading','rel','role','rowspan','src','target','title','width'];
+    private const ALLOWED = ['a','abbr','article','aside','audio','b','blockquote','br','caption','cite','code','dd','details','div','dl','dt','em','figcaption','figure','h2','h3','h4','h5','h6','hr','i','img','li','mark','ol','p','pre','section','small','source','span','strong','sub','summary','sup','table','tbody','td','tfoot','th','thead','tr','u','ul','video'];
+    private const ATTRIBUTES = ['alt','aria-label','class','colspan','controls','height','href','loading','playsinline','poster','preload','rel','role','rowspan','src','target','title','type','width'];
 
     public static function sanitize(string $html): string
     {
@@ -39,10 +39,11 @@ final class HtmlSanitizer
             foreach (iterator_to_array($node->attributes) as $attribute) {
                 $name = strtolower($attribute->name);
                 if (!in_array($name, self::ATTRIBUTES, true) && !str_starts_with($name, 'aria-')) { $node->removeAttributeNode($attribute); continue; }
-                if (in_array($name, ['href','src'], true) && !self::safeUrl($attribute->value, $tag === 'a')) $node->removeAttribute($name);
+                if (in_array($name, ['href','src','poster'], true) && !self::safeUrl($attribute->value, $tag === 'a'&&$name==='href')) $node->removeAttribute($name);
             }
             if ($tag === 'a' && $node->getAttribute('target') === '_blank') $node->setAttribute('rel', 'noopener noreferrer');
             if ($tag === 'img' && !$node->hasAttribute('loading')) $node->setAttribute('loading', 'lazy');
+            if (in_array($tag,['audio','video'],true)) {$node->setAttribute('controls','controls');$node->setAttribute('preload','metadata');$node->removeAttribute('autoplay');}
             self::cleanChildren($node);
         }
     }
