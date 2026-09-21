@@ -795,6 +795,14 @@ final class DashboardController extends Controller
     {
         $this->guard();$this->access->assert('ai.manage');if(!$this->auth->verifyCsrf($_POST['csrf']??null))$this->result(false,'Your session token is invalid. Refresh and try again.',null,419);if(!$this->aiKnowledge)$this->result(false,'The Core Knowledge Base service is unavailable.',null,503);try{$this->aiKnowledge->trainingAction($type,$id,$action,$this->auth->id()??0);$this->result(true,'Training workspace updated.','/ai/knowledge?tab=training');}catch(\RuntimeException$error){$this->result(false,$error->getMessage(),null,422);}
     }
+    public function prepareKnowledgeTraining(int$id):never
+    {
+        $this->guard();$this->access->assert('ai.manage');if(!$this->auth->verifyCsrf($_POST['csrf']??null))$this->result(false,'Your session token is invalid. Refresh and try again.',null,419);if(!$this->aiKnowledge)$this->result(false,'The Core Knowledge Base service is unavailable.',null,503);try{$package=$this->aiKnowledge->prepareTrainingPackage($id,$this->auth->id()??0);$this->result(true,'Local training package prepared. No provider API request was made.','/ai/knowledge?tab=training',200,$package);}catch(\RuntimeException$error){$this->result(false,$error->getMessage(),null,422);}catch(\Throwable$error){error_log('Training package preparation failed: '.$error->getMessage());$this->result(false,'The local training package could not be prepared.',null,503);}
+    }
+    public function downloadKnowledgeTraining(int$id):never
+    {
+        $this->guard();$this->access->assert('ai.manage');if(!$this->aiKnowledge){http_response_code(503);exit;}$package=$this->aiKnowledge->trainingPackage($id);if(!$package){http_response_code(404);header('Content-Type: text/plain; charset=utf-8');exit('The prepared training package was not found.');}$path=(string)$package['absolute_path'];$filename='sensecms-training-dataset-'.(int)$package['dataset_id'].'-'.substr((string)$package['dataset_checksum'],0,12).'.jsonl';header('Content-Type: application/x-ndjson; charset=utf-8');header('Content-Disposition: attachment; filename="'.$filename.'"');header('Content-Length: '.filesize($path));header('Cache-Control: private, no-store');header('X-Content-Type-Options: nosniff');readfile($path);exit;
+    }
     public function conversations(): never
     {
         $this->guard();

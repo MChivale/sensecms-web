@@ -11,6 +11,9 @@ $assert(str_contains($migration,'ai_knowledge_enabled TINYINT(1) NOT NULL DEFAUL
 $assert(str_contains($migration,'ai_training_datasets')&&str_contains($migration,'ai_training_examples')&&str_contains($migration,'ai_training_jobs'),'training data is versioned separately from RAG sources');
 $assert(str_contains($migration,'ai_evaluation_cases'),'evaluation cases are represented in Core');
 $assert(str_contains($migration,'storage_path')&&str_contains($migration,'checksum')&&str_contains($migration,'content_checksum')&&str_contains($migration,'index_status'),'knowledge documents retain private storage and index integrity metadata');
+$automation=$read('.cms/source/database/workspace/041_ai_knowledge_automation.sql');
+$assert(str_contains($automation,'ai_knowledge_sync_queue')&&str_contains($automation,'UNIQUE KEY ai_knowledge_sync_source'),'page and post synchronization is deduplicated in a persistent Core queue');
+$assert(str_contains($automation,'training_file_path')&&str_contains($automation,'estimated_tokens')&&str_contains($automation,'dataset_checksum'),'prepared training packages retain local review metadata');
 
 $service=$read('.cms/source/app/Core/AiKnowledgeBase.php');
 $assert(str_contains($service,"storage/ai-knowledge")&&!str_contains($service,"/public/ai-knowledge"),'uploaded originals stay outside the public web root');
@@ -23,6 +26,9 @@ $assert(str_contains($service,"source_type IN ('page','post')")&&str_contains($s
 $assert(str_contains($service,'DELETE FROM ai_knowledge_chunks')&&str_contains($service,"index_status=\"ready\""),'reindexing replaces stale chunks atomically');
 $assert(str_contains($service,'Raw documents')===false,'Core service does not claim that raw documents are training examples');
 $assert(str_contains($service,'A ready dataset needs at least 10 examples')&&str_contains($service,"['draft','ready']"),'training datasets require reviewed examples and reject edits to locked states');
+$assert(str_contains($service,"GET_LOCK('sensecms.ai.knowledge.sync',0)")&&str_contains($service,'processQueue'),'automatic indexing is serialized and retryable');
+$assert(str_contains($service,"storage/ai-training")&&str_contains($service,'prepareTrainingPackage')&&str_contains($service,'JSONL')===false,'training packages are prepared in private local storage');
+$assert(!str_contains($service,'fine_tuning.jobs.create')&&!str_contains($service,'/v1/files'),'local training preparation cannot submit or upload to a provider');
 
 $repository=$read('.cms/source/app/Core/AiRepository.php');
 $assert(str_contains($repository,"d.status='published'")&&str_contains($repository,"d.index_status='ready'"),'visitor retrieval only reads approved ready sources');
@@ -31,6 +37,7 @@ $assert(str_contains($repository,'relevance DESC')&&str_contains($repository,'[S
 $workspace=$read('.cms/source/app/workspace.php');
 $assert(str_contains($workspace,"'/ai/knowledge'")&&str_contains($workspace,'saveKnowledgeDocument')&&str_contains($workspace,'rebuildKnowledgeBase'),'Knowledge Base routes are registered in Core');
 $assert(str_contains($workspace,"'/ai/knowledge/training/datasets'")&&str_contains($workspace,'knowledgeTrainingAction'),'training workspace routes are registered in Core');
+$assert(str_contains($workspace,'page.builder.updated')&&str_contains($workspace,"\$events->listen('post.updated'")&&str_contains($workspace,'prepareKnowledgeTraining'),'content events and local training preparation are wired in Core');
 $access=$read('.cms/source/app/Core/AccessControl.php');
 $assert(str_contains($access,"str_starts_with(\$path,'/ai/knowledge')")&&str_contains($access,"return'ai.manage'"),'Knowledge Base routes require AI management permission');
 
@@ -39,13 +46,19 @@ $assert(str_contains($controller,'function knowledgeBase')&&str_contains($contro
 $assert(str_contains($controller,"'ai_knowledge_enabled'=>isset(\$_POST['ai_knowledge_enabled'])"),'post inclusion is persisted from an explicit editor control');
 $view=$read('.cms/source/app/Views/console-ai-knowledge.php');
 $assert(str_contains($view,'Knowledge Base')&&str_contains($view,'RAG index')&&str_contains($view,'Training & evals'),'Knowledge Base exposes sources, RAG and training readiness');
-$assert(str_contains($view,'No API request or charge has been made.')&&str_contains($view,'Start fine-tuning')&&str_contains($view,'disabled'),'paid fine-tuning remains explicitly disabled');
+$assert(str_contains($view,'No provider API request or charge is made')&&str_contains($view,'Start paid fine-tuning')&&str_contains($view,'disabled'),'paid fine-tuning remains explicitly disabled');
 $assert(str_contains($view,'Curated examples')&&str_contains($view,'Evaluation cases')&&str_contains($view,'/ai/knowledge/training/examples'),'training data can be curated and evaluated without starting a paid job');
+$assert(str_contains($view,'Prepared packages')&&str_contains($view,'/prepare')&&str_contains($view,'/download'),'reviewed datasets can be prepared and downloaded locally');
 $assert(str_contains($view,'TXT, PDF, RTF, DOC or DOCX'),'upload UI documents every supported source format');
 $post=$read('.cms/source/app/Views/console-content-post-form.php');
 $assert(str_contains($post,'Include in Knowledge Base')&&str_contains($post,"!array_key_exists('ai_knowledge_enabled'"),'new posts are included by default and editors can opt out');
 $js=$read('.cms/source/public/theme/sensecms-ai-knowledge.js');
 $assert(str_contains($js,"'/ai/knowledge/sources'")&&str_contains($js,"'/ai/knowledge/rebuild'"),'source controls and rebuild use JSON requests');
 $assert(str_contains($js,'Delete knowledge source')&&str_contains($js,'SenseCMSUI?.modal'),'permanent deletion uses the existing confirmation modal');
+$publisher=$read('scripts/publish-ai-product-pages.php');
+$assert(str_contains($publisher,"'/platform/ai'")&&str_contains($publisher,'CollectionPage')&&str_contains($publisher,'AI Content Management, RAG & Editorial Assistance'),'the product website receives a dedicated indexable AI page');
+$assert(str_contains($publisher,'Public visitor generation is not enabled')&&str_contains($publisher,'Paid provider fine-tuning remains disabled'),'public AI claims remain aligned with implemented availability');
+$worker=$read('.cms/source/scripts/ai-knowledge-sync.php');$cron=$read('deploy/cron/sensecms-ai-knowledge');
+$assert(str_contains($worker,'processQueue(50)')&&str_contains($cron,'--reconcile'),'the Core queue runs continuously with a nightly consistency reconciliation');
 
 echo "AI Knowledge Base checks passed: {$checks}.\n";

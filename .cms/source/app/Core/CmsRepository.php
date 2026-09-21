@@ -329,7 +329,7 @@ final class CmsRepository
 
     public function setPostStatus(int $id, string $status, int $userId): bool
     {
-        if(!in_array($status,['draft','archived'],true))return false;$statement=$this->db->prepare("UPDATE posts SET status=?,workflow_state='draft',assigned_user_id=NULL,review_requested_at=NULL,reviewed_at=NULL,reviewed_by=NULL,published_at=NULL,updated_at=NOW() WHERE id=?");$statement->execute([$status,$id]);if(!$statement->rowCount())return false;$this->audit($userId,$status==='archived'?'post.archived':'post.restored','post',$id,[]);return true;
+        if(!in_array($status,['draft','archived'],true))return false;$statement=$this->db->prepare("UPDATE posts SET status=?,workflow_state='draft',assigned_user_id=NULL,review_requested_at=NULL,reviewed_at=NULL,reviewed_by=NULL,published_at=NULL,updated_at=NOW() WHERE id=?");$statement->execute([$status,$id]);if(!$statement->rowCount())return false;$this->audit($userId,$status==='archived'?'post.archived':'post.restored','post',$id,[]);$this->events->dispatch('post.updated',['post_id'=>$id]);return true;
     }
 
     public function duplicatePost(int $id, int $userId): int
@@ -567,7 +567,7 @@ final class CmsRepository
 
     public function setPageStatus(int $id, string $status, int $userId): bool
     {
-        if(!in_array($status,['draft','archived'],true))return false;if($status==='archived'){$this->assertNotHomepage($id);$children=$this->db->prepare("SELECT COUNT(*) FROM pages WHERE parent_id=? AND status<>'archived'");$children->execute([$id]);if((int)$children->fetchColumn()>0)throw new \RuntimeException('Reassign or archive this page’s child pages first.');}$statement=$this->db->prepare("UPDATE pages SET status=?,workflow_state='draft',assigned_user_id=NULL,review_requested_at=NULL,reviewed_at=NULL,reviewed_by=NULL,published_at=NULL,updated_at=NOW() WHERE id=?");$statement->execute([$status,$id]);if(!$statement->rowCount())return false;$this->audit($userId,$status==='archived'?'page.archived':'page.restored','page',$id,[]);return true;
+        if(!in_array($status,['draft','archived'],true))return false;if($status==='archived'){$this->assertNotHomepage($id);$children=$this->db->prepare("SELECT COUNT(*) FROM pages WHERE parent_id=? AND status<>'archived'");$children->execute([$id]);if((int)$children->fetchColumn()>0)throw new \RuntimeException('Reassign or archive this page’s child pages first.');}$statement=$this->db->prepare("UPDATE pages SET status=?,workflow_state='draft',assigned_user_id=NULL,review_requested_at=NULL,reviewed_at=NULL,reviewed_by=NULL,published_at=NULL,updated_at=NOW() WHERE id=?");$statement->execute([$status,$id]);if(!$statement->rowCount())return false;$this->audit($userId,$status==='archived'?'page.archived':'page.restored','page',$id,[]);$this->events->dispatch('page.updated',['page_id'=>$id]);return true;
     }
 
     public function deletePagePermanently(int $id, int $userId): bool
@@ -577,7 +577,7 @@ final class CmsRepository
             $statement=$this->db->prepare('SELECT status FROM pages WHERE id=? FOR UPDATE');$statement->execute([$id]);$status=$statement->fetchColumn();
             if($status===false){$this->db->rollBack();return false;}
             if($status!=='archived')throw new \RuntimeException('Only pages already in the trash can be permanently deleted.');
-            $this->assertNotHomepage($id);$this->deletePageRows($id);$this->audit($userId,'page.deleted','page',$id,['permanent'=>true]);$this->db->commit();return true;
+            $this->assertNotHomepage($id);$this->deletePageRows($id);$this->audit($userId,'page.deleted','page',$id,['permanent'=>true]);$this->db->commit();$this->events->dispatch('page.deleted',['page_id'=>$id]);return true;
         }catch(\Throwable$error){if($this->db->inTransaction())$this->db->rollBack();throw$error;}
     }
 
@@ -587,7 +587,7 @@ final class CmsRepository
         try{
             $where=["status='archived'"];$parameters=[];$this->facilityScope($where,$parameters,'facility_id',$facilityIds);$statement=$this->db->prepare('SELECT id FROM pages WHERE '.implode(' AND ',$where).' ORDER BY id FOR UPDATE');$statement->execute($parameters);$ids=array_map('intval',$statement->fetchAll(PDO::FETCH_COLUMN));
             foreach($ids as$id){$this->assertNotHomepage($id);$this->deletePageRows($id);$this->audit($userId,'page.deleted','page',$id,['permanent'=>true,'trash_empty'=>true]);}
-            $this->audit($userId,'page.trash_emptied','page',0,['count'=>count($ids)]);$this->db->commit();return count($ids);
+            $this->audit($userId,'page.trash_emptied','page',0,['count'=>count($ids)]);$this->db->commit();foreach($ids as$id)$this->events->dispatch('page.deleted',['page_id'=>$id]);return count($ids);
         }catch(\Throwable$error){if($this->db->inTransaction())$this->db->rollBack();throw$error;}
     }
 

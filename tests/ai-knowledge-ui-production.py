@@ -20,7 +20,7 @@ try:
         'sources':(b'data-ai-knowledge',b'Knowledge sources',b'TXT, PDF, RTF, DOC or DOCX',b'/theme/sensecms-ai-knowledge.js?v=20260921-1'),
         'content':(b'Website content sources',b'Save changes and rebuild',b'Pages and posts included in RAG'),
         'index':(b'Core RAG index',b'Rebuild complete index',b'RETRIEVAL PIPELINE'),
-        'training':(b'Training workspace',b'Curated examples',b'Evaluation cases',b'No API request or charge has been made.'),
+        'training':(b'Training workspace',b'Curated examples',b'Evaluation cases',b'No provider API request or charge is made',b'Start paid fine-tuning'),
     }.items():
         status,page,_=request('/ai/knowledge?tab='+tab);assert status==200,(tab,status)
         for marker in markers:assert marker in page,(tab,marker)
