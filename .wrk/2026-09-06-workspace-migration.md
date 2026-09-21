@@ -5172,3 +5172,41 @@ needed an explicit reload after adding the route. Their recoveries remain at
 `/root/sensecms-backups/20260921T165012Z-ai-knowledge`; the additive migration state was
 validated and intentionally retained. A preceding incomplete-package preflight stopped before
 any production backup or mutation.
+
+### 2026-09-22 — Automatic RAG synchronization, local training packages and AI product SEO
+
+Core now queues page, Page Builder and post changes for asynchronous Knowledge Base
+synchronization. The queue deduplicates each source, honours future publication dates,
+serializes workers through a database lock and retries bounded failures without delaying or
+rolling back an editorial save. A minute worker processes changes and a nightly local rebuild
+provides eventual reconciliation. Draft, private, future and excluded content remains outside
+retrieval. No generation provider is called by either worker.
+
+The Training workspace can now prepare an approved ready dataset as a private checksum-locked
+JSONL package. It records the provider and base model, example count and approximate tokens,
+and provides a permission-protected download. Preparation is local only. Provider upload and
+paid fine-tuning remain disabled; cost fields stay empty until a later workflow can retrieve or
+configure current provider pricing and request separate confirmation.
+
+The managed product website now publishes `/platform/ai` and promotes implemented AI on the
+homepage and Platform page. Its copy distinguishes review-first Page Builder and Posts AI,
+provider-neutral configuration, budget guardrails, controlled RAG and local training-data
+preparation from the not-yet-enabled public visitor assistant and paid fine-tuning. Dedicated
+SEO includes an HTTPS canonical, indexable robots policy, CollectionPage JSON-LD, Open Graph
+and Twitter copy, and one canonical sitemap entry.
+
+Migration `041_ai_knowledge_automation.sql` is additive. Local validation passed PHP/Python
+syntax, 38 Knowledge Base checks, 23 Page Builder AI checks, 16 Posts AI checks, 92 security
+checks, 16 maintenance checks, 11 project-boundary checks, 282 Builder checks, deterministic
+installer-package checks, web-installer checks and `git diff --check`. Production deployment
+used the reviewed hashes, a private database dump and rollback journal. Authenticated Knowledge
+Base acceptance, public HTTP/SEO/sitemap checks and service-log review passed. Nginx, PHP-FPM,
+MariaDB and cron are active. The final production index contains 49 ready sources and 101
+chunks, with zero failed or queued sources. Provider configuration and all five historical AI
+usage records were preserved; no training job or billable provider request was created.
+
+The final recovery backup is `/root/sensecms-backups/20260921T215825Z-ai-automation`. One
+preflight stopped before mutation because the staged test dependencies were incomplete. Two
+controlled deployment attempts retained the safe additive migration but restored Core files,
+cron and managed pages after detecting respectively an outdated managed-block assumption and
+an invalid relative canonical. Their recovery journals remain available for audit.
