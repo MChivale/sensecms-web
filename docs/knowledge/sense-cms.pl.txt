@@ -1,0 +1,93 @@
+SENSE CMS — OPIS SYSTEMU, WIEDZY I INTELIGENCJI
+
+Sense CMS to bezpieczna, uniwersalna platforma treści i komunikacji dla organizacji, które potrzebują jednego uporządkowanego środowiska dla stron internetowych, pracy redakcyjnej, mediów, rozmów z klientami, sztucznej inteligencji i połączonych usług cyfrowych. System opiera się na jasnej zasadzie architektonicznej: Core odpowiada za logikę biznesową, treść, uprawnienia, zasady działania i dane; motywy odpowiadają za prezentację wizualną; a dodatki wprowadzają niezależnie zarządzane funkcje bez osłabiania fundamentu systemu.
+
+TREŚĆ, PUBLIKACJA I PRACA REDAKCYJNA
+
+Sense CMS oferuje kompletny Workspace do tworzenia i zarządzania stronami, postami, kategoriami, nawigacją, mediami, widocznością w wyszukiwarkach oraz obiegiem redakcyjnym. Zespoły mogą budować uporządkowane strony publiczne w Page Builderze, tworzyć rozbudowane posty w nowoczesnym edytorze, dodawać obrazy główne, audio i wideo, zarządzać streszczeniami oraz metadanymi i publikować treść dopiero po jej sprawdzeniu.
+
+Każdy element treści pozostaje pod kontrolą redakcyjną. Tworzenie szkiców, sugestie, tłumaczenia i wsparcie AI pomagają redaktorowi, lecz nie zastępują jego decyzji. Publikacja może być natychmiastowa, zaplanowana, prywatna, ograniczona albo zarchiwizowana zgodnie z procesem organizacji i uprawnieniami użytkowników. Stany recenzji, właścicielstwo, komentarze, odpowiedzialność i historia zmian sprawiają, że cykl redakcyjny jest przejrzysty.
+
+Page Builder wykorzystuje uporządkowane, wielokrotnego użycia sekcje zamiast zamykać treść w jednym sztywnym szablonie. Zespoły mogą układać sekcje, definiować okna widoczności, utrzymywać niezależną treść dla języków, używać sekcji współdzielonych i zachować spójność całej strony. Treść Core pozostaje niezależna od aktywnego motywu publicznego, dlatego organizacja może zmienić prezentację bez przebudowy wiedzy, struktury redakcyjnej ani danych operacyjnych.
+
+Posty i strony zawierają praktyczne ustawienia SEO: tytuł SEO, opis, adres kanoniczny, politykę robots, słowa kluczowe, metadane Open Graph, metadane Twitter oraz dane strukturalne tam, gdzie są właściwe. System świadomie łączy treść redakcyjną, publiczną widoczność i udostępnianie w social media. Obraz główny może być jednocześnie obrazem strony, podglądem społecznościowym i materiałem publikacyjnym, pozostając pod kontrolą Biblioteki Mediów.
+
+MEDIA I ZASOBY CYFROWE
+
+Sense CMS zawiera zarządzaną Bibliotekę Mediów dla obrazów, audio, wideo i dokumentów. Redaktorzy mogą wybierać istniejące media, dodawać je zatwierdzonymi procesami oraz używać bezpiecznych adresów bezpośrednich, gdy jest to uzasadnione. Media można wykorzystywać ponownie na stronach, w postach i w miejscach publikacji. Platforma oddziela prezentację publiczną od chronionego magazynu operacyjnego i wspiera bezpieczne metadane, dostęp oraz cykl życia zasobów.
+
+Audio i wideo są obsługiwane jako zasoby redakcyjne pierwszej klasy. Post publiczny może udostępnić czytelne działanie „Odsłuchaj nagranie” albo „Obejrzyj film”, zachowując spójny odtwarzacz. Media redakcyjne i zasoby dla social mediów pozostają połączone: obraz główny może pełnić rolę grafiki społecznościowej lub okładki, natomiast ustawienia konkretnej platformy są zawsze wybierane jawnie.
+
+WIELOJĘZYCZNOŚĆ I LOKALIZACJA
+
+Sense CMS traktuje treść wielojęzyczną jako odpowiedzialność redakcyjną, a nie dodatek na końcu procesu. Strony, posty, nawigacja i uporządkowane sekcje mogą utrzymywać treść oraz metadane specyficzne dla języka. Redaktorzy mogą niezależnie sprawdzać słownictwo, terminologię i kontekst kulturowy każdego języka. Pozwala to prowadzić wspólną obecność globalną i jednocześnie komunikować się naturalnie z lokalnymi odbiorcami.
+
+Ta sama zasada dotyczy wiedzy AI. Zatwierdzone źródła angielskie, polskie i inne językowe mogą współistnieć w Bazie Wiedzy. Wyszukiwanie może preferować język odwiedzającego, zachowując powiązanie ze źródłem i zasady redakcyjne. Zespół może utrzymywać jedno globalne wyjaśnienie polityki, obok lokalnych treści językowych i materiałów konkretnych placówek, bez łączenia niepowiązanych informacji w jeden niekontrolowany dokument.
+
+BAZA WIEDZY, RAG I ZARZĄDZANE AI
+
+Sense CMS zawiera kontrolowaną Bazę Wiedzy dla Retrieval-Augmented Generation, czyli RAG. RAG pozwala asystentowi AI odpowiadać na podstawie zatwierdzonej, aktualnej wiedzy organizacji, zamiast polegać wyłącznie na ogólnej wiedzy modelu językowego. Baza Wiedzy może być budowana z wybranych stron i postów publicznych, ręcznie pisanych materiałów oraz zatwierdzonych prywatnych dokumentów TXT, PDF, RTF, DOC i DOCX.
+
+Wiedza jest zarządzana na poziomie źródła. Każde źródło można utworzyć, poprawić, zatwierdzić, wykluczyć, wstrzymać, ponownie zindeksować, zarchiwizować lub usunąć. Szkice, treści prywatne, zaplanowane na przyszłość oraz jawnie wykluczone treści publiczne nie trafiają do wyszukiwania. Materiał źródłowy jest normalizowany, dzielony na ograniczone fragmenty i indeksowany lokalnie, aby odpowiedzi mogły opierać się na właściwych dowodach. Asystent może zwracać zweryfikowane linki do źródeł, gdy odpowiedź opiera się na wiedzy strony.
+
+Baza Wiedzy wspiera warstwowy model informacji. Organizacja może utrzymywać ogólną bazę wiedzy Sense CMS lub wiedzę wspólną dla całej organizacji, bazę dla konkretnej placówki, zespołu, marki, działu, linii usług lub kraju, a także kontrolowany dostęp do wybranych źródeł współdzielonych. Zasady wyszukiwania mogą określać, że placówka korzysta wyłącznie z własnej zatwierdzonej wiedzy, z bazy wspólnej razem z własnym materiałem albo z wybranej współdzielonej wiedzy innych zatwierdzonych placówek. Uprawnienia, właścicielstwo i stan publikacji określają, co może zostać wyszukane.
+
+Taka struktura jest szczególnie cenna dla organizacji wieloplacówkowych. Globalną politykę, opis produktu lub zasadę wsparcia można utrzymywać raz. Każda placówka może następnie dodać lokalne godziny pracy, usługi, kontakty, procedury, warianty językowe i wytyczne regionalne. Asystent otrzymuje wyłącznie wiedzę dozwoloną w bieżącym kontekście, co pomaga uniknąć przypadkowego ujawnienia danych między placówkami i jednocześnie udostępnia wartościową wiedzę wspólną tam, gdzie jest do tego upoważnienie.
+
+DOSTAWCY AI, MODELE I MACHINE LEARNING
+
+Sense CMS nie jest związany z jednym dostawcą AI. Administratorzy mogą konfigurować obsługiwanych dostawców, w tym OpenAI Responses API, API zgodne z OpenAI, Anthropic Messages API oraz Google Gemini API. Daje to organizacji możliwość wyboru dostawcy chmurowego, punktu końcowego enterprise, zgodnej prywatnej bramy modelowej lub zatwierdzonego środowiska modeli zarządzanych samodzielnie — zgodnie z wymaganiami bezpieczeństwa, jakości, kosztów i zgodności.
+
+Każdy dostawca może mieć własne zaszyfrowane dane dostępowe, wybór modelu, priorytet oraz przeznaczenie. Dostawcy mogą obsługiwać pomoc redakcyjną, rozmowy odwiedzających, weryfikację lub inne kontrolowane funkcje. Administratorzy mogą ustawiać limity żądań, tokenów, budżety dzienne i miesięczne, metadane cenowe oraz progi ostrzegawcze. Gdy jeden dostawca jest niedostępny, polityka może wybrać inny zatwierdzony model zamiast tworzyć zależność całego systemu od jednego dostawcy.
+
+Machine Learning w Sense CMS korzysta z tego samego podejścia review-first. Organizacje mogą tworzyć przykłady treningowe, definiować idealne odpowiedzi, ustawiać język i instrukcje zachowania, budować odrębne przypadki ewaluacyjne oraz przygotowywać sprawdzalne pakiety JSONL do przeglądu. Dane treningowe są odrębne od wiedzy faktograficznej RAG: trening kształtuje zachowanie, ton i wzorce odpowiedzi, natomiast RAG dostarcza aktualne zatwierdzone fakty. Takie rozdzielenie pozwala poprawiać jakość odpowiedzi bez przekształcania prywatnych lub zmiennych dokumentów w niekontrolowane dane treningowe modelu.
+
+Fine-tuning i optymalizacja modeli są prowadzone jako odpowiedzialne działania operacyjne. Przygotowane pakiety danych można sprawdzić lokalnie przed wysłaniem do dostawcy. Kontrola kosztów, wybór dostawcy, modelu bazowego, ewaluacje i zgoda człowieka tworzą zdyscyplinowaną ścieżkę dla organizacji korzystających z własnych modeli, prywatnych wdrożeń lub zatwierdzonych zewnętrznych usług AI. AI jest więc rozszerzalną funkcją platformy, a nie nieprzejrzystą czarną skrzynką.
+
+AI DLA REDAKTORÓW I ODWIEDZAJĄCYCH
+
+Redaktorzy mogą korzystać z AI w Page Builderze i Postach, aby rozwijać pomysły, zwiększać klarowność, porządkować szkice, dostosowywać ton, tworzyć warianty i wspierać pracę wielojęzyczną. Sugestie pozostają edytowalne. To redaktor decyduje, co jest prawdziwe, właściwe i gotowe do publikacji. AI nigdy nie omija obiegu publikacji.
+
+Asystent Live Chat wykorzystuje zatwierdzoną wiedzę RAG i działa obok operatorów ludzkich. Organizacja może wybrać, czy jako pierwszy odpowiada zespół ludzi, czy AI, skonfigurować kontrolowany czas przejęcia oraz przekazywać rozmowę między operatorem, zespołem i asystentem AI. Gdy AI ma wystarczający, zweryfikowany kontekst, może odpowiedzieć naturalnie w języku odwiedzającego i podać linki do źródeł. Gdy kontekst jest niewystarczający, budżet został wykorzystany albo potrzebna jest odpowiedź człowieka, rozmowa może zostać przekazana ludziom lub poprosić o adres e-mail do kontaktu zwrotnego zamiast wymyślać odpowiedź.
+
+Wsparcie człowieka pozostaje kluczowe. Operatorzy mogą przeglądać przydzielone rozmowy, współpracować w zespołach, przekazywać pracę, przejmować odpowiedzialność, monitorować kontekst i kontynuować rozmowę z pełną rozliczalnością. Natychmiastowe powiadomienia w przeglądarce, Telegramie i innych dozwolonych kanałach pomagają zespołom szybko reagować. Dostarczanie powiadomień respektuje rolę użytkownika, przynależność do zespołu, dostęp do placówki i preferencje połączonego odbiorcy.
+
+PLACÓWKI, ZESPOŁY, UŻYTKOWNICY I KONTROLA DOSTĘPU
+
+Sense CMS wspiera organizacje posiadające więcej niż jedną placówkę, biuro, kampus, lokalizację, dział, markę lub jednostkę operacyjną. Placówki zapewniają praktyczny zakres dla treści, ludzi, rekordów, kalendarzy, ustawień usług i wiedzy. Zespoły i role określają, kto może przeglądać, edytować, zatwierdzać, publikować, zarządzać dodatkami, konfigurować AI, uzyskiwać dostęp do rozmów lub administrować systemem.
+
+Kontrola dostępu oparta na rolach chroni zasadę minimalnych uprawnień. Użytkownicy otrzymują tylko uprawnienia konieczne do wykonywania ich obowiązków. Członkostwo w zespole i placówce może dodatkowo ograniczać dostęp. Wrażliwe działania, takie jak zarządzanie użytkownikami, ustawienia systemu, licencje, konfiguracja dostawców i zarządzanie pakietami, mogą pozostać ograniczone do upoważnionych administratorów. Ślady audytowe pomagają zrozumieć istotne zmiany bez niepotrzebnego ujawniania danych dostępowych i treści prywatnych.
+
+SOCIAL PUBLISHING I DYSTRYBUCJA CYFROWA
+
+Social Publishing pozwala redaktorowi przygotować post raz i jawnie wybrać miejsca publikacji. Każda sieć społecznościowa jest realizowana jako osobny dodatek, aby uprawnienia zależne od platformy, licencje, połączenia kont, wymagania weryfikacyjne i limity operacyjne pozostały czytelne. Połączenia mogą być zarządzane niezależnie, a redaktor może dostosować komunikat dla wybranego miejsca przed wysłaniem lub zaplanowaniem publikacji.
+
+Ekosystem Social Publishing obejmuje połączone miejsca takie jak Facebook Pages, X, LinkedIn, Bluesky, Mastodon, Telegram Channels, Pinterest, TikTok i YouTube. Każdy dostawca działa według własnych zasad API, uprawnień, formatów publikacji, warunków konta i limitów. Sense CMS szyfruje dane połączeń, stosuje kontrolowane callbacki, nie udostępnia redaktorom sekretów dostawców i zapisuje stan dostawy, aby ponowienie nie utworzyło duplikatu publikacji.
+
+Publikacja społecznościowa nigdy nie jest niewidocznym skutkiem zapisu postu. Redaktor sprawdza post, wybiera miejsca publikacji, potwierdza opcje specyficzne dla dostawcy i kontroluje historię dostaw. Dzięki temu jedna pozycja redakcyjna może realizować spójną strategię treści, respektując różnice pomiędzy stroną Facebook, profilem LinkedIn, kontem Mastodon, kanałem Telegram, platformą krótkich form czy kanałem wideo.
+
+DODATKI, LICENCJE I CYKL ŻYCIA PRODUKTU
+
+Sense CMS wykorzystuje architekturę rozszerzeń dla motywów, pluginów, add-onów i aplikacji. Core pozostaje przenośny i skoncentrowany. Motywy kontrolują identyfikację wizualną. Pluginy i add-ony dostarczają opcjonalne funkcje, takie jak publikacja społecznościowa, kalendarze, analityka, powiadomienia i integracje. Każdy płatny dodatek może mieć własną tożsamość produktu, klucz licencyjny, domenę instalacji, zakres dat ważności i kontrole uprawnień, niezależnie od licencji Core oraz pozostałych dodatków.
+
+Ten model pozwala organizacjom wdrażać funkcje w odpowiednim tempie. System może zacząć od zarządzania treścią Core, a następnie rozszerzać się o potrzebne usługi. Licencjonowanie i weryfikacja pakietów są oddzielone od danych redakcyjnych, dzięki czemu organizacja zachowuje kontrolę nad treścią i rekordami operacyjnymi. Podpisane pakiety, kontrole zgodności, ustawienia aktualizacji i procesy uwzględniające rollback chronią instalacje podczas zmian.
+
+BEZPIECZEŃSTWO, PRYWATNOŚĆ I KONTROLA OPERACYJNA
+
+Bezpieczeństwo jest wbudowaną cechą produktu. Dane dostępowe są szyfrowane i nie są ujawniane na stronach publicznych, w polach redaktora, repozytoriach kodu źródłowego ani w zwykłych logach operacyjnych. Prywatne dokumenty Bazy Wiedzy pozostają poza publicznym katalogiem web. Wrażliwe działania korzystają z uwierzytelnionych, autoryzowanych i chronionych CSRF procesów. Typy plików, ścieżki, callbacki zewnętrzne i odpowiedzi dostawców są walidowane przed akceptacją.
+
+Platforma traktuje AI i integracje zewnętrzne jako usługi kontrolowane. Źródła wiedzy są zatwierdzane świadomie. Dostawców konfigurują upoważnieni administratorzy. Limity użycia i budżetów mogą zapobiegać nieoczekiwanym kosztom. Operatorzy ludzcy mogą przejmować komunikację z klientem. Odwiedzający stronę nie otrzymują przez asystenta publicznego poufnych danych placówek, danych dostępowych, notatek wewnętrznych ani niezatwierdzonych treści.
+
+Sense CMS wspiera również prywatność w obsłudze odwiedzających. Live Chat przechowuje dane operacyjne w kontrolowanej instalacji organizacji, ogranicza ekspozycję stanu publicznego i może korzystać z lokalnego przybliżenia kraju dla upoważnionych operatorów bez przesyłania adresów IP odwiedzających do zewnętrznego API geolokalizacji. Usuwanie rozmów i retencja są realizowane kontrolowanymi procesami administracyjnymi.
+
+WYSZUKIWANIE, ANALITYKA, POWIADOMIENIA I OPERACJE
+
+Sense CMS zapewnia widoczność operacyjną w tym samym środowisku co treść. Administratorzy mogą zarządzać indeksowaniem wyszukiwania, cache, e-mailem, powiadomieniami, dodatkami, aktualizacjami, rolami, placówkami i historią aktywności. Integracje analityczne mogą być konfigurowane z zachowaniem zasad zgody. Kanały powiadomień mogą docierać do upoważnionych użytkowników przez Web Push, Telegram i inne połączone usługi, a uprawnienie do otrzymania alertu jest zawsze powiązane z rzeczywistym dostępem.
+
+Platforma wspiera niezawodne przetwarzanie w tle dla takich działań jak synchronizacja Bazy Wiedzy, treść zaplanowana i dostarczanie powiadomień. Zadania są projektowane jako idempotentne tam, gdzie jest to właściwe, ograniczane blokadami i ponowieniami oraz widoczne przez statusy i ślady audytowe. Dzięki temu system pozostaje niezawodny bez zmuszania redaktorów do ręcznego zarządzania kolejkami technicznymi.
+
+PODEJŚCIE SENSE CMS
+
+Sense CMS łączy swobodę redakcyjną z dyscypliną operacyjną. Udostępnia nowoczesny CMS, uporządkowany Page Builder, zarządzanie mediami, publikację wielojęzyczną, zarządzane AI, wiedzę RAG, Live Chat z udziałem człowieka, dystrybucję społecznościową, uprawnienia, placówki, dodatki i licencjonowanie w jednej spójnej platformie.
+
+Rezultatem nie jest wyłącznie edytor strony internetowej. Jest to kontrolowane środowisko cyfrowe, w którym ludzie, zespoły, placówki, wiedza i AI mogą współpracować. Organizacja zachowuje kontrolę nad swoją treścią, danymi, wybranymi dostawcami, decyzjami publikacyjnymi i sposobem wykorzystania inteligencji w rzeczywistej komunikacji z klientami.

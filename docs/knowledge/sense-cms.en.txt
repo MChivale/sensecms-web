@@ -1,0 +1,93 @@
+SENSE CMS — PRODUCT, KNOWLEDGE AND INTELLIGENCE OVERVIEW
+
+Sense CMS is a secure, general-purpose content and communication platform for organisations that need one governed environment for websites, editorial work, media, customer conversations, artificial intelligence and connected digital services. It is built around a clear architectural principle: Core owns business logic, content, permissions, governance and data; themes own visual presentation; and extensions add independently managed capabilities without weakening the foundation.
+
+CONTENT, PUBLISHING AND EDITORIAL WORK
+
+Sense CMS provides a complete Workspace for creating and managing pages, posts, categories, navigation, media, search visibility and editorial workflow. Teams can create structured public pages with Page Builder, write long-form posts with a modern rich-text editor, add featured images, audio and video, manage excerpts and metadata, and publish only after review.
+
+Every piece of content is designed to remain under editorial control. Drafting, suggestions, translations and AI assistance support the editor; they do not silently replace an editor’s decision. Publication can be immediate, scheduled, private, restricted or archived according to the organisation’s workflow and permissions. Revision-aware processes, review states, ownership, comments and accountability make the editorial lifecycle traceable.
+
+The Page Builder uses reusable, structured sections instead of forcing content into a fixed template. Teams can arrange sections, define visibility windows, preserve independent language content, reuse shared sections and keep presentation coherent across a site. Core content remains independent of the active public theme, so an organisation can change its presentation without rebuilding its knowledge, editorial structure or operational data.
+
+Posts and pages include practical search-engine controls: SEO title, description, canonical URL, robots policy, keywords, Open Graph metadata, Twitter metadata and structured data where appropriate. The system supports a deliberate relationship between editorial content, public discovery and social sharing. Featured media can be used as the primary page image, social preview and publishing asset while remaining manageable in the Media Library.
+
+MEDIA AND DIGITAL ASSETS
+
+Sense CMS includes a governed Media Library for images, audio, video and documents. Content editors can choose existing media, add media through approved workflows and use secure direct URLs when appropriate. Media is reusable across pages, posts and publishing destinations. The platform keeps public presentation separate from protected operational storage and supports safe metadata, access and lifecycle controls.
+
+Audio and video can be attached to editorial content as first-class assets. A public post can expose an appropriate “Listen to recording” or “Watch video” action while preserving a consistent embedded player experience. Editorial media and social-media assets stay connected: a featured image can act as a social image or cover image, while destination-specific publishing controls remain explicit.
+
+MULTILINGUAL CONTENT AND LOCALISATION
+
+Sense CMS supports multilingual content as an editorial responsibility, not as an afterthought. Pages, posts, navigation and structured sections can maintain language-specific content and metadata. Editors can review wording, terminology and cultural context independently for each language. This supports organisations that need a shared global presence while still communicating naturally with local audiences.
+
+The same principle applies to AI knowledge. English, Polish and other approved language sources can coexist in the Knowledge Base. Retrieval can prefer the visitor’s language while preserving source traceability and editorial governance. A team can maintain one global explanation of a policy, alongside local language and facility-specific material, without mixing unrelated content into one uncontrolled document.
+
+KNOWLEDGE BASE, RAG AND GOVERNED AI
+
+Sense CMS includes a controlled Knowledge Base for Retrieval-Augmented Generation, commonly called RAG. RAG allows an AI assistant to answer using approved, current organisational knowledge instead of relying only on the general knowledge of a language model. The Knowledge Base is built from selected public pages and posts, manually written knowledge, and approved private documents such as TXT, PDF, RTF, DOC and DOCX files.
+
+Knowledge is governed at source level. Each source can be created, corrected, approved, excluded, paused, reindexed, archived or deleted. Draft, private, future-dated and explicitly excluded public content is kept outside retrieval. Source material is normalised, split into bounded passages and indexed locally so that answers can be grounded in relevant evidence. The assistant can return verified source links when an answer is based on website knowledge.
+
+The Knowledge Base supports a layered information model. An organisation can maintain a general Sense CMS or organisation-wide knowledge base, a knowledge base for a particular facility, team, brand, department, service line or country, and controlled access to selected shared sources. Retrieval policies can be configured so that a facility uses only its own approved knowledge, uses the common knowledge base plus its own material, or uses selected shared knowledge from other approved facilities. Permissions, ownership and publication state determine what can be retrieved.
+
+This structure is valuable for multi-facility organisations. A global policy, product description or support rule can be maintained once. Each facility can then add local opening hours, services, contacts, procedures, language variants and region-specific guidance. The assistant receives only the knowledge permitted by the current context, helping avoid accidental cross-facility disclosure while keeping useful shared knowledge available where authorised.
+
+AI PROVIDERS, MODELS AND MACHINE LEARNING
+
+Sense CMS is not tied to one AI vendor. Administrators can configure supported AI providers, including OpenAI Responses API, OpenAI-compatible APIs, Anthropic Messages API and Google Gemini API. This gives an organisation the freedom to choose a hosted provider, an enterprise endpoint, a compatible private model gateway or an approved self-managed model environment according to its security, quality, cost and compliance requirements.
+
+Each provider can have its own encrypted credentials, model selection, priority and purpose. Providers can be assigned to editorial assistance, visitor conversations, verification or other controlled capabilities. Administrators can set request limits, token limits, daily and monthly budgets, pricing metadata and warning thresholds. If one provider is unavailable, policy can select another approved provider rather than forcing a system-wide dependency on a single model.
+
+Machine Learning in Sense CMS is governed by the same review-first approach. Organisations can curate training examples, define ideal responses, set language and behavioural instructions, build separate evaluation cases and prepare checksum-locked JSONL datasets for review. Training data is distinct from factual RAG knowledge: training shapes behaviour, tone and response patterns, while RAG supplies current approved facts. This separation makes it possible to improve response quality without turning private or changing documents into uncontrolled model training data.
+
+Fine-tuning and model optimisation are managed as accountable operational activities. Prepared data packages can be reviewed locally before any provider submission. Cost controls, provider selection, base-model selection, evaluations and human approval create a disciplined path for organisations that use their own models, private deployments or approved external AI services. AI is therefore an extensible capability of the platform, not an opaque black box.
+
+AI FOR EDITORS AND VISITORS
+
+Editors can use AI assistance in Page Builder and Posts to develop ideas, improve clarity, restructure drafts, adapt tone, create alternatives and support multilingual editorial work. Suggestions remain editable. The editor decides what is accurate, appropriate and publishable. AI never bypasses the publication workflow.
+
+The Live Chat assistant uses approved RAG knowledge and can work alongside human operators. An organisation can choose whether a human team or AI responds first, configure a controlled takeover period and route a conversation between an operator, a team and the AI assistant. When AI has sufficient verified context, it can answer naturally in the visitor’s language and provide supporting source links. When context is insufficient, a budget is exhausted or a human response is required, the conversation can be handed over to people or request a callback email rather than inventing an answer.
+
+Human support remains central. Operators can view assigned conversations, coordinate within teams, transfer work, take ownership, monitor context and continue the conversation with full accountability. Immediate browser, Telegram and other permitted notifications help teams react quickly. Notification delivery respects the user’s role, team membership, facility access and connected recipient preferences.
+
+FACILITIES, TEAMS, USERS AND ACCESS CONTROL
+
+Sense CMS supports organisations with more than one facility, office, campus, location, department, brand or operational unit. Facilities provide a practical scope for content, people, records, calendars, service settings and knowledge. Teams and roles determine who can view, edit, approve, publish, manage extensions, configure AI, access conversations or administer the system.
+
+Role-based access control is designed to preserve least privilege. Users receive only the permissions needed for their responsibilities. Team and facility membership can further narrow access. Sensitive operations such as user administration, system settings, licensing, provider configuration and package management can remain restricted to authorised administrators. Audit trails help operators understand meaningful changes without exposing credentials or private content unnecessarily.
+
+SOCIAL PUBLISHING AND DIGITAL DISTRIBUTION
+
+Social Publishing lets editors prepare a post once and explicitly select its publishing destinations. Each social network is implemented as an independent extension so that platform-specific permissions, licences, account connections, review requirements and operational limits remain clear. Connections can be managed independently, and an editor can tailor a message for a chosen destination before sending or scheduling it.
+
+The Social Publishing ecosystem covers connected destinations such as Facebook Pages, X, LinkedIn, Bluesky, Mastodon, Telegram Channels, Pinterest, TikTok and YouTube. Each provider follows its own API rules, permissions, publication formats, account conditions and rate limits. Sense CMS keeps connection credentials encrypted, uses controlled callbacks, avoids sharing provider secrets with editors and records delivery state so that a retry does not create duplicate publishing.
+
+Social publication is never an invisible side effect of saving a post. Editors review a post, choose destinations, confirm provider-specific options and inspect delivery history. This allows a single editorial item to support a consistent content strategy while respecting the differences between a Facebook Page, a professional LinkedIn profile, a Mastodon account, a Telegram channel, a short-form platform or a video channel.
+
+EXTENSIONS, LICENSING AND PRODUCT LIFECYCLE
+
+Sense CMS uses an extension architecture for themes, plugins, add-ons and applications. Core remains portable and focused. Themes control visual identity. Plugins and add-ons supply optional capabilities such as social publishing, calendars, analytics, notifications and integrations. Each paid extension can have its own product identity, licence key, installation domain, validity dates and entitlement checks, independent of the Core licence and other extensions.
+
+This model helps organisations adopt capabilities at their own pace. A system can start with Core content management and then add the services it needs. Licensing and package verification are separated from editorial data so that a valid organisation keeps ownership of its content and operational records. Signed packages, compatibility checks, update controls and rollback-aware workflows protect installations during change.
+
+SECURITY, PRIVACY AND OPERATIONAL CONTROL
+
+Security is a built-in product concern. Credentials are encrypted and never exposed in public pages, editor fields, source code repositories or normal operational logs. Private knowledge documents stay outside the public web root. Sensitive actions use authenticated, authorised and CSRF-protected workflows. File types, paths, external callbacks and provider responses are validated before they are accepted.
+
+The platform treats AI and external integrations as controlled services. Knowledge sources are approved deliberately. Providers are configured by authorised administrators. Usage and budget guardrails can prevent unexpected spending. Human operators can take over customer communication. Website visitors do not receive confidential facility data, credentials, internal notes or unapproved content through the public assistant.
+
+Sense CMS also supports privacy-aware visitor support. Live Chat keeps operational data within the organisation’s controlled installation, limits public state exposure and can use an offline country approximation for authorised operators without sending visitor IP addresses to a third-party geolocation API. Conversation deletion and retention are handled through controlled administrative workflows.
+
+SEARCH, ANALYTICS, NOTIFICATIONS AND OPERATIONS
+
+Sense CMS brings operational visibility into the same environment as content. Administrators can manage search indexing, cache, e-mail settings, notifications, extensions, updates, roles, facilities and activity history. Analytics integrations can be configured with consent-aware behaviour. Notification channels can reach authorised users through browser push, Telegram and other connected services, while notification eligibility remains tied to real access rights.
+
+The platform supports reliable background processing for activities such as Knowledge Base synchronisation, scheduled content and notification delivery. Jobs are designed to be idempotent where appropriate, bounded by locks and retries, and observable through status and audit information. This helps the system remain dependable without asking editors to manage technical queues manually.
+
+THE SENSE CMS APPROACH
+
+Sense CMS combines editorial freedom with operational discipline. It gives organisations a modern CMS, a structured Page Builder, media management, multilingual publishing, governed AI, RAG knowledge, human live chat, social distribution, permissions, facilities, extensions and licensing in one coherent platform.
+
+The result is not merely a website editor. It is a controlled digital operating environment in which people, teams, facilities, knowledge and AI can work together. Organisations remain in charge of their content, their data, their chosen providers, their publication decisions and the way intelligence is applied to real customer communication.
