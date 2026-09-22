@@ -57,7 +57,7 @@ $assert(str_contains($js,"'/ai/knowledge/sources'")&&str_contains($js,"'/ai/know
 $assert(str_contains($js,'Delete knowledge source')&&str_contains($js,'SenseCMSUI?.modal'),'permanent deletion uses the existing confirmation modal');
 $publisher=$read('scripts/publish-ai-product-pages.php');
 $assert(str_contains($publisher,"'/platform/ai'")&&str_contains($publisher,'CollectionPage')&&str_contains($publisher,'AI Content Management, RAG & Editorial Assistance'),'the product website receives a dedicated indexable AI page');
-$assert(str_contains($publisher,'Public visitor generation is not enabled')&&str_contains($publisher,'Paid provider fine-tuning remains disabled'),'public AI claims remain aligned with implemented availability');
+$assert(str_contains($publisher,'RAG visitor assistant with human handoff')&&str_contains($publisher,'Paid provider fine-tuning remains disabled'),'public AI claims remain aligned with implemented availability');
 $worker=$read('.cms/source/scripts/ai-knowledge-sync.php');$cron=$read('deploy/cron/sensecms-ai-knowledge');
 $assert(str_contains($worker,'processQueue(50)')&&str_contains($cron,'--reconcile'),'the Core queue runs continuously with a nightly consistency reconciliation');
 

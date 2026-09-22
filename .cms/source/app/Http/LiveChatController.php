@@ -16,6 +16,7 @@ final class LiveChatController extends Controller
         $this->guard();
         $since = max(0, (int) ($_GET['since'] ?? time()));
         $userId = $this->auth->id() ?? 0;
+        $this->chat->touchOperatorPresence($userId);
         $unread = $this->chat->unreadCounts($userId);
         $this->json(true, [
             'pending' => $this->chat->queuedConversations($userId),

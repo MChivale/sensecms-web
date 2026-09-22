@@ -7,7 +7,6 @@ use App\Core\AiChatService;
 use App\Core\AiContentService;
 use App\Core\AiKnowledgeBase;
 use App\Core\AiProviderClient;
-use App\Core\AiLicenseService;
 use App\Core\AiRepository;
 use App\Core\CmsRepository;
 use App\Core\EventBus;
@@ -16,6 +15,7 @@ use App\Core\ExtensionRuntime;
 use App\Core\LicenseException;
 use App\Core\LicenseService;
 use App\Core\ManifestRegistry;
+use App\Core\NotificationDispatcher;
 use App\Core\PackageManager;
 use App\Core\Secrets;
 use App\Core\FacilityRepository;
@@ -79,8 +79,9 @@ $events->listen('page.updated',$queueKnowledge('page','page_id'));
 $events->listen('page.builder.updated',$queueKnowledge('page','page_id'));
 $events->listen('page.deleted',$queueKnowledge('page','page_id'));
 $events->listen('post.updated',$queueKnowledge('post','post_id'));
-$dashboard = new DashboardController($auth, $access, $workflow, $media, $surveys, $cms, $facilities, $themes, $plugins, $addons, $packages, $marketplaceGovernance, $consoleSearch, $aiRepository, $license, new App\Core\SystemUpdate($db,$root,$config),$emailSystem,$aiContent,$aiKnowledge);
-$aiChat = new AiChatController(new AiChatService($aiRepository,$secrets,$cms,$aiClient),$cms);
+$aiChatService=new AiChatService($aiRepository,$secrets,$cms,$aiClient);
+$dashboard = new DashboardController($auth, $access, $workflow, $media, $surveys, $cms, $facilities, $themes, $plugins, $addons, $packages, $marketplaceGovernance, $consoleSearch, $aiRepository, $license, new App\Core\SystemUpdate($db,$root,$config),$emailSystem,$aiContent,$aiKnowledge,$aiChatService);
+$aiChat = new AiChatController($aiChatService,$cms,new NotificationDispatcher($db,$config,$root));
 $liveChat = new LiveChatController($auth, $aiRepository);
 $login = new AuthController($auth, $cms, (string) $config['base_url'], (array) ($config['demo'] ?? []),$emailSystem);
 $licenseController = new LicenseController($auth, $license, $config, $cms);
@@ -282,12 +283,7 @@ if ($method === 'GET' && $path === '/license') $dashboard->license();
 if ($method === 'POST' && $path === '/license') $licenseController->upload();
 if ($method === 'POST' && $path === '/system/license/hosting-credit') $dashboard->saveHostingCredit();
 if ($method === 'POST' && $path === '/api/chat/message') $aiChat->reply(true);
-if ($method === 'POST' && $path === '/api/ai/chat') {
-    $forceHuman = false;
-    try { (new AiLicenseService('https://www.chivale.com/license/', $root . '/storage/license/ai-status.json'))->validate((string) getenv('AI_CHAT_LICENSE_KEY'), $config['base_url']); }
-    catch (LicenseException) { $forceHuman = true; }
-    $aiChat->reply($forceHuman);
-}
+if ($method === 'POST' && $path === '/api/ai/chat') $aiChat->reply(false);
 if ($method === 'GET' && $path === '/api/chat/state') $aiChat->state();
 if ($method === 'GET' && $path === '/api/search') $publicSearch->search();
 if ($method === 'GET' && $path === '/api/facilities') $publicFacilities->index();

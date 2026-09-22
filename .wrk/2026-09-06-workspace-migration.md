@@ -5210,3 +5210,119 @@ preflight stopped before mutation because the staged test dependencies were inco
 controlled deployment attempts retained the safe additive migration but restored Core files,
 cron and managed pages after detecting respectively an outdated managed-block assumption and
 an invalid relative canonical. Their recovery journals remain available for audit.
+
+### 2026-09-22 — Core RAG visitor assistant and reviewed private training package
+
+The public live-chat widget can now use a Core-owned RAG assistant before human support. The
+feature is disabled by default for portable installations and is enabled explicitly in Live
+Chat configuration only when a configured provider exposes the `chat` purpose. The official
+website is enabled with a limit of 25 AI replies per day and 300 output tokens per reply. The
+same provider-level request, token and cost budgets used by Page Builder and Posts remain the
+outer guardrail. There is no separate add-on licence gate.
+
+The assistant retrieves only `published` and `ready` Knowledge Base chunks, treats retrieved
+content and conversation history as untrusted reference text, answers in the visitor language,
+does not expose provider or internal configuration details, appends up to three verified local
+source links and transfers to a human when context, provider availability or budget is
+insufficient. The existing session isolation, CSRF control, 12-message session rate limit,
+operator-only IP/country visibility, deletion and retention behaviour remain unchanged.
+Live Chat configuration now controls the assistant, daily reply cap and output-token cap.
+
+Nightly full reconciliation moved from 03:17 to 05:00 server time; the minute incremental
+worker remains unchanged. A reviewed behaviour/safety dataset was prepared locally with 12
+approved examples (six English and six Polish). Job 1 contains 2,189 estimated tokens in a
+checksum-locked JSONL file plus a private JSON manifest. Both files are under
+`storage/ai-training`, mode 0640, inside a mode-0700 directory owned by the application user.
+The dataset trains response behaviour rather than current product facts; facts continue to
+come from RAG. Provider upload and paid Fine Tuning remain disabled, and both estimated and
+actual Fine Tuning cost fields are null.
+
+The managed `/platform/ai` page and its SEO description now describe the available RAG visitor
+assistant, verified source links, cost controls and human handoff. The update was reconciled
+into the local index, which remains healthy at 49 ready documents, 101 chunks and zero failed
+documents.
+
+Local validation passed PHP/Python/JavaScript syntax, 10 visitor-AI checks, 38 Knowledge Base
+checks, 23 Page Builder AI checks, 16 Posts AI checks, 92 security checks, 16 maintenance
+checks and `git diff --check`. Production preflight verified every previous deployed hash and
+created a private database recovery dump. Core files, versioned assets, provider purpose,
+settings, cron and managed product copy were then verified directly over HTTPS. The production
+public-chat smoke suite passed nine checks and fresh service logs contained no new critical
+errors. Nginx, PHP-FPM, MariaDB and cron remain active.
+
+One deliberately bounded end-to-end RAG request confirmed a real assistant answer with three
+source links. It used 1,940 input and 88 output tokens and recorded USD 0.004936. The uniquely
+identified QA conversation and its messages were removed immediately; the usage record was
+retained for cost audit. No other provider test and no Fine Tuning request was made.
+
+The primary recovery backup is `/root/sensecms-backups/20260921T230308Z-visitor-ai`; the final
+two-file localization backup is
+`/root/sensecms-backups/20260921T230804Z-visitor-ai-localization`. An earlier incomplete-stage
+preflight stopped before backup or production mutation.
+
+### 2026-09-22 — Live Chat human/AI routing and callback fallback deployed
+
+Core Live Chat now has an explicit first-responder setting: `AI assistant first` preserves the
+existing RAG-first behaviour, while `Human team first` queues the visitor for the configured
+takeover period (15 seconds by default) and sends immediate durable operator notifications. A
+queued conversation is claimed atomically by the assistant only after that window expires;
+the prior shortcut that bypassed the window when no operator presence was visible was removed.
+
+When the assistant has no verified Knowledge Base answer and a person is unavailable, it asks
+for a callback e-mail instead of inventing an answer. The address is validated, retained only
+in the existing private visitor field and never returned from the public state endpoint. The
+new `043_live_chat_callback_email.sql` migration adds only the request timestamp. Operators can
+now transfer an active conversation to another operator, a team, or the enabled RAG assistant;
+the latter immediately uses the latest visitor context and follows the same callback fallback.
+
+The public widget reveals the e-mail field only when required and retains the refreshed
+desktop/mobile layout. Configuration, message routing, transfer handling and rendering remain
+Core-owned. The per-message notification event key remains intact, so browser/Telegram and
+other configured channels no longer collapse subsequent visitor messages into the first chat
+notification.
+
+Local validation passed PHP lint for all affected Core/view entry points, Python compilation,
+`git diff --check` and 16 visitor AI architecture checks. Production deployment created the
+private recovery backup `/root/sensecms-backups/20260922T005736Z-live-chat-realtime`, applied
+the additive migration, matched checksums for all deployed files, verified the new schema and
+routing preference, passed nine HTTPS public-chat checks and found no new Nginx/PHP-FPM
+critical errors. The configuration screen was reloaded directly and visibly confirmed both
+first-responder choices and the callback explanation. No provider generation was issued during
+this release.
+
+### 2026-09-22 — Live Chat Telegram notification eligibility repair
+
+The investigation of the latest Live Chat conversation confirmed that every visitor message
+had an individual Telegram delivery record and that the shared Telegram broker received a
+successful Bot API response for each. The Core audience rule nevertheless accepted only
+`queued` chats. That could suppress an alert when AI-first routing had already moved a
+conversation to `open`, or an operator/team had made it `assigned`, before collection.
+
+`NotificationAudience` now permits authorised recipients for active chat states `open`,
+`queued` and `assigned`, while still refusing closed conversations and preserving per-message
+deduplication. The focused regression check brings the visitor-AI suite to 17 checks. A first
+deployment preflight correctly rolled back after its test wrongly assumed a site-specific
+15-second takeover value. The test now validates the supported configurable range instead.
+The succeeding deployment used backup
+`/root/sensecms-backups/20260922T011452Z-live-chat-realtime`, matched all deployed checksums,
+passed the production widget smoke test and found no fresh critical service errors. A fresh,
+marked Telegram diagnostic delivery was accepted by the Telegram Bot API for the connected CMS
+user. Device-level mute, archive and notification preferences remain outside Telegram's API
+delivery confirmation.
+
+### 2026-09-22 — Bilingual Knowledge Base review and product-content cleanup
+
+The production RAG audit found 49 ready English website sources and no Polish source, despite
+Polish being an enabled CMS language. A reviewed, provider-free product and support source was
+added in both English and Polish through the Core Knowledge Base service. A full local
+reconciliation completed with 50 ready English sources (103 chunks), one ready Polish source
+(two chunks), no failed sources and an empty synchronization queue. No text-generation provider
+request or cost was incurred.
+
+The public `shoudu-detective-club` post was unrelated legacy content on the Sense CMS product
+site. It was archived rather than deleted, then removed from the rebuilt public Knowledge Base.
+The production content audit found no empty English page/post titles, SEO titles or SEO
+descriptions, and no visible content blocks without a translation. The current public product
+pages still have English-only translations; the Polish support source supplies Polish RAG
+coverage, while a complete editorial translation of the product site remains a separate content
+project.

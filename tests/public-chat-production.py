@@ -10,7 +10,7 @@ if sys.argv[1]=='smoke':
     _,req=access.client('www.sensecms.com')
     for path in ['/','/platform','/extensions','/contact','/update']:
         status,body,headers=req(path)
-        assert status==200 and body.count(b'data-public-chat ')==1 and b'public-chat.css?v=20260913-2' in body
+        assert status==200 and body.count(b'data-public-chat ')==1 and b'public-chat.css?v=20260922-live-3' in body and b'data-endpoint="/api/ai/chat"' in body
         assert 'no-store' in headers.get('Cache-Control','');print('PASS One session-safe live chat widget: '+path)
     for path,mime in [('/assets/public-chat.css','text/css'),('/assets/public-chat.js','javascript')]:
         status,body,headers=req(path);assert status==200 and mime in headers.get('Content-Type','')

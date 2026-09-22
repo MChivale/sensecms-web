@@ -7,15 +7,16 @@ namespace App\Http;
 use App\Core\AiChatService;
 use App\Core\Auth;
 use App\Core\CmsRepository;
+use App\Core\NotificationDispatcher;
 
 final class AiChatController extends Controller
 {
-    public function __construct(private readonly AiChatService $chat, private readonly ?CmsRepository $cms = null) {}
+    public function __construct(private readonly AiChatService $chat, private readonly ?CmsRepository $cms = null, private readonly ?NotificationDispatcher $notifications = null) {}
     public function reply(bool $forceHuman = false): never
     {
         $this->headers();
         $this->guard(true);
-        if (!is_string($_POST['message'] ?? null) || !is_string($_POST['name'] ?? '') || !is_string($_POST['locale'] ?? 'en')) {
+        if (!is_string($_POST['message'] ?? null) || !is_string($_POST['name'] ?? '') || !is_string($_POST['email'] ?? '') || !is_string($_POST['locale'] ?? 'en')) {
             http_response_code(422); echo json_encode(['error'=>'Invalid chat message.']); exit;
         }
         unset($_SESSION['ai_chat_ended']);
@@ -23,15 +24,29 @@ final class AiChatController extends Controller
         if ($window < time() - 600) { $_SESSION['ai_rate_window'] = time(); $_SESSION['ai_rate_count'] = 0; }
         if (($_SESSION['ai_rate_count'] ?? 0) >= 12) { http_response_code(429); echo json_encode(['error' => 'Please wait a few minutes before sending another message.']); exit; }
         $_SESSION['ai_rate_count'] = ($_SESSION['ai_rate_count'] ?? 0) + 1;
-        try { echo json_encode($this->chat->reply((string) ($_POST['message'] ?? ''), preg_replace('/[^a-z-]/', '', (string) ($_POST['locale'] ?? 'en')) ?: 'en', $_SESSION['ai_conversation'] ??= $this->uuid(), (string) ($_POST['name'] ?? ''), $forceHuman, \App\Core\IpCountry::ip($_SERVER['REMOTE_ADDR'] ?? null)), JSON_UNESCAPED_UNICODE); }
+        try {
+            $result = $this->chat->reply((string) ($_POST['message'] ?? ''), preg_replace('/[^a-z-]/', '', (string) ($_POST['locale'] ?? 'en')) ?: 'en', $_SESSION['ai_conversation'] ??= $this->uuid(), (string) ($_POST['name'] ?? ''), $forceHuman, \App\Core\IpCountry::ip($_SERVER['REMOTE_ADDR'] ?? null), (string) ($_POST['email'] ?? ''));
+            echo json_encode($result, JSON_UNESCAPED_UNICODE);
+            $this->dispatchNotificationsAfterResponse();
+        }
         catch (\Throwable $exception) {
             $message = $exception->getMessage();
-            $expected = in_array($message, ['Please enter a message up to 2,000 characters.', 'This conversation has ended. Start a new chat to continue.'], true);
+            $expected = in_array($message, ['Please enter a message up to 2,000 characters.', 'Please enter a valid callback e-mail address.', 'This conversation has ended. Start a new chat to continue.'], true);
             if (!$expected) error_log('Public chat send failed: ' . $exception::class);
             http_response_code($expected ? 422 : 503);
             echo json_encode(['error' => $expected ? $message : 'Sending could not be confirmed. Check the conversation before trying again.']);
         }
         exit;
+    }
+
+    private function dispatchNotificationsAfterResponse(): void
+    {
+        if ($this->notifications === null) return;
+        if (!function_exists('fastcgi_finish_request')) return;
+        if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+        fastcgi_finish_request();
+        try { $this->notifications->run(50); }
+        catch (\Throwable $error) { error_log('Immediate chat notification dispatch failed: ' . $error::class); }
     }
 
     public function state(): never

@@ -61,7 +61,7 @@ final class NotificationDispatcher
                 if (microtime(true)>$this->deadline-5) return;
                 $event=match($source) {
                     'user'=>['key'=>'user:'.$row['id'],'source'=>'user','subject'=>(string)$row['id'],'user_id'=>(int)$row['user_id'],'title'=>$row['title'],'message'=>$row['message'],'url'=>$row['url']],
-                    'chat'=>['key'=>'chat:'.$row['conversation_id'],'source'=>'chat','subject'=>$row['conversation_id'],'title'=>'Live chat','message'=>$this->chatMessage($row),'url'=>'/conversations?conversation='.rawurlencode($row['conversation_id'])],
+                    'chat'=>['key'=>'chat:'.$row['id'],'source'=>'chat','subject'=>$row['conversation_id'],'title'=>'Live chat','message'=>$this->chatMessage($row),'url'=>'/conversations?conversation='.rawurlencode($row['conversation_id'])],
                     'form'=>['key'=>'form:'.$row['id'],'source'=>'form','subject'=>(string)$row['id'],'title'=>'Form Inbox','message'=>'A new form submission is available in SenseCMS.','url'=>'/forms/submissions'],
                     'event'=>['key'=>$row['event_key'],'source'=>$row['source'],'subject'=>$row['subject'],'user_id'=>(int)$row['user_id'],'title'=>$row['title'],'message'=>$row['message'],'url'=>$row['url'],'channels'=>$row['channels']===''?[]:explode(',',$row['channels'])],
                 };
@@ -99,13 +99,11 @@ final class NotificationDispatcher
     {
         if (!preg_match('#^/(?!/)[A-Za-z0-9_/?=&%.~-]*$#D',(string)$event['url'])) return;
         $statement=$this->db->prepare('INSERT INTO notification_deliveries (plugin_slug,user_id,event_key,payload,settings_revision,status,created_at,updated_at) VALUES (?,?,?,?,?,"pending",UTC_TIMESTAMP(),UTC_TIMESTAMP()) ON DUPLICATE KEY UPDATE id=id');
-        $chatPrior=($event['source']??'')==='chat'?$this->db->prepare("SELECT 1 FROM notification_deliveries WHERE plugin_slug=? AND user_id=? AND status IN ('pending','processing','sent','unknown') AND JSON_UNQUOTE(JSON_EXTRACT(payload,'$.source'))='chat' AND JSON_UNQUOTE(JSON_EXTRACT(payload,'$.subject'))=? LIMIT 1"):null;
         foreach ($this->channels as $channel) {
             if ($event['created_at']<$channel['since'] || (!empty($event['channels']) && !in_array($channel['slug'],$event['channels'],true))) continue;
             $recipients=$this->recipients($channel);
             foreach ((array)$recipients as $userId=>$recipient) {
                 if ((!empty($event['user_id']) && (int)$event['user_id']!==(int)$userId) || !$this->audience->allows((int)$userId,$event)) continue;
-                if($chatPrior){$chatPrior->execute([$channel['slug'],(int)$userId,(string)$event['subject']]);if($chatPrior->fetchColumn())continue;}
                 $statement->execute([$channel['slug'],(int)$userId,hash('sha256',$event['key']),json_encode($event,JSON_UNESCAPED_UNICODE|JSON_THROW_ON_ERROR),$channel['revision']]);
             }
         }

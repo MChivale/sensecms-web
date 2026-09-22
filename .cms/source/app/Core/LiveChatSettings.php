@@ -28,6 +28,7 @@ final class LiveChatSettings
                 ],
             ],
             'retention' => ['enabled' => true, 'days' => 30],
+            'assistant' => ['enabled' => false, 'first_responder' => 'ai', 'daily_requests' => 25, 'max_output_tokens' => 300, 'takeover_seconds' => 15],
             'sounds' => [
                 'incoming' => 'ring.mp3',
                 'admin_message' => 'notification-05.mp3',
@@ -59,6 +60,11 @@ final class LiveChatSettings
         }
         $settings['retention']['enabled'] = (bool) ($settings['retention']['enabled'] ?? true);
         $settings['retention']['days'] = max(1, min(365, (int) ($settings['retention']['days'] ?? 30)));
+        $settings['assistant']['enabled'] = (bool) ($settings['assistant']['enabled'] ?? false);
+        $settings['assistant']['first_responder'] = in_array($settings['assistant']['first_responder'] ?? '', ['ai', 'human'], true) ? $settings['assistant']['first_responder'] : 'ai';
+        $settings['assistant']['daily_requests'] = max(1, min(10000, (int) ($settings['assistant']['daily_requests'] ?? 25)));
+        $settings['assistant']['max_output_tokens'] = max(100, min(800, (int) ($settings['assistant']['max_output_tokens'] ?? 300)));
+        $settings['assistant']['takeover_seconds'] = max(0, min(300, (int) ($settings['assistant']['takeover_seconds'] ?? 15)));
         return $settings;
     }
 

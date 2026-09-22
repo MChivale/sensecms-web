@@ -6,6 +6,7 @@ namespace App\Http;
 
 use App\Core\AiRepository;
 use App\Core\AiContentService;
+use App\Core\AiChatService;
 use App\Core\AiKnowledgeBase;
 use App\Core\AiProviderClient;
 use App\Core\Auth;
@@ -36,7 +37,7 @@ use App\Core\HtmlSanitizer;
 
 final class DashboardController extends Controller
 {
-    public function __construct(private readonly Auth $auth, private readonly AccessControl $access, private readonly WorkflowRepository $workflowRepository, private readonly MediaLibrary $media, private readonly SurveyRepository $surveys, private readonly CmsRepository $cms, private readonly FacilityRepository $facilities, private readonly ManifestRegistry $themes, private readonly ManifestRegistry $plugins, private readonly ManifestRegistry $addons, private readonly PackageManager $packages, private readonly MarketplaceGovernance $governance, private readonly ConsoleSearchIndex $consoleSearchIndex, private readonly AiRepository $ai, private readonly LicenseService $license, private readonly ?\App\Core\SystemUpdate $updater = null, private readonly ?EmailSystem $emailSystem = null,private readonly ?AiContentService$aiContent=null,private readonly ?AiKnowledgeBase$aiKnowledge=null) {}
+    public function __construct(private readonly Auth $auth, private readonly AccessControl $access, private readonly WorkflowRepository $workflowRepository, private readonly MediaLibrary $media, private readonly SurveyRepository $surveys, private readonly CmsRepository $cms, private readonly FacilityRepository $facilities, private readonly ManifestRegistry $themes, private readonly ManifestRegistry $plugins, private readonly ManifestRegistry $addons, private readonly PackageManager $packages, private readonly MarketplaceGovernance $governance, private readonly ConsoleSearchIndex $consoleSearchIndex, private readonly AiRepository $ai, private readonly LicenseService $license, private readonly ?\App\Core\SystemUpdate $updater = null, private readonly ?EmailSystem $emailSystem = null,private readonly ?AiContentService$aiContent=null,private readonly ?AiKnowledgeBase$aiKnowledge=null,private readonly ?AiChatService$aiChat=null) {}
     public function dashboard(): never
     {
         $this->guard();
@@ -811,7 +812,7 @@ final class DashboardController extends Controller
         $selected = trim((string) ($_GET['conversation'] ?? ($conversations[0]['id'] ?? '')));
         $conversation = $this->validConversationId($selected) ? $this->ai->conversationWithMessages($selected, $userId) : null;
         if ($conversation) { $this->ai->markRead($selected, $userId); $conversations = $this->ai->conversations($userId); }
-        $this->render('Live chat', 'conversations', ['conversations' => $conversations, 'conversation' => $conversation, 'chatUsers' => $this->ai->users(), 'chatTeams' => $this->ai->teams(false)]);
+        $this->render('Live chat', 'conversations', ['conversations' => $conversations, 'conversation' => $conversation, 'chatUsers' => $this->ai->users(), 'chatTeams' => $this->ai->teams(false),'chatAiProviders'=>$this->ai->enabledProviders('chat'),'chatAssistantEnabled'=>$this->liveChatSettings()['assistant']['enabled']]);
     }
     public function liveChatConfiguration(): never
     {
@@ -819,7 +820,7 @@ final class DashboardController extends Controller
         $settings = $this->liveChatSettings();
         $userSettings = LiveChatSettings::userFrom($this->cms->setting('live_chat_user_' . ($this->auth->id() ?? 0), []));
         $userSettings['effective_avatar'] = LiveChatSettings::avatar($this->auth->user(), $userSettings);
-        $this->render('Live chat configuration', 'live-chat-config', ['liveChatSettings' => $settings, 'liveChatUserSettings' => $userSettings, 'languages' => $this->cms->languages(), 'chatUsers' => $this->ai->users(), 'chatTeams' => $this->ai->teams()]);
+        $this->render('Live chat configuration', 'live-chat-config', ['liveChatSettings' => $settings, 'liveChatUserSettings' => $userSettings, 'languages' => $this->cms->languages(), 'chatUsers' => $this->ai->users(), 'chatTeams' => $this->ai->teams(), 'chatAiProviders' => $this->ai->enabledProviders('chat')]);
     }
     public function saveLiveChatConfiguration(): never
     {
@@ -849,6 +850,7 @@ final class DashboardController extends Controller
             $settings['availability']['schedule'][$day] = ['enabled' => isset($_POST['availability'][$day]['enabled']), 'start' => $start, 'end' => $end];
         }
         $settings['retention'] = ['enabled' => isset($_POST['retention_enabled']), 'days' => max(1, min(365, (int) ($_POST['retention_days'] ?? 30)))];
+        $settings['assistant'] = ['enabled' => isset($_POST['assistant_enabled']), 'first_responder'=>in_array($_POST['assistant_first_responder']??'', ['ai','human'], true)?(string)$_POST['assistant_first_responder']:'ai', 'daily_requests' => max(1, min(10000, (int) ($_POST['assistant_daily_requests'] ?? 25))), 'max_output_tokens' => max(100, min(800, (int) ($_POST['assistant_max_output_tokens'] ?? 300))), 'takeover_seconds' => max(0, min(300, (int) ($_POST['assistant_takeover_seconds'] ?? 15)))];
         $teams = [];
         foreach ((array) ($_POST['teams'] ?? []) as $row) {
             if (!is_array($row) || isset($row['removed'])) continue;
@@ -907,6 +909,11 @@ final class DashboardController extends Controller
         if (!$this->auth->verifyCsrf($_POST['csrf'] ?? null)) $this->result(false, 'Your session token is invalid. Refresh and try again.', null, 419);
         if (!$this->validConversationId($id)) $this->result(false, 'Conversation not found.', null, 404);
         $target = trim((string) ($_POST['target'] ?? ''));
+        if ($target === 'ai') {
+            if (!$this->aiChat || !$this->liveChatSettings()['assistant']['enabled'] || !$this->ai->enabledProviders('chat') || !$this->ai->transferToAi($id,$this->auth->id()??0,mb_substr(trim((string)($_POST['note']??'')),0,500))) $this->result(false,'The conversation could not be transferred to the AI assistant.',null,409);
+            $this->aiChat->respondToTransfer($id);
+            $this->result(true,'Conversation transferred to the AI assistant.','/conversations?conversation='.rawurlencode($id));
+        }
         $toUser = preg_match('/^user:(\d+)$/', $target, $match) ? (int) $match[1] : null;
         $toTeam = preg_match('/^team:(\d+)$/', $target, $match) ? (int) $match[1] : null;
         $note = mb_substr(trim((string) ($_POST['note'] ?? '')), 0, 500);

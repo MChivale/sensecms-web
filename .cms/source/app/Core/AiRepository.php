@@ -70,14 +70,18 @@ final class AiRepository
     private function cost(int$input,int$output,array$limits):float{return($input*(float)$limits['input_cost_per_million']+$output*(float)$limits['output_cost_per_million'])/1000000;}
     private function assertBudget(string$label,float$used,float$reserved,float$limit):void{if($limit>0&&$used+$reserved>$limit)throw new \RuntimeException($label.' budget reached for this provider. Increase the limit or wait for its reset.',429);}
 
-    public function context(string $message, string $locale): array
+    public function contextMatches(string $message, string $locale): array
     {
         $terms = array_values(array_unique(array_slice(array_filter(preg_split('/[^[:alnum:]]+/u', mb_strtolower($message)) ?: [], static fn(string $term): bool => mb_strlen($term) > 2), 0, 10)));
         if (!$terms) return [];
         $score=implode('+',array_fill(0,count($terms),'CASE WHEN LOWER(c.content) LIKE ? THEN 1 ELSE 0 END'));$where=implode(' OR ',array_fill(0,count($terms),'LOWER(c.content) LIKE ?'));$likes=array_map(static fn(string$term):string=>'%'.$term.'%',$terms);
         $statement=$this->db->prepare("SELECT c.content,d.title,d.source_url,({$score}) relevance FROM ai_knowledge_chunks c INNER JOIN ai_knowledge_documents d ON d.id=c.document_id WHERE d.status='published' AND d.index_status='ready' AND (d.locale=? OR d.locale IS NULL) AND ({$where}) ORDER BY relevance DESC,d.updated_at DESC,c.sort_order LIMIT 8");
-        $statement->execute(array_merge($likes,[$locale],$likes));$result=[];foreach($statement->fetchAll()as$row){$source=trim((string)$row['title']);if(trim((string)($row['source_url']??''))!=='')$source.=' · '.trim((string)$row['source_url']);$result[]='[Source: '.$source."]\n".(string)$row['content'];}return$result;
+        $statement->execute(array_merge($likes,[$locale],$likes));return array_map(static fn(array$row):array=>['title'=>trim((string)$row['title']),'url'=>trim((string)($row['source_url']??'')),'content'=>(string)$row['content']],$statement->fetchAll());
     }
+
+    public function context(string $message,string$locale):array{return array_map(static function(array$row):string{$source=$row['title'];if($row['url']!=='')$source.=' · '.$row['url'];return'[Source: '.$source."]\n".$row['content'];},$this->contextMatches($message,$locale));}
+    public function recentConversationMessages(string$id,int$limit=6):array{$limit=max(1,min(12,$limit));$statement=$this->db->prepare("SELECT role,content FROM ai_messages WHERE conversation_id=? AND role IN ('visitor','assistant','agent') ORDER BY id DESC LIMIT {$limit}");$statement->execute([$id]);return array_reverse($statement->fetchAll());}
+    public function usageCount(string$purpose,string$period='day'):int{$since=$period==='month'?"DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')":'CURDATE()';$statement=$this->db->prepare("SELECT COUNT(*) FROM ai_usage_events WHERE purpose=? AND status IN ('requested','completed') AND created_at>={$since}");$statement->execute([$purpose]);return(int)$statement->fetchColumn();}
 
     public function conversation(string $id, string $locale, ?string $ip = null): void
     {
@@ -86,18 +90,53 @@ final class AiRepository
         $statement->execute([$id, $locale, $ip, IpCountry::lookup($ip)]);
     }
     public function setVisitorName(string $conversation, string $name): void { $this->db->prepare('UPDATE ai_conversations SET visitor_name = ? WHERE id = ? AND (visitor_name IS NULL OR visitor_name = "")')->execute([$name, $conversation]); }
+    public function setVisitorEmail(string $conversation, string $email): void { $this->db->prepare('UPDATE ai_conversations SET visitor_email = ? WHERE id = ? AND (visitor_email IS NULL OR visitor_email = "")')->execute([$email, $conversation]); }
+    public function requestVisitorEmail(string $conversation): bool { $statement=$this->db->prepare('UPDATE ai_conversations SET email_requested_at=COALESCE(email_requested_at,NOW()),updated_at=NOW() WHERE id=? AND (visitor_email IS NULL OR visitor_email="")');$statement->execute([$conversation]);return $statement->rowCount()===1; }
     public function message(string $conversation, string $role, string $content, ?string $provider = null): void { $statement = $this->db->prepare('INSERT INTO ai_messages (conversation_id,role,content,provider_slug,created_at) VALUES (?,?,?,?,NOW())'); $statement->execute([$conversation, $role, $content, $provider]); $this->db->prepare('UPDATE ai_conversations SET updated_at = NOW() WHERE id = ?')->execute([$conversation]); }
 
-    public function queueForHuman(string $conversation): bool
+    public function queueForHuman(string $conversation, ?int $takeoverSeconds = null): bool
     {
-        $statement = $this->db->prepare("UPDATE ai_conversations SET channel = 'human', status = 'queued', assigned_user_id = NULL, assigned_team_id = NULL, updated_at = NOW() WHERE id = ? AND status = 'open'");
-        $statement->execute([$conversation]);
+        $takeoverAt = $takeoverSeconds === null ? null : (new \DateTimeImmutable())->modify('+' . max(0, min(300, $takeoverSeconds)) . ' seconds')->format('Y-m-d H:i:s');
+        $statement = $this->db->prepare("UPDATE ai_conversations SET channel = 'human', status = 'queued', assigned_user_id = NULL, assigned_team_id = NULL, queued_at = NOW(), ai_takeover_at = ?, updated_at = NOW() WHERE id = ? AND status = 'open'");
+        $statement->execute([$takeoverAt, $conversation]);
         return $statement->rowCount() === 1;
+    }
+
+    public function touchOperatorPresence(int $userId): void
+    {
+        if ($userId < 1) return;
+        $this->db->prepare('INSERT INTO live_chat_operator_presence (user_id,last_seen_at) VALUES (?,NOW()) ON DUPLICATE KEY UPDATE last_seen_at=NOW()')->execute([$userId]);
+    }
+
+    public function onlineOperatorCount(int $withinSeconds = 20): int
+    {
+        $threshold = (new \DateTimeImmutable())->modify('-' . max(5, min(120, $withinSeconds)) . ' seconds')->format('Y-m-d H:i:s');
+        $statement = $this->db->prepare('SELECT COUNT(*) FROM live_chat_operator_presence p INNER JOIN users u ON u.id=p.user_id AND u.active=1 WHERE p.last_seen_at>=?');
+        $statement->execute([$threshold]);
+        return (int) $statement->fetchColumn();
+    }
+
+    public function claimAiTakeover(string $conversation): ?array
+    {
+        $this->db->beginTransaction();
+        try {
+            $statement = $this->db->prepare("UPDATE ai_conversations SET channel='ai',status='open',assigned_user_id=NULL,assigned_team_id=NULL,queued_at=NULL,ai_takeover_at=NULL,updated_at=NOW() WHERE id=? AND status='queued' AND assigned_user_id IS NULL AND ai_takeover_at IS NOT NULL AND ai_takeover_at<=NOW()");
+            $statement->execute([$conversation]);
+            if ($statement->rowCount() !== 1) { $this->db->rollBack(); return null; }
+            $latest = $this->db->prepare("SELECT c.locale,m.content FROM ai_conversations c INNER JOIN ai_messages m ON m.conversation_id=c.id AND m.role='visitor' WHERE c.id=? ORDER BY m.id DESC LIMIT 1");
+            $latest->execute([$conversation]);
+            $row = $latest->fetch();
+            $this->db->commit();
+            return $row ?: null;
+        } catch (\Throwable $exception) {
+            if ($this->db->inTransaction()) $this->db->rollBack();
+            throw $exception;
+        }
     }
 
     public function conversationStatus(string $id): ?array
     {
-        $statement = $this->db->prepare('SELECT channel, status, assigned_user_id, assigned_team_id FROM ai_conversations WHERE id = ? LIMIT 1');
+        $statement = $this->db->prepare('SELECT channel, status, assigned_user_id, assigned_team_id, visitor_email, queued_at, ai_takeover_at, email_requested_at FROM ai_conversations WHERE id = ? LIMIT 1');
         $statement->execute([$id]);
         return $statement->fetch() ?: null;
     }
@@ -127,7 +166,7 @@ final class AiRepository
         $statement->execute($parameters);
         $conversation = $statement->fetch();
         if (!$conversation) return null;
-        if ($userId === null) unset($conversation['visitor_ip'], $conversation['visitor_country']);
+        if ($userId === null) unset($conversation['visitor_ip'], $conversation['visitor_country'], $conversation['visitor_email']);
         $messages = $this->db->prepare("SELECT m.id, m.role, m.content, m.created_at, COALESCE(mu.name, IF(m.role = 'agent', u.name, NULL)) AS agent_name FROM ai_messages m LEFT JOIN users mu ON mu.id = m.user_id LEFT JOIN users u ON u.id = ? WHERE m.conversation_id = ? ORDER BY m.id");
         $messages->execute([$conversation['assigned_user_id'], $id]);
         $conversation['messages'] = $messages->fetchAll();
@@ -157,7 +196,7 @@ final class AiRepository
 
     public function claimConversation(string $conversation, int $userId): bool
     {
-        $statement = $this->db->prepare("UPDATE ai_conversations c SET c.channel = 'human', c.status = 'assigned', c.assigned_user_id = ?, c.updated_at = NOW() WHERE c.id = ? AND c.status = 'queued' AND (c.assigned_user_id = ? OR (c.assigned_user_id IS NULL AND (c.assigned_team_id IS NULL OR EXISTS (SELECT 1 FROM live_chat_team_users tu WHERE tu.team_id = c.assigned_team_id AND tu.user_id = ?))))");
+        $statement = $this->db->prepare("UPDATE ai_conversations c SET c.channel = 'human', c.status = 'assigned', c.assigned_user_id = ?, c.queued_at=NULL, c.ai_takeover_at=NULL, c.updated_at = NOW() WHERE c.id = ? AND c.status = 'queued' AND (c.assigned_user_id = ? OR (c.assigned_user_id IS NULL AND (c.assigned_team_id IS NULL OR EXISTS (SELECT 1 FROM live_chat_team_users tu WHERE tu.team_id = c.assigned_team_id AND tu.user_id = ?))))");
         $statement->execute([$userId, $conversation, $userId, $userId]);
         return $statement->rowCount() === 1;
     }
@@ -169,7 +208,7 @@ final class AiRepository
             $lock = $this->db->prepare("SELECT c.id FROM ai_conversations c WHERE c.id = ? AND c.status <> 'closed' AND " . $this->accessSql('c') . ' FOR UPDATE');
             $lock->execute([$conversation, $userId, $userId]);
             if (!$lock->fetchColumn()) { $this->db->rollBack(); return false; }
-            $this->db->prepare("UPDATE ai_conversations SET channel = 'human', status = 'assigned', assigned_user_id = COALESCE(assigned_user_id, ?), updated_at = NOW() WHERE id = ?")->execute([$userId, $conversation]);
+            $this->db->prepare("UPDATE ai_conversations SET channel = 'human', status = 'assigned', assigned_user_id = COALESCE(assigned_user_id, ?), queued_at=NULL, ai_takeover_at=NULL, updated_at = NOW() WHERE id = ?")->execute([$userId, $conversation]);
             $message = $this->db->prepare("INSERT INTO ai_messages (conversation_id, role, content, user_id, created_at) VALUES (?, 'agent', ?, ?, NOW())");
             $message->execute([$conversation, $content, $userId]);
             $this->db->commit();
@@ -262,14 +301,14 @@ final class AiRepository
                 $target->execute([$toUserId]);
                 $row = $target->fetch();
                 if (!$row) { $this->db->rollBack(); return null; }
-                $this->db->prepare("UPDATE ai_conversations SET channel='human',status='queued',assigned_user_id=?,assigned_team_id=NULL,updated_at=NOW() WHERE id=?")->execute([$toUserId, $conversation]);
+                $this->db->prepare("UPDATE ai_conversations SET channel='human',status='queued',assigned_user_id=?,assigned_team_id=NULL,queued_at=NOW(),ai_takeover_at=NULL,updated_at=NOW() WHERE id=?")->execute([$toUserId, $conversation]);
                 $label = (string) $row['name'];
             } else {
                 $target = $this->db->prepare('SELECT t.id, t.name FROM live_chat_teams t WHERE t.id = ? AND t.active = 1 AND EXISTS (SELECT 1 FROM live_chat_team_users tu INNER JOIN users u ON u.id = tu.user_id AND u.active = 1 WHERE tu.team_id = t.id) LIMIT 1');
                 $target->execute([$toTeamId]);
                 $row = $target->fetch();
                 if (!$row) { $this->db->rollBack(); return null; }
-                $this->db->prepare("UPDATE ai_conversations SET channel='human',status='queued',assigned_user_id=NULL,assigned_team_id=?,updated_at=NOW() WHERE id=?")->execute([$toTeamId, $conversation]);
+                $this->db->prepare("UPDATE ai_conversations SET channel='human',status='queued',assigned_user_id=NULL,assigned_team_id=?,queued_at=NOW(),ai_takeover_at=NULL,updated_at=NOW() WHERE id=?")->execute([$toTeamId, $conversation]);
                 $label = (string) $row['name'];
             }
             $this->db->prepare('INSERT INTO live_chat_transfers (conversation_id,from_user_id,to_user_id,to_team_id,note,created_at) VALUES (?,?,?,?,?,NOW())')->execute([$conversation, $fromUserId, $toUserId, $toTeamId, $note !== '' ? $note : null]);
@@ -279,6 +318,20 @@ final class AiRepository
             if ($this->db->inTransaction()) $this->db->rollBack();
             throw $exception;
         }
+    }
+
+    public function transferToAi(string $conversation, int $fromUserId, string $note): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $lock=$this->db->prepare('SELECT id FROM ai_conversations c WHERE c.id=? AND c.status<>\'closed\' AND '.$this->accessSql('c').' FOR UPDATE');
+            $lock->execute([$conversation,$fromUserId,$fromUserId]);
+            if (!$lock->fetchColumn()) { $this->db->rollBack(); return false; }
+            $this->db->prepare("UPDATE ai_conversations SET channel='ai',status='open',assigned_user_id=NULL,assigned_team_id=NULL,queued_at=NULL,ai_takeover_at=NULL,updated_at=NOW() WHERE id=?")->execute([$conversation]);
+            $this->db->prepare('INSERT INTO live_chat_transfers (conversation_id,from_user_id,to_user_id,to_team_id,note,created_at) VALUES (?,?,NULL,NULL,?,NOW())')->execute([$conversation,$fromUserId,$note!==''?$note:'Transferred to AI assistant']);
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $exception) { if ($this->db->inTransaction()) $this->db->rollBack(); throw $exception; }
     }
 
     public function transferHistory(string $conversation): array

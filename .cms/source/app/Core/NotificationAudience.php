@@ -17,7 +17,7 @@ final class NotificationAudience
         $id = (string)$event['subject']; $source = $event['source']; $scope = $access->facilityIds();
         if ($source === 'chat') {
             $row = $this->row('SELECT status FROM ai_conversations WHERE id=?', [$id]);
-            return $access->allows('chat.view') && ($row['status'] ?? '') === 'queued' && (new AiRepository($this->db))->canAccessConversation($id,$userId);
+            return $access->allows('chat.view') && in_array($row['status'] ?? '', ['open','queued','assigned'],true) && (new AiRepository($this->db))->canAccessConversation($id,$userId);
         }
         if ($source === 'form') {
             $row = $this->row('SELECT facility_id FROM form_submissions WHERE id=? AND deleted_at IS NULL', [$id]);
