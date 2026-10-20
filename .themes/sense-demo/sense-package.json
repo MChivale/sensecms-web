@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "type": "theme",
+  "slug": "sense-demo",
+  "name": "Sense CMS Demo",
+  "version": "1.0.1",
+  "requires": {
+    "php": {"min": "8.5.0", "max_exclusive": "9.0.0"},
+    "core": {"min": "0.1.0", "max_exclusive": "2.0.0"}
+  },
+  "publisher": {"key_id": "sensecms-release", "name": "QUANT Software House Limited"}
+}

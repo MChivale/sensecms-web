@@ -223,7 +223,8 @@ final class CmsRepository
             'draft_total' => $pageCounts['draft'] + $postCounts['draft'],
             'facilities' => (int) $facilities->fetchColumn(),
             'languages' => (int) $this->db->query('SELECT COUNT(*) FROM languages WHERE enabled = 1')->fetchColumn(),
-            'themes' => (int) $this->db->query('SELECT COUNT(*) FROM installed_themes WHERE active = 1')->fetchColumn(),
+            'themes' => $this->runtime !== null && (new Packages\ThemeManager($this->runtime))->active() !== null
+                ? 1 : (int) $this->db->query('SELECT COUNT(*) FROM installed_themes WHERE active = 1')->fetchColumn(),
             'plugins' => (int) $this->db->query("SELECT COUNT(*) FROM (SELECT 'plugin' type,slug FROM installed_plugins WHERE active=1 UNION SELECT type,slug FROM extension_packages WHERE active=1 AND type IN ('plugin','addon')) active_extensions")->fetchColumn(),
             'recent_content' => $this->recentDashboardContent($facilityIds),
             'scheduled_content' => $this->scheduledDashboardContent($facilityIds),

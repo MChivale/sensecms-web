@@ -5326,3 +5326,45 @@ descriptions, and no visible content blocks without a translation. The current p
 pages still have English-only translations; the Polish support source supplies Polish RAG
 coverage, while a complete editorial translation of the product site remains a separate content
 project.
+
+### 2026-10-19 — independent public demo launch
+
+The existing `demo.sensecms.com` installation was live but had no public theme, facility,
+pages or posts. Its database, licence, Owner and server-enforced read-only Demo account were
+kept separate from `www.sensecms.com`. The demo database now contains one explicitly labelled
+example facility, three published bilingual pages, four bilingual rich-text sections, one
+category and one bilingual sample post. No real organisation or visitor metrics were invented.
+
+The dedicated `.themes/sense-demo` source was signed with the separately held publisher key
+and installed through the Core theme lifecycle. Release `1.0.1` is active (archive SHA-256
+`2d0cce85527eb83707714b8156128a64a40e4dcfcce82628e835c431c25764d0`); `1.0.0`
+remains a rollback release. Publisher public-key trust was added to the demo installation only.
+The demonstration theme renders its five declared section types and leaves administration in
+Core. Its PHP/CSS package has no private credentials or demo database content.
+
+The legacy dashboard counted only `installed_themes`, so it reported zero active themes for
+a signed private release even while the Themes screen and website correctly showed one. A
+single-line Core fix now counts the active signed theme pointer, with the legacy table as
+fallback. The remote pre-change Core file and a transactional database dump plus private
+storage snapshots are in `/root/sensecms-backups/20261019T013942Z-demo-launch`. To reverse
+the launch, restore that installation's database and storage from this backup and the saved
+Core file; a presentation-only rollback may activate the retained `1.0.0` theme release.
+Do not restore either snapshot into the official website.
+
+PHP lint, theme-contract validation, a five-section render/safe-link check, 678 local
+theme/website checks, 55 package checks and
+`git diff --check` passed. Direct HTTPS checks returned 200 with expected content for `/`,
+`/explore`, `/about`, their Polish routes, both sample-post routes, CSS and login. The
+authenticated Demo dashboard showed 1 active facility, 3 pages, 1 post, 1 active theme and
+the read-only session banner; English and Polish homepages were visually inspected in the
+browser. A 390 px mobile emulation measured a 390 px document width without horizontal
+overflow.
+Nginx, PHP-FPM and MariaDB were active and had no fresh error-level service journal entries.
+Temporary deployment files were removed from the demo runtime. The server volume was 95% full
+with about 3.8 GB free, so available disk space should be watched before larger releases.
+
+This is an initial public and editorial demo. The installed demo Core is older than the
+current repository source and no provider-specific optional packages were installed. The
+five declared theme sections are supported; other Core Page Builder section presentations
+require a later demo-theme expansion. The Demo account's write guard was preserved but not
+retested with a mutation during this launch.
