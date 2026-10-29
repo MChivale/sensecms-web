@@ -152,14 +152,17 @@ extract files, execute PHP, apply SQL or change installation state.
 
 ## License entitlement
 
-The official website now publishes all 13 product tiers at `/extensions/catalog`,
+The website catalogue source defines 25 product tiers for `/extensions/catalog`,
 with CMS-managed detail/category pages. `.src/package-catalog.php` is website-only
 content; it is not trusted download-entitlement inventory and is not bundled into
-portable Core. Free/paid classification and USD annual prices follow the live
-Eduvixo marketplace, as explicitly requested. Five entries are free, eight paid
-(including Core). Publication does not make unadapted packages downloadable.
+portable Core. The current catalogue contains nine free and 16 paid entries
+(including Core). Villa Theme, Villa Sections and Legacy Redirects are development
+offers; their listing does not make them downloadable. Publication does not make
+unadapted packages downloadable.
 Calendar and the official theme have signed development archives; other products
-remain explicitly marked as awaiting Sense CMS adaptation. The official theme is
+remain explicitly marked as awaiting Sense CMS adaptation. Villa Theme has signed
+development archives for the Villa installation, but is not a downloadable catalogue
+release. The official theme is
 enabled for CMS-license-gated download. Calendar 0.1.0 is enabled for download with
 its separately validated product key: ProductName `Sense CMS Calendar`,
 ProductModel `Sense CMS Calendar Addon`, protocol ProductVersion `1.0`.

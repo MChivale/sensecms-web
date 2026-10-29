@@ -1,0 +1,107 @@
+{
+  "contract_version": 1,
+  "slug": "villa-theme",
+  "name": "Villa Theme",
+  "version": "0.15.4",
+  "release_channel": "development",
+  "description": "An Italian editorial hospitality theme with refined serif typography, warm ivory, burgundy accents and a managed room explorer.",
+  "default_social_image": "/theme-assets/og-image.jpg",
+  "default_social_image_type": "image/jpeg",
+  "default_social_image_width": 1200,
+  "default_social_image_height": 630,
+  "supported_blocks": [
+    "villa-hero",
+    "villa-rooms",
+    "villa-room"
+  ],
+  "page_templates": [
+    {
+      "key": "default",
+      "label": "Standard page"
+    },
+    {
+      "key": "home",
+      "label": "Homepage"
+    },
+    {
+      "key": "room",
+      "label": "Room detail"
+    },
+    {
+      "key": "location",
+      "label": "Location"
+    }
+  ],
+  "configuration": [
+    {
+      "key": "accent_color",
+      "type": "color",
+      "label": "Accent colour",
+      "default": "#6e262e"
+    },
+    {
+      "key": "olive_color",
+      "type": "color",
+      "label": "Olive colour",
+      "default": "#1d2b22"
+    },
+    {
+      "key": "booking_url",
+      "type": "text",
+      "label": "Online booking URL",
+      "max_length": 500,
+      "default": ""
+    },
+    {
+      "key": "booking_label",
+      "type": "text",
+      "label": "Booking button label",
+      "max_length": 80,
+      "default": "Sprawdź dostępność"
+    },
+    {
+      "key": "footer_note",
+      "type": "text",
+      "label": "Footer note",
+      "max_length": 220,
+      "default": "Kameralne pokoje gościnne w Gdyni."
+    },
+    {
+      "key": "detail_image",
+      "type": "asset",
+      "label": "Homepage detail photograph",
+      "default": ""
+    },
+    {
+      "key": "detail_image_alt",
+      "type": "text",
+      "label": "Detail photograph alternative text",
+      "max_length": 240,
+      "default": ""
+    },
+    {
+      "key": "location_label",
+      "type": "text",
+      "label": "Homepage location caption",
+      "max_length": 120,
+      "default": ""
+    },
+    {
+      "key": "map_embed_url",
+      "type": "text",
+      "label": "Google Maps embed URL",
+      "max_length": 500,
+      "default": ""
+    },
+    {
+      "key": "lodging_schema",
+      "type": "toggle",
+      "label": "Use lodging business structured data",
+      "default": false
+    }
+  ],
+  "design_tokens": {
+    "--villa-accent": "accent_color",
+    "--villa-olive": "olive_color"
+  }
+}

@@ -23,6 +23,9 @@ $assert($headStatus===200&&$headBody===''&&(int)$headHeaders['Content-Length']==
 $socialImage='/theme-assets/og.image.jpg';[$socialStatus,$socialHeaders,$socialBody]=$theme->response($socialImage);$socialSize=getimagesizefromstring($socialBody);
 $assert($socialStatus===200&&$socialHeaders['Content-Type']==='image/jpeg'&&$socialSize['mime']==='image/jpeg'&&$socialSize[0]===1200&&$socialSize[1]===630,'Default Open Graph image is an exact 1200 by 630 JPEG');
 $assert($theme->response('/theme-assets/logo-light.svg')[0]===200&&$theme->response('/theme-assets/logo-light.svg')[1]['Content-Type']==='image/svg+xml','Light footer logo is a public theme asset');
+$villaRoot=dirname(__DIR__).'/.themes/villa-theme';$villaDescriptor=json_decode((string)file_get_contents($villaRoot.'/theme.json'),true,64,JSON_THROW_ON_ERROR);$villaDescriptor['_path']=$villaRoot;App\Core\ThemeContract::validateAll(['villa-theme'=>$villaDescriptor]);
+$villaResponse=(new PublicTheme($villaRoot,'https://villaitaliana.chivale.com'))->response('/');
+$assert($villaResponse[0]===200&&str_contains($villaResponse[2],'Villa Italiana')&&str_contains($villaResponse[2],'/theme-assets/villa.css'),'Villa Theme satisfies the public contract and its layout adapter renders the homepage');
 $catalogPackage = ['type'=>'theme','slug'=>'catalog-test','name'=>'Catalog test','version'=>'0.1.0','installed_version'=>'0.2.0','pending_version'=>'0.2.0','managed_releases'=>true,'active'=>true,'source'=>'package','signature_status'=>'verified','manifest'=>['engine'=>'>=0.1.0 <1.0.0','release_channel'=>'stable']];
 $remoteRelease = ['id'=>7,'type'=>'theme','slug'=>'catalog-test','version'=>'0.2.0','release_channel'=>'stable','manifest'=>[]];
 $catalog = static fn(array $package, array $remote = [], array $themes = [], array $legacy = []) => App\Core\MarketplaceCatalog::build('0.1.0', $themes, [], [], [$package], $legacy, [], [], $remote);
@@ -172,14 +175,14 @@ foreach (require dirname(__DIR__) . '/.src/package-catalog.php' as $product) {
     $marketBlocks[] = ['type'=>'text','payload'=>['title'=>$product['name'],'text'=>'<p><strong>' . ($product['usd_year']===0?'Free':'USD '.$product['usd_year'].' / year') . '</strong></p><p>'.$product['description'].'</p><p>Not available yet</p>','cta_url'=>'/extensions/catalog/'.$product['type'].'/'.$product['slug'],'cta_label'=>'View package']];
 }
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog','blocks'=>$marketBlocks]);
-$assert(substr_count($market, 'data-market-item ')===22, 'marketplace presents all CMS products as cards');
+$assert(substr_count($market, 'data-market-item ')===25, 'marketplace presents all CMS products as cards');
 $entryMarket=$managed(['title'=>'Marketplace','public_path'=>'/extensions','blocks'=>$marketBlocks]);
-$assert(substr_count($entryMarket,'data-market-item ')===22 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
+$assert(substr_count($entryMarket,'data-market-item ')===25 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
 $assert(str_contains($entryMarket,'data-market-category="plugin"') && str_contains($entryMarket,'data-market-price="free"'), 'primary marketplace contains category and price chips');
 $assert(substr_count($entryMarket,'data-market-dialog ')===1 && str_contains($entryMarket,'aria-labelledby="market-dialog-title"'), 'marketplace provides one accessible inline details dialog');
-$assert(substr_count($entryMarket,'data-market-open href=')===44 && substr_count($entryMarket,'data-market-status hidden')===22, 'all product actions support dialogs with real no-JS detail links');
+$assert(substr_count($entryMarket,'data-market-open href=')===50 && substr_count($entryMarket,'data-market-status hidden')===25, 'all product actions support dialogs with real no-JS detail links');
 $assert(str_contains($entryMarket,'disabled>Download unavailable') && str_contains($entryMarket,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
-$assert(substr_count($market, 'data-pricing="free"')===8, 'marketplace retains eight free product tiers');
+$assert(substr_count($market, 'data-pricing="free"')===9, 'marketplace retains nine free product tiers');
 $catalogProducts=require dirname(__DIR__) . '/.src/package-catalog.php';$bluesky=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='bluesky-publisher'))[0]??[];$assert(($bluesky['usd_year']??null)===15&&($bluesky['license']['product_name']??'')==='Sense CMS Bluesky Publisher Plugin'&&($bluesky['license']['product_model']??'')==='Bluesky Publisher Plugin','Bluesky marketplace entry keeps separate paid licence identity');
 $mastodon=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='mastodon-publisher'))[0]??[];$assert(($mastodon['usd_year']??null)===15&&($mastodon['license']['product_name']??'')==='Sense CMS Mastodon Publisher Plugin'&&($mastodon['license']['product_model']??'')==='Mastodon Publisher Plugin','Mastodon marketplace entry keeps separate paid licence identity');
 $telegramChannels=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='telegram-channels-publisher'))[0]??[];$assert(($telegramChannels['usd_year']??null)===15&&($telegramChannels['license']['product_name']??'')==='Sense CMS Telegram Channels Plugin'&&($telegramChannels['license']['product_model']??'')==='Telegram Channels Plugin','Telegram Channels marketplace entry keeps separate paid licence identity');

@@ -16,7 +16,7 @@ products = json.loads(subprocess.check_output([
     php, '-r', 'echo json_encode(require $argv[1]);',
     str(root / '.src/package-catalog.php'),
 ]))
-assert len(products) == 22 and sum(p['usd_year'] == 0 for p in products) == 8
+assert len(products) == 25 and sum(p['usd_year'] == 0 for p in products) == 9
 paths = ['/extensions/catalog']
 paths += ['/extensions/catalog/' + p['type'] + '/' + p['slug'] for p in products]
 paths += ['/extensions/catalog/' + t for t in ('theme', 'plugin', 'addon', 'module')]
@@ -33,16 +33,22 @@ for path in paths:
         assert res.status == 200 and not res.read(), path
 index = bodies[paths[0]]
 entry = bodies['/extensions']
-assert entry.count('data-market-item ') == 22 and 'marketplace-hero' in entry
+assert entry.count('data-market-item ') == 25 and 'marketplace-hero' in entry
 assert 'data-market-category="plugin"' in entry
 assert 'Browse packages →' not in entry
-assert index.count('data-market-item ') == 22
+assert index.count('data-market-item ') == 25
 assert 'data-market-filters hidden' in index and 'data-market-count' in index
 assert 'data-market-empty hidden' in index
-assert index.count('data-pricing="free"') == 8
+assert index.count('data-pricing="free"') == 9
+theme_index = bodies['/extensions/catalog/theme']
+plugin_index = bodies['/extensions/catalog/plugin']
 for product in products:
     path = '/extensions/catalog/' + product['type'] + '/' + product['slug']
     assert 'href="' + path + '"' in index, path
+    if product['type'] == 'theme':
+        assert 'href="' + path + '"' in theme_index, path
+    if product['type'] == 'plugin':
+        assert 'href="' + path + '"' in plugin_index, path
     body = bodies[path]
     price = 'Free' if product['usd_year'] == 0 else 'USD ' + str(product['usd_year']) + ' / year'
     assert price in body, path
@@ -100,7 +106,13 @@ assert 'USD 15 / year' in youtube and 'Development Preview 0.1.1' in youtube
 assert 'Sense CMS YouTube Publisher Plugin' in youtube and 'YouTube Publisher Plugin' in youtube
 assert 'start date and expiry date' in youtube and 'Multiple channels' in youtube
 assert '<code>youtube.upload</code>' in youtube and '<code>youtube.readonly</code>' in youtube and 'private uploads' in youtube
+villa_theme = bodies['/extensions/catalog/theme/villa-theme']
+assert 'Villa Theme' in villa_theme and 'Free' in villa_theme and 'valid Sense CMS system licence' in villa_theme
+villa_sections = bodies['/extensions/catalog/plugin/villa-sections']
+assert 'Villa Sections' in villa_sections and 'USD 12 / year' in villa_sections and 'own product licence' in villa_sections
+legacy_redirects = bodies['/extensions/catalog/plugin/legacy-redirects']
+assert 'Legacy Redirects' in legacy_redirects and 'USD 12 / year' in legacy_redirects and 'own product licence' in legacy_redirects
 for path in ('/extensions', '/extensions/themes', '/extensions/plugins', '/extensions/addons', '/extensions/modules', '/download'):
     with urllib.request.urlopen(base + path, timeout=20) as res:
         assert 'href="/extensions/catalog' in res.read().decode(), path
-print('Passed: managed marketplace routes, direct /extensions catalogue, 22 product prices/licence policies and entry links.')
+print('Passed: managed marketplace routes, direct /extensions catalogue, 25 product prices/licence policies and entry links.')

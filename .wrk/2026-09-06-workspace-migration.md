@@ -5368,3 +5368,317 @@ current repository source and no provider-specific optional packages were instal
 five declared theme sections are supported; other Core Page Builder section presentations
 require a later demo-theme expansion. The Demo account's write guard was preserved but not
 retested with a mutation during this launch.
+
+### 2026-10-20 — Villa Italiana theme and package sources
+
+Added an independent `villa-italiana` theme with its own responsive hospitality layout,
+Core block views, Polish/English contact form and feedback, design settings and optimized
+1200x630 social image. Added `villa-italiana-sections` with reusable hero, room-list and room-detail
+Page Builder components, plus `villa-legacy-redirects` for the former `/gabinety/` route.
+The theme and plugins remain development sources; no package price or licence terms were
+invented, and no signed release, CMS installation or production content was published.
+
+Offline validation against the repository's manifest registry and Page Builder confirmed the
+theme contract, all three plugin renderers, both localized contact-form variants, safe
+social-image serving and the exact legacy redirect scope. PHP syntax, JavaScript syntax and
+JSON manifests parsed successfully. The
+full CMS test bootstrap could not run on the local PHP 8.4.10 CLI because this Core requires
+PHP 8.5; `project-boundaries.php` also stops on the pre-existing missing `.modules` directory.
+The Villa project's `.info` identifies `https://villaitaliana.chivale.com` as production and
+`https://villaitaliana-noclegi.pl` as the source site. After the user confirmed the independently
+captured ED25519 host fingerprint, a password-authenticated, read-only SSH preflight reached
+`eur.ittsp.net`. Apache is active and the Villa production vhost maps to
+`/home/villaitaliana.chivale.com/web`; that directory contains only the ISPConfig placeholder,
+favicon, robots file, error pages and statistics. No CMS, application database or existing site
+files were inspected beyond this directory inventory, and no remote file or service was changed.
+Later SSH connection attempts timed out; repeat the preflight before any deployment.
+
+The Sense package builder produces signed but unpublished development artifacts with the
+protected publisher key. The user approved the Villa Italiana theme as a free offer gated by a
+valid Sense CMS licence. The two plugin offer terms remain unresolved; paid plugins need
+separately registered product/model identities. No domain-bound Villa CMS licence was found in
+the local project configuration, so do not initialize the production installation until that
+licence is provisioned. Publisher signing material is not present in this Sense CMS checkout.
+
+### 2026-10-21 — Villa package identities, offers and redirect rules
+
+Applied the approved package names and identifiers: free, Sense CMS-licensed `Villa Theme`
+(`theme:villa-theme`), plus annual USD 12 offers `Villa Sections` (`plugin:villa-sections`)
+and `Legacy Redirects` (`plugin:legacy-redirects`). Added all three as development offers to
+the website package catalogue. The sections plugin provides Page Builder hero, room collection
+and room detail components. Legacy Redirects now manages groups of local aliases that point to
+one local path or HTTPS URL, with 301/302 status; its initial settings preserve `/gabinety` and
+`/gabinety/` to `/tlenoterapia/`.
+
+The paid identities are not registered in this checkout's private `.cfg` (no such directory
+is present), so paid distribution/download entitlement remains closed until the registered
+product/model pairs are provisioned and verified. The Sense publisher signing key is also not
+present in this checkout, and prior SSH attempts to the Villa host timed out; no signed archive,
+external publication, production installation or deployment was performed. The source packages
+remain development versions. The 13 isolated Legacy Redirects checks, all package PHP lints,
+JSON parsing, JavaScript syntax and `git diff --check` passed. `tests/themes.php` still cannot
+start under the available PHP 8.4.10 CLI because Sense CMS requires PHP 8.5. The earlier
+2026-10-20 entries record the original working names.
+
+### 2026-10-21 — Production marketplace reconciliation and Villa deployment preparation
+
+The public `/extensions` marketplace was checked directly and still showed 22 products. The
+official production host was previously verified on PHP 8.5.10. Updated the read-only HTTP
+acceptance contract for the 25-entry catalogue and added `--reconcile` to the operator content
+publisher. It creates only absent detail pages, appends missing visible offer cards to the
+existing main/category pages, preserves custom blocks and journals every inserted block for a
+non-destructive rollback. The original `--apply` mode retains its existing-route refusal.
+
+Villa's host is separate from the Sense CMS official website. The Villa `.cfg` contains the
+Villa host access and MySQL settings, but this Sense repository has no own `.cfg/SSH.txt` for
+the official `ind` host; Villa credentials must not be reused for it. Villa production remains
+an ISPConfig placeholder with no installed CMS; no domain-bound Sense CMS licence was found in
+the Villa project, and no paid-plugin product/model registrations or local publisher key are
+available. Deployment is therefore prepared but must wait for those scoped production inputs.
+
+### 2026-10-21 — Official catalogue published
+
+The correct Sense CMS access came from the Villa workspace's `.cfg/SSH.ind.txt`; its cached
+PuTTY host key was present and credentials were sent through a transient named pipe. The `ind`
+host reports PHP 8.5.11, with nginx, PHP-FPM and MariaDB active. Before changing catalogue
+content, created `/root/sensecms-backups/20261021T005404Z-extension-catalog/database-before.sql`
+(mode 0600, 2,372,583 bytes; SHA-256
+`bd41bf9f232f225acd856b4ce2cbea738a188c5efa0b52c8dc36cf490fba5da8`).
+
+Ran the scoped `--reconcile` publisher against `/home/sensecms.com/web`: created the three Villa
+detail pages and appended nine offer cards across `/extensions`, the main catalogue, and the two
+relevant category pages. The private `catalog-changes.json` journal is retained beside the dump
+for rollback. No Core, package distribution, license records, theme activation, or service was
+changed. `tests/package-catalog-http.py https://www.sensecms.com` passed all route, count, price,
+license-policy and link assertions for 25 public catalogue entries.
+
+Villa's own SSH credentials remain limited to the Villa host. A fresh connection to its configured
+IPv4 timed out, as did HTTPS to `https://villaitaliana.chivale.com`. The latest prior host audit
+still records only an ISPConfig placeholder, no installed CMS or domain-bound Core licence. The
+three local packages remain development version 0.2.0; this checkout has no signing key and the
+paid plugins do not yet have registered licensing product/model pairs. Therefore the public
+offers are visible, while signed package downloads and the Villa production install remain pending.
+
+The user then provided `.cfg/License Sense CMS.txt`. Its 32-character key was read in memory and
+validated through the official production Sense CMS `LicenseClient` for the canonical Villa
+domain. The client displayed its generic invalid/expired/revoked/not-assigned response; this did
+not expose the licensing provider's underlying reason. The key was not printed or saved elsewhere;
+no alternate domain was tried, and no license registration or Villa installation was changed.
+
+At the user's request, retried validation from `ind` at 2026-10-21 01:23 UTC. Local UTC was
+01:23:49 and `ind` reported 01:23:54, within five seconds. The Sense client again displayed its
+generic rejection, so the provider-specific reason remained unknown. No server clock was changed.
+
+After the user reported that the license was in order and that server times differed, repeated the
+same HTTPS request from `ind` at 2026-10-21 01:31:46 UTC, capturing only sanitized response fields.
+The license endpoint returned HTTP 200 with `Date: Wed, 21 Oct 2026 01:31:46 GMT`, matching the
+`ind` clock. Its JSON response was `error: true`, `message: "Product model not licensed"`, with
+no license data. The key remains unprinted and unmodified. This identifies a provider-side product
+model licensing/assignment issue; it does not support a clock-skew diagnosis. No license record,
+clock, or Villa installation was changed.
+
+Retried the same request at 2026-10-21 01:40:51 UTC from `ind`. The provider returned HTTP 200,
+`error: false`, and `message: "License valid"`; the `ind` clock (01:40:51 UTC) and provider
+`Date` header (01:40:52 GMT) differed by one second. The Sense CMS client accepted the response;
+the license is valid through 2027-12-31 23:59:00 UTC. No license record, clock, or Villa
+installation was changed.
+
+License recheck on 2026-10-21 01:59 UTC was sent from the trusted `ind` host to the configured licensing endpoint for `Sense CMS` / `Sense CMS System` and `https://villaitaliana.chivale.com`. The endpoint returned HTTP 200, `License valid`, valid through 2027-12-31 23:59:00 UTC. No key was printed or persisted in this note. This machine cannot reach the licensing endpoint directly; the verified server-side check succeeded.
+
+Villa installation was not started: the official Core release catalogue still has no stable installer release, while the available source builder explicitly emits an unsigned `development` installer. Installing that build on the public Villa domain would bypass the production release channel. The Villa Theme source also remains channel `development`; paid plugin product/model identities and plugin-specific keys are not configured. No Villa files, database, licence records, or services were changed in this check.
+
+### 2026-10-21 — Plugin licence identity recheck
+
+The operator licence file now contains three separate 32-character key records labelled `Sense CMS 1.0`, `Villa Sections 1.0` and `Legacy Redirects 1.0`. Plugin keys were read only in memory and were not printed or recorded. From `ind`, validated the plugin keys for `https://villaitaliana.chivale.com` using the established Sense CMS identities `ProductName=Villa Sections`, `ProductModel=Villa Sections Plugin` and `ProductName=Legacy Redirects`, `ProductModel=Legacy Redirects Plugin`, with `ProductVersion=1.0`. The provider returned HTTP 200 and `Product model not licensed` for both requests. The keys and product names are present, but the configured file contains no ProductModel fields; the chosen model strings are not accepted by the provider. No licence records, package files, Villa files, database or services were changed.
+
+### 2026-10-21 02:36 UTC — Plugin licence recheck after provider correction
+
+Repeated licence validation from the pinned `ind` host using the plugin-specific keys and exact identities `Villa Sections` / `Villa Sections Plugin` and `Legacy Redirects` / `Legacy Redirects Plugin`, version `1.0`, for `https://villaitaliana.chivale.com`. Both requests returned HTTP 200, `error=false`, `License valid`, through 2027-12-31 23:59 UTC. The earlier `Product model not licensed` responses are superseded by this successful recheck. Keys were not printed or written to this note. No plugin package, Villa files, database or services were changed.
+
+### 2026-10-21 — Villa Theme 0.3.0 deployed (homepage design 4)
+
+Implemented the approved photographic forest/ivory design in `.themes/villa-theme`, with
+the accepted SVG wordmark, locally licensed Inter Variable, responsive hero and room
+selector, consistent interior-page styling and preserved contact-form renderer. Added
+Appearance fields for a managed hero detail photograph/ALT/location. No Core or plugin
+upgrade was needed. Existing package identities and the development channel remain.
+
+Signed on the official ind publisher, installed and activated through ThemeManager on
+the separate Villa PHP 8.5 host; never edited the signed active payload in place. Archive
+SHA-256: `5db1e538117290bd926c9aa367e8eeee19cd93c974d9e3ac92c120219f3d87b7`.
+The previous signed 0.2.1 release is retained. Backups and scoped CMS content rollback:
+`/root/villa-italiana-backups/20261021T160348Z-theme-030` on Villa.
+
+Homepage PL/EN copy and photos remain Builder data; three surplus home sections were
+hidden, preserving UUIDs/translations and all 15 published pages. Verified 30 PL/EN URLs,
+12 homepage assets, all four room choices, keyboard/menu behavior and seven widths
+320–1920. No horizontal overflow or browser errors; Apache/FPM active and vhost error
+log unchanged. Signature and all 17 payload files verified again after activation.
+The existing site uses phone/email contact and has no installed contact-form block or
+online booking engine. Detailed deployment/evidence is in the Villa workspace's
+`.wrk/2026-10-21-villa-deployment.md`. No installer rebuild or Git commit was performed.
+
+### 2026-10-22 Asia/Bangkok — Villa Theme 0.4.0, approved design 5
+
+Implemented the approved light editorial proposal with **Ciao Italia** as the managed PL/EN
+headline. Villa Theme now uses centered SVG branding, Bodoni Moda regular/true italic
+(local Latin/Latin Extended WOFF2 + OFL), ivory/burgundy, curved photo frames, a refined
+room selector and matching optional chat colours. The Core and plugin sources were not
+changed. Both manifests retain their identity/development channel and now read 0.4.0.
+
+Signed on ind and activated through ThemeManager on Villa as web126 after inactive staging
+and ownership correction. ZIP SHA-256:
+`5ae4c875cf0bc3780c7e698cb1a9fc4c4e91324654bfa6837164901c55a0230c`.
+Verified existing publisher trust, signature and all 23 installed payload files. Previous
+0.3.0 is retained. Current homepage Builder revision is 4; all eight section UUIDs, five
+visible sections and all 15 published pages remain. No schema/infrastructure changes.
+
+Passed PHP 8.5 lint/ThemeContract, 30 PL/EN URLs, 14 homepage assets, four font files,
+all room selections/images, keyboard/menu behaviour, no-JavaScript room fallback and
+18 locale/viewport combinations at nine widths from 320 to 1920. No header collisions,
+viewport overflow, photo/title collisions or browser errors. Services active and vhost
+error log unchanged. Recovery on Villa:
+`/root/villa-italiana-backups/20261021T165536Z-theme-040`; this includes scoped Builder/theme
+configuration rollback. Detailed evidence is in the Villa workspace deployment note and
+`villa-theme-v5-verification.json`. No installer rebuild, commit or unrelated deployment.
+
+### 2026-10-22 — Villa Theme 0.4.1, light footer
+
+Replaced the green footer/booking strip with the existing ivory background, dark logo,
+burgundy outline/hover/focus and matching dividers. Narrow theme-only patch in villa.css,
+views/page.php and both version manifests; no CMS/DB/Core/plugin changes, Builder still 4.
+Signed on ind, staged/activated through ThemeManager as web126, verified all 23 payload
+files. ZIP SHA-256: `1e4850a85e689d1a081411ac620b346c079f027398631ceb70650b1a7917a27e`.
+Previous 0.4.0 retained; recovery on Villa:
+`/root/villa-italiana-backups/20261021T181314Z-theme-041`.
+Passed PHP 8.5 lint/contract validation, 30 routes and 16 PL/EN/contact/room footer checks
+at four widths, including hover/focus/contrast/logo and no overflow/browser errors.
+Services active, error log unchanged. Evidence remains in the Villa workspace `.wrk`.
+
+### 2026-10-23 — Villa Theme 0.5.0, responsive polish
+
+Refined the approved Ciao Italia theme: desktop header/hero proportions, photo framing,
+mobile copy/action row, two-column room selection, compact light footer, clearer controls,
+navigation/button hover and two existing font preloads. Room transitions are cancellable,
+320ms, respect reduced motion and promote only the selected image to eager loading.
+No dependencies, CMS data/configuration, Core, plugin or infrastructure changes.
+
+Signed on ind and installed/activated on Villa through ThemeManager as web126.
+Active `villa-theme-0.5.0-72dfa1735fa38337`; signed ZIP SHA-256:
+`72dfa1735fa3833783508ff209a47ba088a976c39ef63ed570938b40504d74ad`.
+All 23 payload files and signature verified. PHP 8.5.12 lint/ThemeContract, JS syntax,
+git diff --check, 30 routes, 24 homepage locale/width layouts and 16 subpage/width checks
+passed. Checked menu/keyboard/focus, all room images, rapid selection, reduced motion,
+no-JS fallback, legacy aliases and fully loaded PL/EN screenshots. No browser JS errors,
+overflow or collisions. Runtime services active; vhost error log unchanged from preflight.
+
+Builder remains revision 4; all 8 sections (5 visible), 15 pages and configuration hashes
+preserved. Previous 0.4.1 retained for ThemeManager::rollback; recovery:
+`/root/villa-italiana-backups/20261023T082441Z-theme-050`. Detailed evidence and screenshots
+are in Villa `.wrk/villa-theme-050-*`. No installer rebuild, restart or Git commit.
+
+### 2026-10-29 — Villa Theme 0.6.0
+
+Implemented the approved homepage: split desktop hero with shorter PL/EN copy, updated
+introduction, alternating breakfast/massage/oxygen sections and retained light footer.
+Two original massage photographs were uploaded through MediaLibrary; one is used in
+the CMS-managed homepage section. Massage links to contact; oxygen uses existing pages.
+Builder revision 5 has nine sections, seven visible; all 15 pages remain published.
+
+Signed on ind and activated on Villa through ThemeManager. ZIP SHA-256
+`5b5bf693315c41cccf17c6dc19c2a1c38abea172a48ea678a0fedb18bda83369`;
+23 installed payload files verified. PHP 8.5 lint/contract, 30 routes, responsive PL/EN
+checks, navigation/room interactions, no-JS fallback, both feature images/links and
+requested copy passed. Runtime services active and error log empty. Recovery and the
+prior Builder/theme snapshots: `/root/villa-italiana-backups/20261029T020133Z-theme-060`.
+Review later CMS edits before scoped rollback. Evidence in Villa `.wrk/villa-theme-060-*`.
+
+### 2026-10-29 — Villa Theme 0.7.0
+
+Refined interior pages and added a keyboard- and touch-accessible native photo viewer
+for CMS galleries and room photos, with direct image links as no-JS gallery fallback.
+No Core/plugin changes or dependencies. Signed on ind and activated via ThemeManager;
+ZIP SHA-256 `f4ae517b284fa1cec7b9b9a9416fa6882ba365b27bd75bccb5c81842340d0b9c`.
+All 23 payload files verified; home Builder remains 5, gallery is 3, oxygen page 2.
+
+Two CMS galleries were updated in PL/EN to replace images containing Wi-Fi credentials.
+Three originals and nine variants were restricted from direct HTTP access; file modes
+are recorded in recovery. Library records remain active because historic revisions use
+them. Advise the owner to rotate previously exposed Wi-Fi credentials; do not restore
+old public permissions or sensitive gallery revisions without removing the credentials.
+
+Checked 30 routes, 78 PL/EN page/width combinations, photo viewer buttons, arrows,
+Escape, focus restoration, simulated swipe, room photos and no-JS gallery fallback.
+No JS errors or overflow; PHP 8.5 lint/contract and JS syntax passed. Services active.
+The 12 vhost permission-denied lines were created by verifying restricted media.
+Recovery `/root/villa-italiana-backups/20261029T031449Z-theme-070`; inspect later edits
+before scoped rollback. Detailed evidence is in Villa `.wrk/villa-theme-070-*`.
+
+### 2026-10-29 — Villa Theme 0.8.0, expanded gallery
+
+Published all 27 safe photographs from the 30-file source (including both massage
+photos). Three images with visible Wi-Fi credentials remain restricted as in 0.7.0.
+The CMS gallery uses three editable blocks of 10/9/8, respecting the Core repeater
+limit. Theme JS joins those blocks into a single viewer while preserving separate room
+photo groups. Reviewed each photo and added descriptive PL/EN alternatives/captions.
+
+Signed on ind; active `villa-theme-0.8.0-a7c95bd18e2d2068`, SHA-256
+`a7c95bd18e2d206887ac39a9b41b6496d115221b9b64a78f152a5739f9286212`.
+Verified 23 signed files, 30 routes, all 27 media URLs, PL/EN 27-image uniqueness,
+six responsive widths, section-boundary navigation and wraparound, room/oxygen viewers,
+no-JS fallback and continued 403 protection. JS/PHP lint/contract passed; services
+active. Gallery Builder revision 5, home revision 5, 15 pages published.
+
+Backup `/root/villa-italiana-backups/20261029T041954Z-theme-080` retains DB/theme and
+pre-change gallery. Review later CMS edits before rollback; preserve private media
+restrictions. No Core/plugin/schema changes, installer rebuild, restart or commit.
+
+## 2026-10-29 — Villa Theme 0.9.0 production
+
+Villa Theme 0.9.0 published for Villa Italiana as a signed standalone theme. Rooms listing displays four CMS-managed variants with room-specific lightboxes and safe detail-page fallback; English room URLs fixed. Page 8 and navigation now use `/tlenoterapia-i-masaze` and `/en/oxygen-therapy-and-massage`, with oxygen therapy and massage content from supplied materials. Home and About CMS copy updated. Production recovery snapshot, database dump, previous theme and signed package: `/root/villa-italiana-backups/20261029T063312Z-theme-090`. Review newer CMS edits before targeted restoration; never overwrite newer production records with a whole-database restore. No schema or plugin changes. PHP 8.5 lint, theme contract and JS syntax passed; activated package and service health verified.
+
+## 2026-10-29 — Villa Theme 0.10.1 contact
+
+Villa contact page and footer now use the localized full facility address and Google Maps, with a CMS-managed bilingual form, CAPTCHA, inbox storage and SMTP notifications. SMTP is configured via EmailSystem with encrypted password; TLS authentication and SMTP envelope acceptance passed, without sending a test message. Actual mailbox delivery and a successful end-to-end submission remain unverified. Signed theme 0.10.1 SHA-256 `645983ea33af54c1b283e7bef03604a825df137491f0d3f8a3d7035ac0f14c5b`. Production checked through pinned SSH tunnel: 30 sitemap URLs, 16 PL/EN contact viewport checks, CAPTCHA and invalid/CSRF rejection. PHP 8.5 lint/contract and JS syntax passed. Recovery snapshot `/root/villa-italiana-backups/20261029T073544Z-theme-0100`; preserve newer enquiries during targeted restore. Detailed evidence in Villa work log.
+
+## 2026-10-29 — Villa Theme 0.11.0 location
+
+Updated bilingual location page with full address, owner-provided Google Maps link and embed, and a four-image accessible slider driven by CMS gallery data. Google Maps is permitted in CSP on the location template only. Signed theme SHA-256 `2b2b7dcef96f6d0e0f415fcc0de20aed754d406bf534237ae9c10e6ea499195c`. Verified 30 sitemap URLs, 16 locale/viewport combinations, slider controls, no-JS images and rendered Google map via pinned tunnel. Recovery `/root/villa-italiana-backups/20261029T080957Z-theme-0110`; inspect later edits before targeted restoration. Detailed evidence in Villa work log.
+
+## 2026-10-29 — Villa Theme 0.12.0 automatic slider
+
+Location slider advances every three seconds, has edge arrows and no visible counter, pauses for hover/focus and reduced motion, and combines 27 public photos from three CMS gallery blocks; restricted photos remain private. Signed SHA-256 `d575e53f8fd5abc550ef57931811ee2a2727059130944871ec87b621ca36ecbc`, location Builder revision 3. Verified bilingual responsive UI, automatic advance and pause, photo URLs, no-JS images and 30 sitemap URLs. Recovery `/root/villa-italiana-backups/20261029T083201Z-theme-0120`; inspect later CMS edits before targeted restore. Detailed Villa work log contains evidence.
+
+## 2026-10-29 — Villa About page
+
+Villa Italiana CMS page 7 rebuilt in PL/EN with four editable image-and-text sections and contact/rooms CTA, using source-confirmed information and existing safe photographs. Builder revision 3; Theme 0.12.0 unchanged. Verified responsive views, photos, links and service health. Recovery snapshot `/root/villa-italiana-backups/20261029T084623Z-about`; review newer edits before targeted restore. Detailed evidence in Villa work log.
+
+## 2026-10-29 — Villa About page refinement
+
+Expanded bilingual About copy and added a three-photo CMS gallery with lightbox to the four existing photos. Builder revision 4; no theme, Core, plugin or schema change. Responsive PL/EN, gallery keyboard/focus, photos and links verified; backup `/root/villa-italiana-backups/20261029T090503Z-about-refine`. Detailed evidence in Villa work log.
+
+## 2026-10-29 — Villa wellness page refinement
+
+Expanded bilingual oxygen therapy and massage content, added a three-photo editable gallery and contact CTA. Page 8 Builder revision 3; no theme, Core, plugin or schema changes. Verified responsive PL/EN, photos, gallery keyboard/focus, contact links and service health. Backup `/root/villa-italiana-backups/20261029T093527Z-wellness-refine`; inspect later edits before targeted restoration. Detailed evidence in Villa work log.
+
+## 2026-10-29 — Villa SEO, navigation and mobile
+
+Villa Theme 0.14.0 deployed with editable per-page keywords, opt-in LodgingBusiness schema, responsive 320px heading fix and corrected navigation; 30 SEO title/description/canonical/alternate/keyword checks passed, plus 60 mobile page/width checks. Sense CMS Core `PublicController.php` sitemap now chooses the configured default locale for x-default, fixing 26 mismatches; source, production hotfix and live XML verified. `tests/product-pages-http.py` adds a regression invariant; its guarded QA fixture was not run. Hotfix applied only to Villa installation; include source change in next formal Core release. Recovery `/root/villa-italiana-backups/20261029T101248Z-seo-0130`. Search Console indexing and field performance unverified; Google ignores meta keywords. Details and evidence in Villa work log.
+
+## 2026-10-29 — Villa Theme 0.15.0 header
+
+Balanced navigation around the logo and increased menu font weight; signed theme SHA-256 `0ae9216a55bc18637cbd3051d6caa6364375143aca757ebe6af6c434b441ded4`. Verified 22 PL/EN viewport combinations, mobile menu, no overlap and 30 sitemap routes. No Core or database changes. Recovery `/root/villa-italiana-backups/20261029T113454Z-header-0150`; detailed evidence in Villa work log.
+
+## 2026-10-30 — Villa Theme 0.15.1
+
+Centered the mobile menu with full-width navigation groups; published the signed theme only to Villa Italiana. PL/EN responsive production checks passed; recovery and deployment details are in the Villa work log. No Sense CMS Core deployment.
+
+## 2026-10-30 — SEO report and sitemap Core hotfix
+
+- Deployed previously reviewed sitemap x-default fix to official www Sense CMS only; exact source SHA-256 6fcb3daca2d037f08b773497d75b762aba6b1f8018c0fa95dfe7d4397bba5ef5. Backup /root/sensecms-backups/20261029T183643Z-sitemap-default. 51 sitemap default-language pairs matched, homepage/sitemap HTTP 200, PHP 8.5 lint and nginx/PHP-FPM health passed; no recent fatal markers. No installer rebuild or formal Core release.
+- Signed Villa Theme 0.15.2 and deployed to Villa, using existing WebP variants with JPEG fallback; enabled site-scoped HSTS. 30 sitemap pages scanned without missing alt attributes; report's likely empty-alt image is decorative chat logo. Details and backups in Villa work log.
+
+## 2026-10-30 — Villa Rank audit and chat image
+
+- ITTSP Rank specifically flagged the decorative chat logo's empty alt. Added descriptive Sense CMS alt and aria-hidden to its decorative wrapper, preserving screen reader behavior; exact Core view deployed to Villa and official www, with backups /root/villa-italiana-backups/20261029T184926Z-chat-alt and /root/sensecms-backups/20261029T184922Z-chat-alt. No formal Core release or installer build. PHP 8.5 lint and services healthy.
+- Villa Theme 0.15.4 selects existing responsive WebP variants with JPEG fallback; production checks passed. Refreshed actual Rank report improved from 89 to 94, no high issues, compared with WordPress report 92. JPEG fallback still appears as a format warning in that checker. Details in Villa work log.

@@ -46,6 +46,11 @@ status, sitemap, _ = request('/sitemap.xml')
 locations = [node.text for node in ET.fromstring(sitemap).findall('{*}url/{*}loc')]
 for path in paths:
     check(locations.count('https://www.sensecms.com' + path) == 1, 'No duplicate canonical sitemap entry ' + path)
+default_locale = re.search(r'<html[^>]+lang="([^"]+)"', request('/')[1]).group(1)
+for node in ET.fromstring(sitemap).findall('{*}url'):
+    links = {link.get('hreflang'): link.get('href') for link in node.findall('{http://www.w3.org/1999/xhtml}link')}
+    if default_locale in links and 'x-default' in links:
+        check(links['x-default'] == links[default_locale], 'Sitemap x-default matches the default locale')
 
 owner = json.loads((root / 'preview-private.json').read_text())
 _, login, _ = request('/login')

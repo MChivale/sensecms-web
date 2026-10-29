@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 // Operator-only CMS content publication; no package executable or Core is installed.
-if (PHP_SAPI !== 'cli' || $argc !== 4 || !in_array($argv[2], ['--apply','--rollback','--release-status','--calendar-status','--analytics-status','--google-calendar-status','--microsoft-calendar-status','--apple-calendar-status','--telegram-status'], true)) exit("Usage: php publish-package-catalog.php <installation> <publication-mode> <private-backup>\n");
+if (PHP_SAPI !== 'cli' || $argc !== 4 || !in_array($argv[2], ['--apply','--reconcile','--rollback','--release-status','--calendar-status','--analytics-status','--google-calendar-status','--microsoft-calendar-status','--apple-calendar-status','--telegram-status'], true)) exit("Usage: php publish-package-catalog.php <installation> <publication-mode> <private-backup>\n");
 umask(0077);
 $root = realpath($argv[1]); $backup = realpath($argv[3]);
 if (!$root || !$backup || !str_starts_with($backup, '/root/')) throw new RuntimeException('Private existing operator paths required.');
@@ -62,6 +62,7 @@ if ($argv[2] === '--rollback') {
     foreach ($state['links'] as $item) $db->prepare('UPDATE content_blocks SET visible=0,archived_at=NOW() WHERE page_id=? AND uid=?')->execute([$item['id'],$item['uid']]);
     echo "Catalog pages withdrawn; existing content and package files preserved.\n"; exit;
 }
+$reconcile = $argv[2] === '--reconcile';
 if (file_exists($stateFile)) throw new RuntimeException('Publication already attempted; inspect its journal.');
 $products = require dirname(__DIR__) . '/.src/package-catalog.php';
 $types = ['theme'=>'Themes','plugin'=>'Plugins','addon'=>'Addons','module'=>'Modules','system'=>'Core','application'=>'Applications'];
@@ -92,8 +93,13 @@ $catalog = App\Core\PageBuilder::catalog($descriptor);
 $facility = (new App\Core\FacilityRepository($db))->primary('en','en');
 $owner = (int) $db->query("SELECT ur.user_id FROM user_roles ur JOIN roles r ON r.id=ur.role_id JOIN users u ON u.id=ur.user_id WHERE r.slug='owner' AND u.active=1 ORDER BY ur.user_id LIMIT 1")->fetchColumn();
 if (!$facility || !$owner || $cms->defaultLocale()!=='en') throw new RuntimeException('Expected English product site with an active owner and primary facility.');
+$existingPages=[];
 foreach ($pages as $url=>$copy) {
-    if ($cms->pageAtPath($url)) throw new RuntimeException('Existing catalogue route needs reviewed reconciliation: ' . $url);
+    $existingPages[$url]=$cms->pageAtPath($url);
+    if ($existingPages[$url]) {
+        if (!$reconcile) throw new RuntimeException('Existing catalogue route needs reviewed reconciliation: ' . $url);
+        continue;
+    }
     $check = $db->prepare('SELECT 1 FROM page_translations WHERE facility_id=? AND locale=? AND slug=?');
     $check->execute([$facility['id'],'en',str_replace('/','-',ltrim($url,'/'))]);
     if ($check->fetchColumn()) throw new RuntimeException('Existing catalogue slug needs review.');
@@ -103,7 +109,34 @@ $block = static fn(array $s): array => ['uid'=>$uuid(),'type'=>'text','visible'=
 $state = ['created'=>[],'links'=>[],'before'=>[]];
 $persist = static function () use (&$state,$stateFile): void { if (file_put_contents($stateFile,json_encode($state,JSON_THROW_ON_ERROR),LOCK_EX)===false) throw new RuntimeException('Cannot save publication journal.'); };
 $persist();
+$createdPages=0; $updatedPages=0; $addedCards=0;
 foreach ($pages as $url=>$copy) {
+    $existing=$existingPages[$url]??null;
+    if ($existing) {
+        if (!$reconcile || !in_array($url,['/extensions/catalog','/extensions/catalog/theme','/extensions/catalog/plugin'],true)) continue;
+        $doc=$cms->builderDocument((int)$existing['id']);
+        $present=[];
+        foreach ($doc['blocks'] as $item) {
+            if (($item['visible']??true)===false) continue;
+            foreach ((array)($item['localized']??[]) as $localized) {
+                $target=(string)($localized['cta_url']??'');
+                if ($target!=='') $present[$target]=true;
+            }
+        }
+        $blocks=$doc['blocks']; $added=[];
+        foreach ($copy['sections'] as $section) {
+            $target=(string)($section[3]??'');
+            if ($target==='' || isset($present[$target])) continue;
+            $new=$block($section); $blocks[]=$new; $added[]=$new; $present[$target]=true;
+        }
+        if (!$added) continue;
+        $state['before'][$url]=$doc;
+        foreach ($added as $item) $state['links'][]=['id'=>$existing['id'],'uid'=>$item['uid']];
+        $persist();
+        $cms->saveBuilderDocument((int)$existing['id'],(int)$doc['builder_version'],$owner,'sensecms',App\Core\PageBuilder::sanitizeBlocks($blocks,$catalog,array_keys($doc['translations'])),array_keys($catalog));
+        $updatedPages++; $addedCards+=count($added);
+        continue;
+    }
     $blocks = App\Core\PageBuilder::sanitizeBlocks(array_map($block,$copy['sections']),$catalog,['en']);
     $input = ['id'=>0,'facility_id'=>(int)$facility['id'],'template'=>'default','status'=>'draft','visibility'=>'public','published_at'=>null];
     $translations = ['en'=>['title'=>$copy['title'],'slug'=>str_replace('/','-',ltrim($url,'/')),'excerpt'=>$copy['description'],'seo_title'=>$copy['title'],'seo_description'=>$copy['description']]];
@@ -111,15 +144,49 @@ foreach ($pages as $url=>$copy) {
     $state['created'][] = ['id'=>$id,'path'=>$url]; $persist();
     $cms->saveBuilderDocument($id,0,$owner,'sensecms',$blocks,array_keys($catalog));
     $cms->savePage(array_replace($input,['id'=>$id,'status'=>'published','public_path'=>$url]),$translations,$owner);
+    $createdPages++;
     echo "Published $url\n";
 }
-foreach (['/extensions'=>'/extensions/catalog','/extensions/themes'=>'/extensions/catalog/theme','/extensions/plugins'=>'/extensions/catalog/plugin','/extensions/addons'=>'/extensions/catalog/addon','/extensions/modules'=>'/extensions/catalog/module','/download'=>'/extensions/catalog'] as $url=>$target) {
+if ($reconcile) {
+    $existing=$cms->pageAtPath('/extensions');
+    if (!$existing) throw new RuntimeException('Expected the existing public extensions marketplace.');
+    $doc=$cms->builderDocument((int)$existing['id']);
+    $present=[];
+    foreach ($doc['blocks'] as $item) {
+        if (($item['visible']??true)===false) continue;
+        foreach ((array)($item['localized']??[]) as $localized) {
+            $target=(string)($localized['cta_url']??'');
+            if ($target!=='') $present[$target]=true;
+        }
+    }
+    $blocks=$doc['blocks']; $added=[];
+    foreach ($products as $product) {
+        $section=$card($product); $target=(string)$section[3];
+        if (isset($present[$target])) continue;
+        $new=$block($section); $blocks[]=$new; $added[]=$new; $present[$target]=true;
+    }
+    if ($added) {
+        $state['before']['/extensions']=$doc;
+        foreach ($added as $item) $state['links'][]=['id'=>$existing['id'],'uid'=>$item['uid']];
+        $persist();
+        $cms->saveBuilderDocument((int)$existing['id'],(int)$doc['builder_version'],$owner,'sensecms',App\Core\PageBuilder::sanitizeBlocks($blocks,$catalog,array_keys($doc['translations'])),array_keys($catalog));
+        $updatedPages++; $addedCards+=count($added);
+    }
+}
+if (!$reconcile) foreach (['/extensions'=>'/extensions/catalog','/extensions/themes'=>'/extensions/catalog/theme','/extensions/plugins'=>'/extensions/catalog/plugin','/extensions/addons'=>'/extensions/catalog/addon','/extensions/modules'=>'/extensions/catalog/module','/download'=>'/extensions/catalog'] as $url=>$target) {
     $existing = $cms->pageAtPath($url);
     if (!$existing) throw new RuntimeException('Expected existing product route.');
     $doc = $cms->builderDocument((int)$existing['id']);
+    $alreadyLinked=false;
+    foreach ($doc['blocks'] as $item) {
+        if (($item['visible']??true)===false) continue;
+        foreach ((array)($item['localized']??[]) as $localized) if (($localized['cta_url']??'')===$target) $alreadyLinked=true;
+    }
+    if ($alreadyLinked) continue;
     $new = $block(['Package catalogue','<p>View products, free and paid licence tiers, and current Sense CMS availability.</p>','Browse packages →',$target]);
     $state['before'][$url] = $doc; $state['links'][] = ['id'=>$existing['id'],'uid'=>$new['uid']]; $persist();
     $blocks = App\Core\PageBuilder::sanitizeBlocks(array_merge([$new],$doc['blocks']),$catalog,array_keys($doc['translations']));
     $cms->saveBuilderDocument((int)$existing['id'],(int)$doc['builder_version'],$owner,'sensecms',$blocks,array_keys($catalog));
+    $updatedPages++; $addedCards++;
 }
-echo 'Published catalogue: ' . count($products) . ' products, ' . count($pages) . " managed pages.\n";
+echo 'Published catalogue: ' . count($products) . ' products; ' . $createdPages . ' pages created, ' . $updatedPages . ' pages updated, ' . $addedCards . " cards added.\n";

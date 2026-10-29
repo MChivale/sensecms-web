@@ -1,0 +1,85 @@
+{
+  "name": "Villa Sections",
+  "slug": "villa-sections",
+  "version": "0.2.0",
+  "author": "QUANT Software House Limited",
+  "type": "plugin",
+  "description": "Adds reusable, multilingual homepage and room sections for the Villa Italiana theme.",
+  "compatible_engine_version": ">=1.0.0 <2.0.0",
+  "dependencies": [],
+  "permissions": [],
+  "icon": "bed-double",
+  "group": "Villa Italiana",
+  "release_channel": "development",
+  "license": {"model":"commercial-subscription","billing_period":"year","price":12,"currency":"USD","product_name":"Villa Sections","product_model":"Villa Sections Plugin","product_version":"1.0"},
+  "builder_components": {
+    "villa-hero": {
+      "label": "Villa hero",
+      "description": "A full-width welcome with a room or reception image and two clear actions.",
+      "icon": "image",
+      "group": "Villa Italiana",
+      "singleton": true,
+      "renderer": "views/hero.php",
+      "fields": [
+        {"key":"eyebrow","type":"text","label":"Overline","max":100},
+        {"key":"title","type":"text","label":"Headline","required":true,"max":180,"wide":true},
+        {"key":"text","type":"textarea","label":"Introduction","max":800,"wide":true},
+        {"key":"image","type":"image","label":"Main photograph","required":true,"wide":true},
+        {"key":"image_alt","type":"text","label":"Photograph alternative text","required":true,"max":240,"wide":true},
+        {"key":"primary_label","type":"text","label":"Primary action","max":80},
+        {"key":"primary_url","type":"url","label":"Primary destination"},
+        {"key":"secondary_label","type":"text","label":"Secondary action","max":80},
+        {"key":"secondary_url","type":"url","label":"Secondary destination"}
+      ]
+    },
+    "villa-rooms": {
+      "label": "Villa rooms",
+      "description": "A managed room collection with a photo, sleeping arrangement and guest link per card.",
+      "icon": "bed-double",
+      "group": "Villa Italiana",
+      "renderer": "views/rooms.php",
+      "fields": [
+        {"key":"eyebrow","type":"text","label":"Overline","max":100},
+        {"key":"title","type":"text","label":"Section heading","required":true,"max":180,"wide":true},
+        {"key":"text","type":"textarea","label":"Introduction","max":600,"wide":true},
+        {"key":"rooms","type":"repeater","label":"Rooms","item_label":"Room","min":0,"max":6,"fields":[
+          {"key":"title","type":"text","label":"Room name","required":true,"max":150,"wide":true},
+          {"key":"description","type":"textarea","label":"Short description","max":360,"wide":true},
+          {"key":"image","type":"image","label":"Photograph","required":true,"wide":true},
+          {"key":"image_alt","type":"text","label":"Photograph alternative text","required":true,"max":240,"wide":true},
+          {"key":"beds","type":"text","label":"Bed arrangement","max":120},
+          {"key":"capacity","type":"number","label":"Maximum guests","min":1,"max":12},
+          {"key":"url","type":"url","label":"Room page URL"}
+        ]}
+      ]
+    },
+    "villa-room": {
+      "label": "Villa room detail",
+      "description": "A reusable room detail with an accurate bed layout, guest count and photo gallery.",
+      "icon": "bed-single",
+      "group": "Villa Italiana",
+      "singleton": true,
+      "renderer": "views/room.php",
+      "fields": [
+        {"key":"eyebrow","type":"text","label":"Overline","max":100},
+        {"key":"title","type":"text","label":"Room heading","required":true,"max":180,"wide":true},
+        {"key":"image","type":"image","label":"Main photograph","required":true,"wide":true},
+        {"key":"image_alt","type":"text","label":"Photograph alternative text","required":true,"max":240,"wide":true},
+        {"key":"beds","type":"text","label":"Bed arrangement","required":true,"max":120},
+        {"key":"capacity","type":"number","label":"Maximum guests","min":1,"max":12},
+        {"key":"floor","type":"text","label":"Floor or layout note","max":100},
+        {"key":"text","type":"textarea","label":"Room description","max":1400,"wide":true},
+        {"key":"gallery","type":"repeater","label":"Additional photographs","item_label":"Photograph","min":0,"max":8,"fields":[
+          {"key":"image","type":"image","label":"Photograph","required":true,"wide":true},
+          {"key":"alt","type":"text","label":"Alternative text","required":true,"max":240,"wide":true}
+        ]},
+        {"key":"cta_label","type":"text","label":"Action label","max":80},
+        {"key":"cta_url","type":"url","label":"Action destination"}
+      ]
+    }
+  },
+  "changelog": [
+    {"version":"0.2.0","summary":"Rename to Villa Sections and add the $12/year subscription offer."},
+    {"version":"0.1.0","summary":"Initial multilingual page-builder sections for the Villa Italiana theme."}
+  ]
+}

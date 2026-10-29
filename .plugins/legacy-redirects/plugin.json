@@ -1,0 +1,22 @@
+{
+  "name": "Legacy Redirects",
+  "slug": "legacy-redirects",
+  "version": "0.2.0",
+  "author": "QUANT Software House Limited",
+  "type": "plugin",
+  "description": "Manage permanent or temporary redirects, including multiple legacy aliases for one destination.",
+  "compatible_engine_version": ">=1.0.0 <2.0.0",
+  "dependencies": [],
+  "permissions": [],
+  "runtime": "runtime.php",
+  "config_url": "/system/extensions/legacy-redirects",
+  "icon": "replace",
+  "group": "Villa Italiana",
+  "release_channel": "development",
+  "license": {"model":"commercial-subscription","billing_period":"year","price":12,"currency":"USD","product_name":"Legacy Redirects","product_model":"Legacy Redirects Plugin","product_version":"1.0"},
+  "routes": ["/system/extensions/legacy-redirects"],
+  "changelog": [
+    {"version":"0.2.0","summary":"Manage multiple redirect groups and aliases in the CMS panel; $12/year subscription offer."},
+    {"version":"0.1.0","summary":"Redirect the legacy gabinety URL to the Villa Italiana oxygen-therapy page."}
+  ]
+}
