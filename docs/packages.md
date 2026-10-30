@@ -497,7 +497,7 @@ original Telegram message identity, changed content is rejected and an ambiguous
 is never repeated automatically. This initial release supports text and links only;
 media albums, polls, discussions and paid high-throughput broadcasts are out of scope.
 
-## Pinterest Publisher 0.1.0 (development, access pending)
+## Pinterest Publisher (development, Trial access)
 
 The paid plugin is prepared for **USD 15/year** with an independent entitlement:
 ProductName `Sense CMS Pinterest Publisher Plugin`, ProductModel
@@ -514,7 +514,9 @@ description before publication.
 
 Version 0.1.0 creates standard image Pins from a public HTTPS featured image, title,
 reviewed description and canonical Sense CMS URL. Video Pins, shopping catalogues and
-advertising workflows are outside this release. The signed plugin is installed on the
-official site and the broker route fails closed while Pinterest Trial access remains
-pending. Public paid download and account connection stay closed until Pinterest
-approves the application and its secret is privately provisioned.
+advertising workflows are outside this release. Pinterest has approved Trial access,
+and the official broker is configured only for the licensed `www.sensecms.com`
+installation. A missing installation restriction fails closed. Trial access has
+provider-imposed visibility limits and does not constitute Standard access; public
+distribution and general customer connections remain pending approval. The actual
+OAuth connection and publishing flow still require end-to-end verification.

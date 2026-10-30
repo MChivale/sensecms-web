@@ -10,7 +10,7 @@ use SenseCMS\Website\PinterestBrokerService;
 use SenseCMS\Website\PinterestOAuthEndpoint;
 
 $root=sys_get_temp_dir().'/sensecms-pinterest-test-'.bin2hex(random_bytes(8));if(!mkdir($root,0700))throw new RuntimeException('Cannot create private Pinterest fixture.');
-$key=random_bytes(32);$access='access-'.str_repeat('a',40);$refresh='refresh-'.str_repeat('r',40);$calls=[];$count=0;$cfg=['client_id'=>'fixture-client-id','client_secret'=>'fixture-client-secret-'.str_repeat('s',20)];
+$key=random_bytes(32);$access='access-'.str_repeat('a',40);$refresh='refresh-'.str_repeat('r',40);$calls=[];$count=0;$cfg=['client_id'=>'fixture-client-id','client_secret'=>'fixture-client-secret-'.str_repeat('s',20),'allowed_domain'=>'https://tenant.example'];
 $http=static function(string$method,string$url,array$headers,string$payload)use(&$calls,$access,$refresh):array{
     $calls[]=[$method,$url,$headers,$payload];
     if($url==='https://www.chivale.com/license/'){parse_str($payload,$form);if(($form['LicenseKey']??'')!==str_repeat('K',32))return[403,'{"error":true}'];return[200,json_encode(['error'=>false,'data'=>['product'=>['name'=>'Sense CMS','model'=>'Sense CMS System','version'=>'1.0'],'valid_from'=>null,'valid_to'=>null]])];}
@@ -25,6 +25,10 @@ $reject=static function(callable$fn,int$code,string$label)use($check):void{try{$
 $requestToken=static function(array$start):string{parse_str((string)parse_url($start['authorize_url'],PHP_URL_QUERY),$query);return(string)($query['request']??'');};
 try{
     $check($broker->ready(),'configured Pinterest broker ready');$reject(fn()=>(new PinterestBrokerService($root,$key,[],$http))->start($server,[]),503,'missing Pinterest app credentials fail closed');
+    $trial=new PinterestBrokerService($root,$key,$cfg,$http);
+    $reject(fn()=>$trial->start($other,['return_url'=>'https://other.example/social-publishing/pinterest/callback']),403,'Trial access rejects a different installation');
+    $reject(fn()=>(new PinterestBrokerService($root,$key,array_diff_key($cfg,['allowed_domain'=>true]),$http))->start($server,['return_url'=>'https://tenant.example/social-publishing/pinterest/callback']),503,'missing Trial installation restriction fails closed');
+    $check($trial->start($server,['return_url'=>'https://tenant.example/social-publishing/pinterest/callback'])['expires_in']===600,'Trial access permits the approved licensed installation');
     $reject(fn()=>$broker->start([],['return_url'=>'https://tenant.example/social-publishing/pinterest/callback']),401,'installation licence required');$reject(fn()=>$broker->start($server,['return_url'=>'https://evil.example/social-publishing/pinterest/callback']),422,'return URL bound to installation');
     $start=$broker->start($server,['return_url'=>'https://tenant.example/social-publishing/pinterest/callback']);$request=$requestToken($start);$check(strlen($request)===43&&$start['expires_in']===600,'short-lived Pinterest authorization request');
     $authorize=$broker->authorize($request);parse_str((string)parse_url($authorize,PHP_URL_QUERY),$query);$check(str_starts_with($authorize,'https://www.pinterest.com/oauth/?')&&$query['client_id']===$cfg['client_id']&&$query['redirect_uri']==='https://www.sensecms.com/api/social/pinterest/v1/callback'&&$query['scope']==='boards:read,pins:read,pins:write,user_accounts:read'&&$query['state']===$request,'Pinterest authorization uses minimum board publishing scopes');

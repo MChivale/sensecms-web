@@ -2,6 +2,7 @@
     'use strict';
     const root = document.querySelector('[data-update-center]');
     if (!root) return;
+    const tr = (en, pl) => document.documentElement.lang === 'pl' ? pl : en;
     const list = root.querySelector('[data-stable-releases]');
     fetch('/api/updates/v1/catalog', {credentials: 'omit', headers: {'Accept':'application/json'}})
         .then(async response => {
@@ -12,8 +13,8 @@
             list.replaceChildren();
             if (!data.releases.length) {
                 const card = document.createElement('article'); card.className = 'update-release-card';
-                const title = document.createElement('h3'); title.textContent = 'The first Stable release is still ahead.';
-                const text = document.createElement('p'); text.textContent = 'No Stable Core release has been published yet. Development builds are not Stable releases. When an accepted release is published, it will appear here and in your CMS update checks.';
+                const title = document.createElement('h3'); title.textContent = tr('The first Stable release is still ahead.', 'Pierwsze stabilne wydanie jest jeszcze przed nami.');
+                const text = document.createElement('p'); text.textContent = tr('No Stable Core release has been published yet. Development builds are not Stable releases. When an accepted release is published, it will appear here and in your CMS update checks.', 'Stabilne wydanie Core nie zostało jeszcze opublikowane. Wersje rozwojowe nie są wydaniami stabilnymi. Po publikacji zatwierdzone wydanie pojawi się tutaj oraz w wynikach sprawdzania aktualizacji CMS.');
                 card.append(title, text); list.append(card);
             }
             data.releases.forEach(release => {
@@ -24,5 +25,5 @@
                 release.notes.forEach(note => { const item = document.createElement('li'); item.textContent = note; notes.append(item); });
                 card.append(heading, details, notes); list.append(card);
             });
-        }).catch(() => { list.textContent = 'Release information is temporarily unavailable. Please retry later; this is not confirmation that your CMS is up to date.'; });
+        }).catch(() => { list.textContent = tr('Release information is temporarily unavailable. Please retry later; this is not confirmation that your CMS is up to date.', 'Informacje o wydaniach są chwilowo niedostępne. Spróbuj ponownie później; ten komunikat nie potwierdza aktualności Twojego CMS.'); });
 })();

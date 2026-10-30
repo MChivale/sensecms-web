@@ -160,6 +160,13 @@ final class CmsRepository
         return $this->db->query('SELECT public_path,id FROM pages WHERE public_path IS NOT NULL')->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
+    public function localizedPublicPaths(string $locale, int $facilityId): array
+    {
+        $query = $this->db->prepare("SELECT p.public_path,t.slug FROM pages p JOIN page_translations t ON t.page_id=p.id AND t.locale=? WHERE p.facility_id=? AND p.public_path IS NOT NULL AND p.visibility='public' AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW()))");
+        $query->execute([$locale, $facilityId]);
+        return $query->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
     public function pageById(int $id,string $locale,string $fallbackLocale,int $facilityId):?array
     {
         $statement=$this->db->prepare("SELECT p.*,COALESCE(t.title,ft.title) title,COALESCE(t.slug,ft.slug) localized_slug,COALESCE(t.excerpt,ft.excerpt) excerpt,COALESCE(t.seo_title,ft.seo_title) seo_title,COALESCE(t.seo_description,ft.seo_description) seo_description FROM pages p LEFT JOIN page_translations t ON t.page_id=p.id AND t.locale=? LEFT JOIN page_translations ft ON ft.page_id=p.id AND ft.locale=? WHERE p.id=? AND p.facility_id=? AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW())) AND p.visibility='public' LIMIT 1");$statement->execute([$locale,$fallbackLocale,$id,$facilityId]);$page=$statement->fetch();if(!$page)return null;$page['blocks']=$this->blocks((int)$page['id'],$locale,$fallbackLocale);return$page;

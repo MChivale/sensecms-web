@@ -299,6 +299,6 @@ if ($method === 'GET' && preg_match('#^/([a-z]{2,5})/posts/([a-z0-9-]+)$#', $pat
 if ($method === 'GET' && preg_match('#^/([a-z]{2,5})/facilities/([a-z0-9-]+)/([a-z0-9-]+)/posts/([a-z0-9-]+)$#', $path, $matches)) $public->showFacilityPost($matches[1],$matches[2],$matches[3],$matches[4]);
 if ($method === 'GET' && preg_match('#^/([a-z]{2,5})/facilities/([a-z0-9-]+)/([a-z0-9-]+)(?:/([a-z0-9-]+))?$#', $path, $matches)) $public->showFacility($matches[1],$matches[2],$matches[3],$matches[4]??null);
 if ($method === 'GET' && preg_match('#^/([a-z]{2,5})/surveys/([a-z0-9-]+)$#', $path, $matches)) $surveyController->show($matches[1],$matches[2]);
-if ($method === 'GET' && preg_match('#^/([a-z]{2,5})(?:/([a-z0-9-]+))?$#', $path, $matches)) $public->show($matches[1], $matches[2] ?? 'home');
+if ($method === 'GET' && preg_match('#^/([a-z]{2,5})(?:/([a-z0-9-]+)|/)?$#', $path, $matches)) $public->show($matches[1], $matches[2] ?? 'home');
 header('Content-Type: text/plain; charset=utf-8', true, 404);
 echo "Not found";

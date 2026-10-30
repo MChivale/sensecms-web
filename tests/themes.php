@@ -75,6 +75,7 @@ $assert(!str_contains($theme->response('/download')[2], '.zip'), 'no fake releas
 $fields = json_decode((string) file_get_contents($source . '/theme.json'), true)['configuration'];
 $settings = array_column($fields, 'default', 'key');
 foreach ($settings as $key => $_value) {
+    if (str_ends_with($key, '_pl')) continue; // Polish fields are exercised with a Polish layout context below.
     $field = array_values(array_filter($fields, static fn(array $candidate): bool => $candidate['key'] === $key))[0];
     if ($field['type'] === 'select') continue;
     $value = str_ends_with($key, '_url') ? '/qa-' . str_replace('_', '-', $key) : 'QA-' . $key . '<unsafe>';
@@ -84,6 +85,13 @@ foreach ($settings as $key => $_value) {
     $expected = str_ends_with($key, '_url') ? $value : 'QA-' . $key . '&lt;unsafe&gt;';
     $assert(str_contains($body, $expected) && !str_contains($body, '<unsafe>'), 'editable homepage field escapes text: ' . $key);
 }
+$polishBody = (static function () use ($source, $pages, $settings): string {
+    $locale='pl'; $path='/'; $baseUrl='https://www.sensecms.com'; $status=200;
+    $page=$pages['/']; $themeSettings=$settings; $themeSettings['home_title_pl']='QA <unsafe>';
+    $e=static fn(mixed $value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    ob_start(); try { require $source . '/layout.php'; return (string)ob_get_contents(); } finally { ob_end_clean(); }
+})();
+$assert(str_contains($polishBody, 'QA &lt;unsafe&gt;') && !str_contains($polishBody, 'QA <unsafe>') && str_contains($polishBody, 'Poznaj Sense CMS'), 'Polish homepage settings and labels render safely');
 $defaultFooter = $theme->response('/')[2];
 $assert(str_contains($defaultFooter, '© Copyright by Sense CMS · QUANT Software House Limited. All rights reserved.') && !str_contains($defaultFooter, 'Independent by design.'), 'product footer uses the requested copyright text');
 $assert(str_contains($defaultFooter,'src="/theme-assets/logo-light.svg"')&&str_contains($defaultFooter,'Sense CMS is a flexible, self-hosted content management system')&&str_contains($footerCss=(string)file_get_contents($source.'/assets/site.css'),'.footer-brand>p{max-width:390px;text-align:justify'),'footer logo, brand and justified SEO description use configurable theme fields');
@@ -135,7 +143,7 @@ $configured = $theme->response('/platform', 'GET', ['navigation' => [
 $assert(str_contains($configured, '&lt;Navigation&gt;') && str_contains($configured, 'aria-current="page"'), 'configured menu is escaped and marks current page');
 $assert(str_contains($configured, 'rel="noopener noreferrer"') && !str_contains($configured, 'javascript:'), 'configured links protect new windows and remove executable URLs');
 $assert(str_contains($configured, '<h2>Explore</h2></div>'), 'intentionally empty navigation stays empty');
-$managed = static function (array $page, ?array $seo=null) use ($source): string {
+$managed = static function (array $page, ?array $seo=null, array $localizedPaths=[]) use ($source): string {
     $locale = 'pl'; $baseUrl = 'https://www.sensecms.com';
     $requestUri=$_SERVER['REQUEST_URI']??null;$_SERVER['REQUEST_URI']=(string)($page['public_path']??'/');
     ob_start();
@@ -176,12 +184,14 @@ foreach (require dirname(__DIR__) . '/.src/package-catalog.php' as $product) {
 }
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog','blocks'=>$marketBlocks]);
 $assert(substr_count($market, 'data-market-item ')===25, 'marketplace presents all CMS products as cards');
+$polishMarket = $managed(['title'=>'Pakiety','public_path'=>'/extensions/catalog','blocks'=>[['type'=>'text','payload'=>['title'=>'Produkt','text'=>'<p><strong>12 USD / rok</strong></p><p>Opis</p><p>Dostępny</p>','cta_url'=>'/extensions/catalog/plugin/google-calendar']]]], null, ['/extensions/catalog/plugin/google-calendar'=>'extensions-catalog-plugin-google-calendar']);
+$assert(str_contains($polishMarket, 'data-product="plugin:google-calendar"') && str_contains($polishMarket, 'href="/pl/extensions-catalog-plugin-google-calendar"') && str_contains($polishMarket, '12 USD / rok'), 'Polish marketplace retains product identity, pricing and localized link');
 $entryMarket=$managed(['title'=>'Marketplace','public_path'=>'/extensions','blocks'=>$marketBlocks]);
 $assert(substr_count($entryMarket,'data-market-item ')===25 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
 $assert(str_contains($entryMarket,'data-market-category="plugin"') && str_contains($entryMarket,'data-market-price="free"'), 'primary marketplace contains category and price chips');
 $assert(substr_count($entryMarket,'data-market-dialog ')===1 && str_contains($entryMarket,'aria-labelledby="market-dialog-title"'), 'marketplace provides one accessible inline details dialog');
 $assert(substr_count($entryMarket,'data-market-open href=')===50 && substr_count($entryMarket,'data-market-status hidden')===25, 'all product actions support dialogs with real no-JS detail links');
-$assert(str_contains($entryMarket,'disabled>Download unavailable') && str_contains($entryMarket,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
+$assert(str_contains($entryMarket,'disabled>Pobieranie niedostępne') && str_contains($entryMarket,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
 $assert(substr_count($market, 'data-pricing="free"')===9, 'marketplace retains nine free product tiers');
 $catalogProducts=require dirname(__DIR__) . '/.src/package-catalog.php';$bluesky=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='bluesky-publisher'))[0]??[];$assert(($bluesky['usd_year']??null)===15&&($bluesky['license']['product_name']??'')==='Sense CMS Bluesky Publisher Plugin'&&($bluesky['license']['product_model']??'')==='Bluesky Publisher Plugin','Bluesky marketplace entry keeps separate paid licence identity');
 $mastodon=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='mastodon-publisher'))[0]??[];$assert(($mastodon['usd_year']??null)===15&&($mastodon['license']['product_name']??'')==='Sense CMS Mastodon Publisher Plugin'&&($mastodon['license']['product_model']??'')==='Mastodon Publisher Plugin','Mastodon marketplace entry keeps separate paid licence identity');
@@ -190,7 +200,7 @@ $pinterest=array_values(array_filter($catalogProducts,static fn(array$product):b
 $tiktok=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='tiktok-publisher'))[0]??[];$assert(($tiktok['usd_year']??null)===15&&($tiktok['license']['product_name']??'')==='Sense CMS TikTok Publisher Plugin'&&($tiktok['license']['product_model']??'')==='TikTok Publisher Plugin','TikTok marketplace entry keeps separate paid licence identity');
 $youtube=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='youtube-publisher'))[0]??[];$assert(($youtube['usd_year']??null)===15&&($youtube['license']['product_name']??'')==='Sense CMS YouTube Publisher Plugin'&&($youtube['license']['product_model']??'')==='YouTube Publisher Plugin','YouTube marketplace entry keeps separate paid licence identity');
 $assert(str_contains($market, 'data-market-filters hidden') && str_contains($market, 'data-market-count'), 'marketplace controls progressively enhance visible server-rendered cards');
-$assert(str_contains($market, 'USD 120 / year') && str_contains($market, 'Separate licence'), 'marketplace displays prices and entitlement labels');
+$assert(str_contains($market, 'USD 120 / year') && str_contains($market, 'Osobna licencja'), 'marketplace displays prices and entitlement labels');
 $marketBlocks[] = ['type'=>'text','payload'=>['title'=>'Editorial <unsafe>','text'=>'<p>Preserved editorial note</p><script>unsafe()</script>']];
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog/plugin','blocks'=>$marketBlocks]);
 $assert(str_contains($market, 'Preserved editorial note') && str_contains($market, 'Editorial &lt;unsafe&gt;') && !str_contains($market,'unsafe()'), 'marketplace preserves non-product editorial blocks safely');
@@ -207,10 +217,10 @@ $assert(!str_contains($platform, 'unsafe()') && !str_contains($platform, 'onerro
 $assert(!str_contains($html, 'class="platform-hero"'), 'default managed template stays unchanged');
 $assert(str_contains($managed(['template'=>'product','title'=>'Empty','blocks'=>[]]), 'class="platform-hero"'), 'product template handles an empty block collection');
 $assert(str_contains($theme->response('/platform')[2], 'class="platform-hero"'), 'starter platform uses same presentation as managed template');
-$assert(str_contains($platform, 'aria-label="Back to top" aria-hidden="true" tabindex="-1"') && str_contains($platform, '<main id="main" tabindex="-1">'), 'return control starts hidden and has an accessible focus destination');
+$assert(str_contains($platform, 'aria-label="Wróć na górę" aria-hidden="true" tabindex="-1"') && str_contains($platform, '<main id="main" tabindex="-1">'), 'return control starts hidden and has an accessible focus destination');
 $seoFixture=App\Core\SeoMeta::resolve([],[],['title'=>'Installation','excerpt'=>'Install Sense CMS'],['base_url'=>'https://www.sensecms.com','current_path'=>'/docs/installation','locale'=>'en','fallback_image'=>'/theme-assets/og.image.jpg','fallback_image_type'=>'image/jpeg','fallback_image_width'=>1200,'fallback_image_height'=>630]);
 $seoPage=$managed(['title'=>'Installation','excerpt'=>'Install Sense CMS','public_path'=>'/docs/installation','blocks'=>[]],$seoFixture);
-$assert(str_contains($seoPage,'"@type":"BreadcrumbList"')&&str_contains($seoPage,'"name":"Documentation"')&&str_contains($seoPage,'property="og:image:width" content="1200"'),'visible breadcrumb trail matches structured data and complete default Open Graph metadata');
+$assert(str_contains($seoPage,'"@type":"BreadcrumbList"')&&str_contains($seoPage,'"name":"Dokumentacja"')&&str_contains($seoPage,'property="og:image:width" content="1200"'),'visible breadcrumb trail matches structured data and complete default Open Graph metadata');
 $assert(str_contains($theme->response('/docs')[2], 'data-back-to-top') && str_contains($theme->response('/')[2], 'data-back-to-top'), 'return control is shared by homepage and subpages');
 $assert(in_array('product', array_column(json_decode((string) file_get_contents($source . '/theme.json'), true)['page_templates'], 'key'), true), 'platform template is available to the CMS editor');
 foreach (['/contact','/docs','/docs/installation','/docs/licensing','/docs/packages','/docs/themes','/docs/server','/download','/extensions','/extensions/modules','/extensions/plugins','/extensions/addons','/extensions/themes'] as $route) {

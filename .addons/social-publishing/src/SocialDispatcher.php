@@ -31,7 +31,7 @@ final class SocialDispatcher
                 $payload = json_decode((string)$delivery['payload'], true, 32, JSON_THROW_ON_ERROR);
                 if (!is_array($payload)) throw new RuntimeException('The delivery payload is invalid.');
                 $published = $runtime['provider']->publish($runtime['credentials'], $payload);
-                if (!is_array($published) || !preg_match('/^[A-Za-z0-9._:-]{1,255}$/D', (string)($published['external_id']??''))) throw new RuntimeException('The provider returned an invalid publication identifier.');
+                if (!is_array($published) || !preg_match('/^[A-Za-z0-9._:~\-]{1,255}$/D', (string)($published['external_id']??''))) throw new RuntimeException('The provider returned an invalid publication identifier.');
                 if(is_array($published['credentials']??null))$this->integrations->updateCredentials((string)$delivery['plugin_slug'],(int)$delivery['connection_id'],$published['credentials']);
                 $url = trim((string)($published['external_url']??''));
                 if ($url !== '' && (!filter_var($url,FILTER_VALIDATE_URL) || !str_starts_with(strtolower($url),'https://'))) throw new RuntimeException('The provider returned an invalid publication URL.');

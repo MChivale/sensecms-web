@@ -172,6 +172,7 @@ final class PublicController extends Controller
             'baseUrl' => $this->config['base_url'],
             'projectRoot' => dirname(__DIR__, 2),
             'navigation' => $navigation,
+            'localizedPaths' => $legacy && $locale !== $fallbackLocale ? $this->cms->localizedPublicPaths($locale, (int)$facility['id']) : [],
             'seo' => $seo,
             'formCsrf' => $this->publicFormToken(),
             'formCaptchaEnabled' => (bool) (((array) $this->cms->setting('captcha_settings', []))['enabled'] ?? true),

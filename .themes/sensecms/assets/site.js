@@ -1,4 +1,5 @@
 'use strict';
+const siteText = (en, pl) => document.documentElement.lang === 'pl' ? pl : en;
 const textScaleKey = 'sensecms:text-scale';
 const normaliseTextScale = value => {
     const number = Number(value);
@@ -48,7 +49,7 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
             card.hidden = !visible;
             if (visible) count++;
         });
-        market.querySelector('[data-market-count]').textContent = count + (count === 1 ? ' result' : ' results');
+        market.querySelector('[data-market-count]').textContent = count + siteText(count === 1 ? ' result' : ' results', count === 1 ? ' wynik' : ' wyników');
         empty.hidden = count !== 0;
         chips.forEach(chip => chip.setAttribute('aria-pressed', String(chip.dataset.marketPrice === pricing)));
         categories.forEach(chip => chip.setAttribute('aria-pressed', String(chip.dataset.marketCategory === category)));
@@ -72,10 +73,7 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
     const downloadForm = dialog.querySelector('[data-download-form]');
     const downloadResult = dialog.querySelector('[data-download-result]');
     let offers = {}, csrf = '', pending, selected = '';
-    const identity = card => {
-        const parts = new URL(card.querySelector('[data-market-open]').href).pathname.split('/');
-        return parts[3] + ':' + parts[4];
-    };
+    const identity = card => card.dataset.product;
     const refreshOffers = async () => {
         const response = await fetch('/packages/download', {headers:{Accept:'application/json'},credentials:'same-origin',cache:'no-store'});
         if (!response.ok) return;
@@ -86,12 +84,12 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
             const offer = offers[identity(card)];
             if (!offer) return;
             const button = card.querySelector('[data-market-status]');
-            button.textContent = 'Download package';
-            button.setAttribute('aria-label', 'Download package: ' + card.querySelector('h2').textContent);
-            card.querySelector('.market-availability').textContent = 'Signed ' + offer.channel + ' package · v' + offer.version;
+            button.textContent = siteText('Download package', 'Pobierz pakiet');
+            button.setAttribute('aria-label', siteText('Download package: ', 'Pobierz pakiet: ') + card.querySelector('h2').textContent);
+            card.querySelector('.market-availability').textContent = siteText('Signed ', 'Podpisany pakiet ') + offer.channel + ' · v' + offer.version;
         });
         const note = market.querySelector('.market-note p');
-        if (note && Object.keys(offers).length) note.textContent = 'Only releases marked as available can be downloaded. Free packages require a CMS licence; paid packages require their own licence. Development packages are not Stable releases.';
+        if (note && Object.keys(offers).length) note.textContent = siteText('Only releases marked as available can be downloaded. Free packages require a CMS licence; paid packages require their own licence. Development packages are not Stable releases.', 'Pobrać można wyłącznie wydania oznaczone jako dostępne. Bezpłatne pakiety wymagają licencji CMS, a płatne — własnej licencji. Pakiety rozwojowe nie są wydaniami stabilnymi.');
     };
     refreshOffers().catch(() => {});
     let opener;
@@ -107,7 +105,7 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
         downloadForm.elements.preview.required = offer?.channel !== 'stable';
         downloadForm.querySelector('.market-preview-consent').hidden = offer?.channel === 'stable';
         dialog.querySelector('.market-download-unavailable').hidden = Boolean(offer);
-        dialog.querySelector('.market-dialog-availability p:last-child').textContent = offer ? 'Signed ' + offer.channel + ' release v' + offer.version + '. Verify the licence below to download this package.' : 'This package is not available yet. No licence key is needed to browse this catalogue.';
+        dialog.querySelector('.market-dialog-availability p:last-child').textContent = offer ? siteText('Signed ', 'Podpisane wydanie ') + offer.channel + ' v' + offer.version + siteText('. Verify the licence below to download this package.', '. Zweryfikuj licencję poniżej, aby pobrać pakiet.') : siteText('This package is not available yet. No licence key is needed to browse this catalogue.', 'Ten pakiet nie jest jeszcze dostępny. Przeglądanie katalogu nie wymaga klucza licencyjnego.');
         const copy = (target, source) => { dialog.querySelector(target).textContent = card.querySelector(source).textContent; };
         copy('#market-dialog-title', 'h2');
         copy('#market-dialog-description', '.market-description');
@@ -118,8 +116,8 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
         copy('[data-dialog-availability]', '.market-availability');
         dialog.querySelector('[data-dialog-icon]').replaceChildren(card.querySelector('.market-icon').cloneNode(true));
         dialog.querySelector('[data-dialog-entitlement]').textContent = card.dataset.pricing === 'free'
-            ? 'This free package requires a valid Sense CMS system licence.'
-            : card.dataset.category === 'system' ? 'Core installation requires a valid Sense CMS system licence.' : 'This paid package requires its own product licence. A CMS licence alone does not authorise the download.';
+            ? siteText('This free package requires a valid Sense CMS system licence.', 'Ten bezpłatny pakiet wymaga ważnej licencji systemowej Sense CMS.')
+            : card.dataset.category === 'system' ? siteText('Core installation requires a valid Sense CMS system licence.', 'Instalacja Core wymaga ważnej licencji systemowej Sense CMS.') : siteText('This paid package requires its own product licence. A CMS licence alone does not authorise the download.', 'Ten płatny pakiet wymaga własnej licencji. Sama licencja CMS nie uprawnia do jego pobrania.');
         dialog.showModal();
         document.documentElement.classList.add('market-dialog-open');
         if (availability) dialog.querySelector('.market-dialog-availability').focus();
@@ -163,7 +161,7 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
         const product = selected, offer = offers[product], controller = new AbortController();
         const submit = downloadForm.querySelector('[type=submit]');
         pending = controller; submit.disabled = true; downloadForm.setAttribute('aria-busy','true');
-        downloadResult.textContent = 'Verifying your licence…';
+        downloadResult.textContent = siteText('Verifying your licence…', 'Weryfikowanie licencji…');
         const body = new FormData(downloadForm);
         downloadForm.elements.license_key.value = '';
         try {
@@ -172,19 +170,19 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
             if (!response.ok) {
                 const error = await response.json();
                 if (response.status === 419) { await refreshOffers(); downloadForm.elements.csrf.value = csrf; }
-                throw new Error(error.message || 'The download could not be verified.');
+                throw new Error(error.message || siteText('The download could not be verified.', 'Nie udało się zweryfikować pobrania.'));
             }
-            if (!response.headers.get('Content-Type')?.startsWith('application/zip')) throw new Error('The server did not return a package.');
+            if (!response.headers.get('Content-Type')?.startsWith('application/zip')) throw new Error(siteText('The server did not return a package.', 'Serwer nie zwrócił pakietu.'));
             const bytes = await response.arrayBuffer();
             const checksum = [...new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))].map(value=>value.toString(16).padStart(2,'0')).join('');
-            if (bytes.byteLength !== offer.bytes || checksum !== offer.sha256) throw new Error('The downloaded package failed its integrity check.');
+            if (bytes.byteLength !== offer.bytes || checksum !== offer.sha256) throw new Error(siteText('The downloaded package failed its integrity check.', 'Pobrany pakiet nie przeszedł kontroli integralności.'));
             if (controller.signal.aborted || !dialog.open || selected !== product) return;
             const url = URL.createObjectURL(new Blob([bytes],{type:'application/zip'}));
             const link = document.createElement('a'); link.href = url; link.download = offer.type + '-' + offer.slug + '-' + offer.version + '.zip';
             document.body.append(link); link.click(); link.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000);
-            downloadResult.textContent = 'Licence verified. Package integrity checked; download handed to your browser.';
+            downloadResult.textContent = siteText('Licence verified. Package integrity checked; download handed to your browser.', 'Licencja zweryfikowana. Integralność pakietu sprawdzona; pobieranie przekazano do przeglądarki.');
         } catch (error) {
-            if (!controller.signal.aborted && dialog.open && selected === product) downloadResult.textContent = error.message || 'Unable to verify the download. Please try again.';
+            if (!controller.signal.aborted && dialog.open && selected === product) downloadResult.textContent = error.message || siteText('Unable to verify the download. Please try again.', 'Nie można zweryfikować pobrania. Spróbuj ponownie.');
         } finally {
             body.delete('license_key');
             if (pending === controller) pending = undefined;
@@ -202,16 +200,16 @@ document.querySelectorAll('[data-contact-form]').forEach(form => {
         if (form.dataset.sending === 'true' || !form.reportValidity()) return;
         const button = form.querySelector('[type="submit"]');
         form.dataset.sending = 'true'; button.disabled = true; form.setAttribute('aria-busy', 'true');
-        result.hidden = false; result.textContent = 'Sending your message…'; result.classList.remove('is-error');
+        result.hidden = false; result.textContent = siteText('Sending your message…', 'Wysyłanie wiadomości…'); result.classList.remove('is-error');
         try {
             const response = await fetch(form.action, {method:'POST', body:new FormData(form), headers:{Accept:'application/json'}, credentials:'same-origin'});
             const data = await response.json();
-            result.textContent = data.message || 'Unable to send your message. Please try again later.';
+            result.textContent = data.message || siteText('Unable to send your message. Please try again later.', 'Nie można wysłać wiadomości. Spróbuj ponownie później.');
             result.classList.toggle('is-error', !data.ok);
             if (response.ok && data.ok) form.reset();
             refresh();
         } catch {
-            result.textContent = 'We could not confirm the result. Your message may have been received. Please contact us by email before sending it again.';
+            result.textContent = siteText('We could not confirm the result. Your message may have been received. Please contact us by email before sending it again.', 'Nie udało się potwierdzić wyniku. Wiadomość mogła zostać dostarczona. Przed ponowną wysyłką skontaktuj się z nami e-mailem.');
             result.classList.add('is-error'); refresh();
         } finally {
             form.dataset.sending = 'false'; button.disabled = false; form.removeAttribute('aria-busy'); result.focus();
