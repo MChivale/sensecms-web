@@ -1,5 +1,5 @@
 <?php
-$surveyBoot=['data'=>$surveyData,'filters'=>$surveyFilters,'languages'=>array_values($languages),'facilities'=>array_values($facilities),'pages'=>array_values($surveyPages),'permissions'=>$surveyPermissions,'csrf'=>$csrf];
+$surveyBoot=['data'=>$surveyData,'filters'=>$surveyFilters,'workspace_facility'=>(int)($workspaceContext['id']??0),'languages'=>array_values($languages),'facilities'=>array_values($facilities),'pages'=>array_values($surveyPages),'permissions'=>$surveyPermissions,'csrf'=>$csrf];
 ?>
 <section class="sensecms-surveys" data-surveys-root>
     <?php $sectionHero=['overline'=>'ENGAGEMENT · PROFESSIONAL SURVEYS','title'=>'Research, feedback and measurable experience','description'=>'Build multilingual campaigns, route respondents with conditional logic and turn trusted feedback into facility-aware decisions.','icon'=>'clipboard-list','action_button'=>empty($surveyPermissions['manage'])?'':'data-survey-new','action_label'=>'Create survey','action_icon'=>'plus'];require __DIR__.'/console-section-hero.php'; ?>

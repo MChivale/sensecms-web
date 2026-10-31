@@ -18,12 +18,12 @@ $sectionHeroActionButton = preg_match('/^data-[a-z0-9-]+$/', (string) $sectionHe
     ? (string) $sectionHero['action_button']
     : '';
 ?>
-<header class="sensecms-section-hero">
+<header class="sensecms-section-hero<?= isset($screen)?' is-compact':'' ?>">
     <div class="sensecms-section-hero-main">
-        <span class="sensecms-section-hero-icon"><i data-lucide="<?= $escape($sectionHero['icon']) ?>"></i></span>
+        <?php if(!isset($screen)): ?><span class="sensecms-section-hero-icon"><i data-lucide="<?= $escape($sectionHero['icon']) ?>"></i></span><?php endif; ?>
         <div>
-            <span class="sensecms-section-overline"><?= $escape($sectionHero['overline']) ?></span>
-            <h2><?= $escape($sectionHero['title']) ?></h2>
+            <?php if(!isset($screen)): ?><span class="sensecms-section-overline"><?= $escape($sectionHero['overline']) ?></span>
+            <h2><?= $escape($sectionHero['title']) ?></h2><?php endif; ?>
             <?php if ($sectionHero['description'] !== ''): ?><p><?= $escape($sectionHero['description']) ?></p><?php endif; ?>
         </div>
     </div>

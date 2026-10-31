@@ -26,7 +26,7 @@ $assert(str_contains($service,"source_type IN ('page','post')")&&str_contains($s
 $assert(str_contains($service,'DELETE FROM ai_knowledge_chunks')&&str_contains($service,"index_status=\"ready\""),'reindexing replaces stale chunks atomically');
 $assert(str_contains($service,'Raw documents')===false,'Core service does not claim that raw documents are training examples');
 $assert(str_contains($service,'A ready dataset needs at least 10 examples')&&str_contains($service,"['draft','ready']"),'training datasets require reviewed examples and reject edits to locked states');
-$assert(str_contains($service,"GET_LOCK('sensecms.ai.knowledge.sync',0)")&&str_contains($service,'processQueue'),'automatic indexing is serialized and retryable');
+$assert(str_contains($service,'GET_LOCK(?,0)')&&str_contains($service,'syncLock()')&&str_contains($service,'processQueue'),'automatic indexing is serialized per installation and retryable');
 $assert(str_contains($service,"storage/ai-training")&&str_contains($service,'prepareTrainingPackage')&&str_contains($service,'JSONL')===false,'training packages are prepared in private local storage');
 $assert(!str_contains($service,'fine_tuning.jobs.create')&&!str_contains($service,'/v1/files'),'local training preparation cannot submit or upload to a provider');
 

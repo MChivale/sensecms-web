@@ -30,20 +30,29 @@ final class AiProviderClient
         elseif($driver==='openai-compatible'){$url=$base.'/chat/completions';$headers[]='Authorization: Bearer '.$key;$payload=['model'=>$model,'messages'=>[['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],'temperature'=>0.2,'max_tokens'=>$maxTokens];}
         elseif($driver==='anthropic'){$url=$base.'/v1/messages';$headers[]='x-api-key: '.$key;$headers[]='anthropic-version: 2023-06-01';$payload=['model'=>$model,'system'=>$system,'messages'=>[['role'=>'user','content'=>$user]],'max_tokens'=>$maxTokens,'temperature'=>0.2];}
         else{$url=$base.'/models/'.rawurlencode($model).':generateContent';$headers[]='x-goog-api-key: '.$key;$payload=['systemInstruction'=>['parts'=>[['text'=>$system]]],'contents'=>[['role'=>'user','parts'=>[['text'=>$user]]]],'generationConfig'=>['temperature'=>0.2,'maxOutputTokens'=>$maxTokens]+($json?['responseMimeType'=>'application/json']:[])];}
-        $response=$this->request($url,$headers,$payload);$body=$response['body'];
+        $response=$this->request($url,$headers,$payload);
+        return $this->result($driver,$response['body']);
+    }
+
+    private function result(string$driver,array$body):array
+    {
         $text=match($driver){
             'openai-responses'=>$this->openAiResponseText($body),
             'openai-compatible'=>(string)($body['choices'][0]['message']['content']??''),
             'anthropic'=>(string)($body['content'][0]['text']??''),
             default=>(string)($body['candidates'][0]['content']['parts'][0]['text']??''),
         };
-        $text=trim($text);if($text==='')throw new RuntimeException('The AI provider returned an empty response.');
+        $text=trim($text);
         $usage=match($driver){
             'openai-responses'=>['input'=>(int)($body['usage']['input_tokens']??0),'output'=>(int)($body['usage']['output_tokens']??0)],
             'openai-compatible'=>['input'=>(int)($body['usage']['prompt_tokens']??0),'output'=>(int)($body['usage']['completion_tokens']??0)],
             'anthropic'=>['input'=>(int)($body['usage']['input_tokens']??0),'output'=>(int)($body['usage']['output_tokens']??0)],
             default=>['input'=>(int)($body['usageMetadata']['promptTokenCount']??0),'output'=>(int)($body['usageMetadata']['candidatesTokenCount']??0)],
         };
+        $usage=array_map(static fn(int$value):int=>max(0,$value),$usage);
+        $reported=$driver==='google-gemini'?($body['usageMetadata']??[]):($body['usage']??[]);
+        $keys=match($driver){'openai-compatible'=>['prompt_tokens','completion_tokens'],'google-gemini'=>['promptTokenCount','candidatesTokenCount'],default=>['input_tokens','output_tokens']};
+        if($text==='')throw new AiProviderException('The AI provider returned an empty response.',is_array($reported)&&array_intersect($keys,array_keys($reported))?$usage:null);
         return['text'=>$text,'usage'=>$usage];
     }
 

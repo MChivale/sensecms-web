@@ -24,9 +24,10 @@ $sectionHero = $screen === 'conversations' ? [
 ];
 require __DIR__ . '/console-section-hero.php';
 ?>
-<nav class="sensecms-chat-nav" aria-label="Live chat sections">
-    <a href="/conversations" class="<?= $screen === 'conversations' ? 'is-active' : '' ?>"><i data-lucide="inbox"></i>Inbox<?php if (($liveChatUnread ?? 0) > 0): ?><b data-chat-nav-unread><?= min(99, (int) $liveChatUnread) ?></b><?php endif; ?></a>
-    <a href="/conversations/configuration" class="<?= $screen === 'live-chat-config' ? 'is-active' : '' ?>"><i data-lucide="sliders-horizontal"></i>Configuration</a>
+<?php if($can('ai.manage')): $aiActive='assistant'; require __DIR__.'/console-ai-navigation.php'; endif; ?>
+<nav class="sensecms-chat-nav sensecms-section-tabs" aria-label="Live chat sections">
+    <a href="/conversations" class="<?= $screen === 'conversations' ? 'is-active' : '' ?>" aria-current="<?= $screen === 'conversations' ? 'page' : 'false' ?>"><i data-lucide="inbox"></i>Inbox<?php if (($liveChatUnread ?? 0) > 0): ?><b data-chat-nav-unread><?= min(99, (int) $liveChatUnread) ?></b><?php endif; ?></a>
+    <a href="/conversations/configuration" class="<?= $screen === 'live-chat-config' ? 'is-active' : '' ?>" aria-current="<?= $screen === 'live-chat-config' ? 'page' : 'false' ?>"><i data-lucide="sliders-horizontal"></i>Configuration</a>
 </nav>
 
 <?php if ($screen === 'conversations'): ?>
@@ -90,7 +91,7 @@ require __DIR__ . '/console-section-hero.php';
     <input type="hidden" name="csrf" value="<?= $escape($csrf) ?>">
     <input type="hidden" name="active_tab" value="general" data-chat-active-tab>
     <input type="hidden" name="ui_locale" value="<?= $escape($_GET['lang']??($languages[0]['locale']??'en')) ?>" data-ui-locale>
-    <div class="sensecms-config-tabs" role="tablist" aria-label="Live chat configuration">
+    <div class="sensecms-config-tabs sensecms-section-tabs" role="tablist" aria-label="Live chat configuration">
         <button type="button" class="is-active" data-chat-config-tab="general"><i data-lucide="messages-square"></i><span>General<small>Localized chat copy</small></span></button>
         <button type="button" data-chat-config-tab="teams"><i data-lucide="users-round"></i><span>Teams<small>Routing and availability</small></span></button>
         <button type="button" data-chat-config-tab="sounds"><i data-lucide="volume-2"></i><span>Sounds<small>Connection and messages</small></span></button>

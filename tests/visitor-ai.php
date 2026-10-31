@@ -21,4 +21,8 @@ $assert(str_contains($repository,'email_requested_at')&&str_contains($repository
 $assert(str_contains($view,'data-chat-email')&&str_contains($js,'emailRequested')&&str_contains($js,'input.required = !emailRequested'),'the visitor widget exposes callback collection only when required');
 $assert(preg_match_all('/^\[\x27en\x27,/m',$training)===6&&preg_match_all('/^\[\x27pl\x27,/m',$training)===6&&str_contains($training,"'provider_request_sent'=>false"),'private package has 12 reviewed bilingual examples and no provider submission');
 $assert(str_contains($training,"'format'=>'jsonl'")&&str_contains($training,"'estimated_provider_cost_usd'=>null")&&str_contains($training,'hash_file'),'package manifest records format, no cost and checksum verification');
+require $root.'/.cms/source/bootstrap.php';
+$type=new ReflectionClass(App\Core\AiChatService::class);$instance=$type->newInstanceWithoutConstructor();$intent=$type->getMethod('requiresHuman');
+foreach(['Chcę porozmawiać z konsultantem.','Proszę o konsultanta.','Połącz mnie z człowiekiem.','Czy mogę rozmawiać z konsultantką?','Prosze o kontakt z obsluga klienta.','konsultant','Human agent please','I want a human.','Can I speak to a real person?','Please transfer me to an operator.','Nie chcę bota, chcę konsultanta.']as$message)$assert($intent->invoke($instance,$message),'explicit human request: '.$message);
+foreach(['Czy obsługa Telegrama jest dostępna?','Jak działa agent AI?','Jak dodać konsultanta do systemu?','Nie chcę rozmawiać z konsultantem.','I do not want a human.','How do I configure an agent?','Talk to the API','I need an AI agent.']as$message)$assert(!$intent->invoke($instance,$message),'ordinary or negated message: '.$message);
 echo"Visitor AI checks passed: {$checks}.\n";

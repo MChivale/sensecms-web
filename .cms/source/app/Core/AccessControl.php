@@ -86,7 +86,7 @@ final class AccessControl
     {
         if (!$this->authenticated()) return;
         $method = strtoupper($method);
-        if ($this->isDemoUser() && !in_array($method, ['GET','HEAD','OPTIONS'], true) && !in_array($path, ['/login','/logout'], true)) $this->denyReadOnly();
+        if ($this->isDemoUser() && !in_array($method, ['GET','HEAD','OPTIONS'], true) && !in_array($path, ['/login','/logout','/workspace/context'], true)) $this->denyReadOnly();
         $permission = $this->permissionFor($method, $path);
         if ($permission === null) return;
         $facilities = $this->requestFacilities($path);

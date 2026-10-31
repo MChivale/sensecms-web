@@ -7,7 +7,8 @@
     const labels = JSON.parse(widget.dataset.labels), input = form.elements.message, email = form.elements.email, submit = form.querySelector('[type=submit]');
     let timer = 0, polling = false, sending = false, ended = false, restarting = false, queued = false, emailRequested = false, seen = new Set();
     const request = async (path, data) => {
-        const abort = new AbortController(), timeout = setTimeout(() => abort.abort(), 15000);
+        // Sending and state polling can both wait for the provider's 55-second generation.
+        const abort = new AbortController(), timeout = setTimeout(() => abort.abort(), 70000);
         try {
             const response = await fetch(path, {method: data ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store', headers: {'Accept': 'application/json'}, body: data, signal: abort.signal});
             const result = await response.json();
@@ -92,10 +93,10 @@
     fresh.addEventListener('click', () => { restarting = true; ended = false; queued = false; emailRequested = false; emailWrap.hidden = true; email.required = false; input.required = true; email.value = ''; seen.clear(); messages.replaceChildren(); intro.hidden = false; setStatus(); controls(); input.focus(); });
     form.addEventListener('submit', async event => {
         event.preventDefault(); if (sending || ended || (!input.value.trim() && !email.value.trim()) || !form.reportValidity()) return;
-        sending = true; controls(); setStatus();
+        sending = true; controls(); setStatus(labels.sending);
         const body = new URLSearchParams({message: input.value.trim(), name: form.elements.name.value.trim(), email: email.value.trim(), locale: widget.dataset.locale, csrf: widget.dataset.csrf});
         try {
-            await request(widget.dataset.endpoint || '/api/chat/message', body); input.value = ''; input.style.height = ''; restarting = false;
+            await request(widget.dataset.endpoint || '/api/chat/message', body); setStatus(); input.value = ''; input.style.height = ''; restarting = false;
             const result = await request('/api/chat/state'); render(result.data); messages.scrollTop = messages.scrollHeight;
         } catch (error) { setStatus(error.name === 'AbortError' ? labels.error : error.message || labels.error, 'error'); }
         finally { sending = false; controls(); schedule(); if (!panel.hidden) input.focus(); }

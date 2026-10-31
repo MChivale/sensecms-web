@@ -29,7 +29,7 @@ $workspaceSeoType = (string) ($contentWorkspace['seo_type'] ?? 'page');
                 <?php foreach ($workspacePages as $page): ?>
                     <option value="<?= (int) ($page['id'] ?? 0) ?>" <?= (int) ($page['id'] ?? 0) === $workspaceSelected ? 'selected' : '' ?>><?= $escape((!empty($page['facility_name'])?$page['facility_name'].' · ':'').($page['title'] ?? ('Page #' . ($page['id'] ?? '')))) ?></option>
                 <?php endforeach; ?>
-            </select><?php else: ?><strong><?= $escape($workspaceTitle) ?></strong><?php endif; ?>
+            </select><?php elseif($workspaceTitle!==($title??'')): ?><strong><?= $escape($workspaceTitle) ?></strong><?php endif; ?>
         </label>
         <span class="sensecms-content-state-stack">
             <span class="sensecms-content-status is-saved" data-content-status aria-live="polite"><i data-lucide="circle-check"></i><?= $escape($workspaceStatus) ?></span>

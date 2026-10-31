@@ -100,6 +100,7 @@ if ($path==='/api/web-push' && in_array($method,['GET','POST'],true)) (new App\H
 $extensionRuntime = new ExtensionRuntime($db, $root);
 if ($extensionRuntime->dispatch($method, $path, new ExtensionContext($db, $auth, $access, $dashboard, $config, $root, $events))) exit;
 
+if ($method === 'POST' && $path === '/workspace/context') $dashboard->switchWorkspace();
 if ($method === 'GET' && $path === '/dashboard') $dashboard->dashboard();
 if ($method === 'GET' && $path === '/profile') $dashboard->profile();
 if ($method === 'POST' && $path === '/profile') $dashboard->saveProfile();

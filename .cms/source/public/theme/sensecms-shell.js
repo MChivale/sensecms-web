@@ -187,3 +187,19 @@
         addEventListener('resize', () => { const next = matchMedia('(max-width: 1140px)').matches; if (next === mobile) return; mobile = next; html.classList.remove('sidenav-enable'); document.querySelector('[data-menu-backdrop]')?.setAttribute('hidden',''); syncMenu(); positionActiveMenu(); });
     });
 })();
+
+// A workspace switch is navigation and obeys the same unsaved-content guard.
+document.addEventListener('submit',event=>{
+    const form=event.target.closest?.('[data-workspace-switch]');
+    if(!form)return;
+    const guard=window.SenseCMSUnsavedGuard;
+    if(guard?.dirty()&&!guard.isBypassing()){
+        event.preventDefault();event.stopImmediatePropagation();
+        const submitter=event.submitter;
+        guard.confirmLeave(()=>form.requestSubmit(submitter));
+    }
+},true);
+document.addEventListener('sensecms:content-ready',()=>{
+    const state=document.querySelector('[data-workspace-id]'),picker=document.querySelector('[data-workspace-switch]');
+    if(state&&picker){picker.querySelector('[name="facility_id"]').value=state.dataset.workspaceId;picker.querySelector('[name="return"]').value=location.pathname+location.search;}
+});

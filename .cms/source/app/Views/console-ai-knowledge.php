@@ -1,5 +1,5 @@
 <?php
-$tab=in_array($_GET['tab']??'sources',['sources','content','index','training'],true)?(string)$_GET['tab']:'sources';
+$requestedTab=(string)($_GET['tab']??'sources');$tab=in_array($requestedTab,['sources','content','index','training'],true)?$requestedTab:'sources';
 $summary=(array)$knowledgeSummary;$documents=(array)($knowledgeDocuments['items']??[]);$pagination=(array)($knowledgeDocuments['pagination']??[]);$editing=(array)($knowledgeEdit??[]);
 $training=(array)($knowledgeTrainingWorkspace??[]);$datasets=(array)($training['datasets']??[]);$examples=(array)($training['examples']??[]);$evaluations=(array)($training['evaluations']??[]);$jobs=(array)($training['jobs']??[]);$providers=(array)($knowledgeProviders??[]);
 $sectionHero=['overline'=>'CORE AI · RETRIEVAL','title'=>'Knowledge Base','description'=>'Control the approved knowledge used by the visitor assistant. Sources remain editable, removable and independent of any single AI provider.','icon'=>'brain-circuit','status'=>(int)($summary['ready']??0).' ready sources','status_detail'=>(int)($summary['chunks']??0).' indexed retrieval chunks','status_icon'=>empty($summary['failed'])?'circle-check':'triangle-alert'];
@@ -12,7 +12,7 @@ $formatBytes=static function(int$bytes):string{if($bytes<1024)return$bytes.' B';
     <div class="sensecms-ai-summary">
         <?php foreach([['Approved sources',$summary['active']??0],['Indexed chunks',$summary['chunks']??0],['Included content',$summary['included_content']??0],['Private files',$formatBytes((int)($summary['bytes']??0))]]as[$label,$value]): ?><article><span><?= $escape($label) ?></span><strong><?= $escape((string)$value) ?></strong></article><?php endforeach; ?>
     </div>
-    <nav class="sensecms-knowledge-tabs" aria-label="Knowledge Base sections"><?php foreach($tabs as$key=>$definition):[$icon,$label,$detail]=$definition; ?><a href="/ai/knowledge?tab=<?= $key ?>" class="<?= $tab===$key?'is-active':'' ?>"><i data-lucide="<?= $icon ?>"></i><span><b><?= $escape($label) ?></b><small><?= $escape($detail) ?></small></span></a><?php endforeach; ?></nav>
+    <nav class="sensecms-knowledge-tabs sensecms-section-tabs" aria-label="Knowledge Base sections"><?php foreach($tabs as$key=>$definition):[$icon,$label,$detail]=$definition; ?><a href="/ai/knowledge?tab=<?= $key ?>" class="<?= $tab===$key?'is-active':'' ?>" aria-current="<?= $tab===$key?'page':'false' ?>"><i data-lucide="<?= $icon ?>"></i><span><b><?= $escape($label) ?></b><small><?= $escape($detail) ?></small></span></a><?php endforeach; ?></nav>
 
     <?php if($tab==='sources'): ?>
     <div class="sensecms-knowledge-layout">

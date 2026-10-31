@@ -38,4 +38,4 @@ $chatLabels = match ($chatLocale) {
         </form>
     </section>
 </div>
-<script src="/assets/public-chat.js?v=20260922-live-3" defer></script>
+<script src="/assets/public-chat.js?v=20261031-ai-1" defer></script>
