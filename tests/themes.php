@@ -304,9 +304,9 @@ $assert(substr_count($docsHtml, 'resource-start') === 1 && substr_count($docsHtm
 $assert(!str_contains($theme->response('/docs/installation')[2], 'resource-start'), 'guide pages do not inherit the landing featured layout');
 $assert(substr_count($theme->response('/extensions')[2], 'class="section-symbol"') === 4, 'extension categories share the icon system');
 $heroCss = (string) file_get_contents($source . '/assets/product.css');
-$assert(str_contains($heroCss, '.product-hero,.platform-hero,.subpage-hero{overflow:hidden;background:radial-gradient(ellipse at 90% 10%,#2462b590,transparent 65%),#09244d;color:#fff}'), 'all public heroes share the approved contact palette');
+$assert(str_contains($heroCss, '.product-design :is(.product-hero,.platform-hero,.subpage-hero){') && str_contains($heroCss, '--surface:#fff;--canvas:#f6f8fc;'), 'public heroes and content share the product surface system');
 $assert(!str_contains($heroCss, '.subpage-contact{') && !str_contains($heroCss, '.subpage-guide .subpage-intro'), 'contact and documentation no longer override shared hero styling');
-$assert(str_contains($theme->response('/platform')[2], 'class="subpage-intro"') && str_contains($theme->response('/platform')[2], 'class="subpage-emblem"'), 'platform uses the same heading layout and emblem as other subpages');
+$assert(str_contains($theme->response('/platform')[2], 'class="subpage-intro"') && str_contains($theme->response('/platform')[2], 'class="hero-visual"') && str_contains($docsHtml, 'class="hero-visual"'), 'platform and documentation use the shared contextual hero illustration');
 $pageEditor=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console-content-page-form.php');$pageController=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Http/DashboardController.php');
 $assert(str_contains($pageEditor,'data-seo-image-upload')&&str_contains($pageEditor,'Open Graph / social image')&&str_contains($pageController,"'og_image_width','og_image_height','og_image_type'"),'page editor uploads localized Open Graph images through the existing media pipeline');
 $mail=App\Core\FormMail::render(['data'=>['fields'=>[['key'=>'message','label'=>'Message']]]],['message'=>'<script>alert(1)</script>'],'TEST-REFERENCE',true);

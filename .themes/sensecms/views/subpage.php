@@ -37,7 +37,7 @@ $featuredResource = $section === 'resources';
     <div class="container">
         <?php $renderBreadcrumb(); ?>
         <div class="subpage-intro"><div><span class="eyebrow"><?= $e($labels[$section]) ?></span><h1><?= $e($page['title']) ?></h1><?php if ($page['description'] !== ''): ?><p><?= $e($page['description']) ?></p><?php endif; ?></div>
-        <div class="subpage-emblem" aria-hidden="true"><span><?= match ($section) { 'resources','guide'=>'{ }', 'contact'=>'↗', 'release'=>'01', 'extensions'=>'+', default=>'S' } ?></span></div></div>
+        <?php if ($section !== 'page'): require __DIR__ . '/hero-visual.php'; endif; ?></div>
         <?php if ($section === 'extensions'): ?><nav class="category-nav" aria-label="<?= $e($tr('Extension categories','Kategorie rozszerzeń')) ?>"><a href="<?= $e($localUrl($categoryHome)) ?>"<?= $publicPath === $categoryHome ? ' aria-current="page"' : '' ?>><?= $e($categoryHome === '/extensions/catalog' ? $tr('All packages','Wszystkie pakiety') : $tr('Overview','Przegląd')) ?></a><?php foreach ($categories as $url=>$label): ?><a href="<?= $e($localUrl($url)) ?>"<?= ($publicPath === $url || str_starts_with($publicPath, $url . '/')) ? ' aria-current="page"' : '' ?>><?= $e($label) ?></a><?php endforeach; ?></nav><?php endif; ?>
     </div>
 </section>

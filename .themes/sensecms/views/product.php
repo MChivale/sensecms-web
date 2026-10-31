@@ -11,7 +11,7 @@ declare(strict_types=1);
                 <?php if ($page['description'] !== ''): ?><p><?= $e($page['description']) ?></p><?php endif; ?>
                 <div class="actions"><a class="button inverse" href="<?= $e($localUrl('/contact')) ?>"><?= $e($tr('Let’s talk', 'Porozmawiajmy')) ?> <span aria-hidden="true">↗</span></a><a class="platform-docs" href="<?= $e($localUrl('/docs')) ?>"><?= $e($tr('Explore the documentation', 'Poznaj dokumentację')) ?> <span aria-hidden="true">→</span></a></div>
             </div>
-            <div class="subpage-emblem" aria-hidden="true"><img src="/theme-assets/logo.svg" alt="" width="64" height="72"></div>
+            <?php require __DIR__ . '/hero-visual.php'; ?>
         </div>
         <div class="platform-foundations"><span>01 <strong><?= $e($tr('A focused Core', 'Przemyślany rdzeń')) ?></strong></span><span>02 <strong><?= $e($tr('A connected workspace', 'Wspólna przestrzeń pracy')) ?></strong></span><span>03 <strong><?= $e($tr('An independent theme', 'Niezależny motyw')) ?></strong></span></div>
     </div>

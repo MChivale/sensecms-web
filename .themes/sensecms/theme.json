@@ -2,7 +2,7 @@
   "contract_version": 1,
   "slug": "sensecms",
   "name": "Sense CMS product website",
-  "version": "1.0.23",
+  "version": "1.0.24",
   "release_channel": "development",
   "description": "Sense CMS website with facility-scoped, multilingual managed pages.",
   "default_social_image": "/theme-assets/og.image.jpg",
