@@ -23,6 +23,16 @@ $assert($headStatus===200&&$headBody===''&&(int)$headHeaders['Content-Length']==
 $socialImage='/theme-assets/og.image.jpg';[$socialStatus,$socialHeaders,$socialBody]=$theme->response($socialImage);$socialSize=getimagesizefromstring($socialBody);
 $assert($socialStatus===200&&$socialHeaders['Content-Type']==='image/jpeg'&&$socialSize['mime']==='image/jpeg'&&$socialSize[0]===1200&&$socialSize[1]===630,'Default Open Graph image is an exact 1200 by 630 JPEG');
 $assert($theme->response('/theme-assets/logo-light.svg')[0]===200&&$theme->response('/theme-assets/logo-light.svg')[1]['Content-Type']==='image/svg+xml','Light footer logo is a public theme asset');
+foreach(['en','pl']as$graphicLocale){
+    foreach(['platform','ai','extensions','docs','releases']as$group){
+        [$assetStatus,$assetHeaders,$assetBody]=$theme->response('/theme-assets/share-'.$group.'-'.$graphicLocale.'.png');$size=getimagesizefromstring($assetBody);
+        $assert($assetStatus===200&&$assetHeaders['Content-Type']==='image/png'&&$size[0]===1200&&$size[1]===630,'Localized sharing image is served at its declared dimensions: '.$group.' '.$graphicLocale);
+    }
+    foreach(['architecture','knowledge','locales']as$diagram){
+        [$assetStatus,$assetHeaders,$assetBody]=$theme->response('/theme-assets/'.$diagram.'-'.$graphicLocale.'.svg');$xml=simplexml_load_string($assetBody);
+        $assert($assetStatus===200&&$assetHeaders['Content-Type']==='image/svg+xml'&&$xml!==false&&(string)$xml['lang']===$graphicLocale&&(string)$xml->title!=='','Diagram is valid and localized: '.$diagram.' '.$graphicLocale);
+    }
+}
 $villaRoot=dirname(__DIR__).'/.themes/villa-theme';$villaDescriptor=json_decode((string)file_get_contents($villaRoot.'/theme.json'),true,64,JSON_THROW_ON_ERROR);$villaDescriptor['_path']=$villaRoot;App\Core\ThemeContract::validateAll(['villa-theme'=>$villaDescriptor]);
 $villaResponse=(new PublicTheme($villaRoot,'https://villaitaliana.chivale.com'))->response('/');
 $assert($villaResponse[0]===200&&str_contains($villaResponse[2],'Villa Italiana')&&str_contains($villaResponse[2],'/theme-assets/villa.css'),'Villa Theme satisfies the public contract and its layout adapter renders the homepage');

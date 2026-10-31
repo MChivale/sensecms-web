@@ -126,3 +126,33 @@ html[data-text-scale-large] .ecosystem-packages{grid-template-columns:minmax(0,1
 /* Justify reading copy where line length supports comfortable spacing. */
 @media(min-width:601px){.sense-block-copy p,.hero-editorial>p,.market-description,.market-core-scope>p,.market-dialog-body>p,.contact-aside>p{text-align:justify;hyphens:auto;text-wrap:pretty}}
 @media(max-width:600px){.footer-brand>p{text-align:left}}
+
+/* Editorial pages use the same cards inside actual Builder layout containers. */
+.platform-capabilities{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}
+.platform-capabilities>.sense-layout{min-width:0;margin:0}
+.platform-capabilities .sense-layout-item{height:100%}
+.platform-capabilities .sense-layout-item>section{height:100%;box-sizing:border-box;margin:0;padding:30px;border:1px solid var(--line);border-radius:18px;background:#fff}
+.platform-capabilities .sense-layout-item>section h2{margin-top:0}
+.platform-capabilities>.sense-layout:has(.sense-block-image-text),.subpage-cards>.sense-layout:has(.sense-block-image-text){grid-column:1/-1;background:transparent}
+.platform-capabilities>.sense-layout:nth-child(odd):has(+.sense-layout .sense-block-image-text){grid-column:1/-1}
+.platform-capabilities .sense-block-image-text,.subpage-cards .sense-layout-item>.sense-block-image-text{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:36px;align-items:center;padding:30px;background:#f7faff}
+.subpage-cards .sense-layout-item>.sense-block-image-text:before{display:none}
+.sense-block-image-text>div,.sense-block-image-text>figure{min-width:0}
+.sense-block-image-text .sense-block-media{margin:0;height:auto;aspect-ratio:auto;background:transparent;box-shadow:none}
+.sense-block-image-text .sense-block-media img{display:block;width:100%;height:auto;object-fit:contain;border-radius:14px}
+.sense-block-image-text .button{margin-top:16px}
+.platform-body .sense-layout:not(.is-grouped),.subpage-content .sense-layout:not(.is-grouped){column-gap:0}
+.sense-block-copy{overflow-wrap:anywhere}
+.sense-block .button{max-width:100%;box-sizing:border-box;white-space:normal;text-align:left}
+.sense-block-copy li{margin-block:9px;line-height:1.75}
+.sense-block-copy ol,.sense-block-copy ul{padding-inline-start:1.4em;margin-block:16px}
+.subpage-intro h1,.platform-hero h1,.sense-block h2,.guide-pagination strong{overflow-wrap:anywhere;hyphens:auto}
+.subpage-body-guide .subpage-content>.sense-layout{padding-bottom:26px;margin-bottom:26px;border-bottom:1px solid var(--line)}
+.subpage-body-guide .sense-layout-item>section{margin:0;padding:0}
+.subpage-body-guide .sense-block h2{font-size:1.6rem;line-height:1.35}
+.subpage-body-guide .sense-block-image-text{display:flex;flex-direction:column;gap:24px}
+.subpage-body-guide .sense-block-image-text figure{width:min(100%,480px);align-self:center}
+.subpage-body-release .subpage-cards .sense-layout-item>section:first-child:before{content:none}
+.subpage-body-release .subpage-cards .sense-layout-item>section:first-child{background:#fff;border-color:var(--line)}
+@media(max-width:760px){.platform-capabilities{grid-template-columns:1fr}.platform-capabilities .sense-block-image-text,.subpage-cards .sense-layout-item>.sense-block-image-text{grid-template-columns:1fr;gap:24px;padding:24px}.sense-block-image-text .sense-block-media{max-width:480px;justify-self:center;width:100%}.platform-capabilities .sense-layout-item>section{padding:24px}}
+@media(max-width:400px){.subpage-intro h1,.platform-hero h1{font-size:clamp(1.9rem,9.5vw,2.35rem)}.subpage-body-guide .sense-block h2{font-size:1.4rem}}

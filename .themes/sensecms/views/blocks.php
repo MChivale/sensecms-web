@@ -27,6 +27,14 @@ $heading = static function (array $data) use ($e, $rich): string {
 
 $layoutKey = null;
 $layoutOpen = false;
+$editorialImageSize = static function(string $url): string {
+    if (preg_match('~^/theme-assets/(architecture|knowledge|locales)-(en|pl)\.svg$~D', $url)) return ' width="480" height="440"';
+    return match ($url) {
+        '/theme-assets/workspace.png' => ' width="1440" height="940"',
+        '/theme-assets/product-preview.png' => ' width="1425" height="930"',
+        default => '',
+    };
+};
 foreach ($blocks as $layoutIndex => $block):
     $type = (string) ($block['type'] ?? '');
     $data = (array) ($block['payload'] ?? []);
@@ -81,7 +89,7 @@ foreach ($blocks as $layoutIndex => $block):
 <?php elseif ($type === 'text'): ?>
 <section class="sense-block sense-block-text<?= !empty($featuredResource) && ($data['cta_url'] ?? '') === '/docs/installation' ? ' resource-start' : '' ?>"><?php if (isset($blockIcons[$data['cta_url'] ?? ''])): ?><span class="section-symbol" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="<?= $blockIcons[$data['cta_url']] ?>"/></svg></span><?php endif; ?><?= $heading($data) ?><?= $action($data['cta_label'] ?? '', $data['cta_url'] ?? '', 'text-link') ?></section>
 <?php elseif ($type === 'image-text'): ?>
-<section class="sense-block sense-block-image-text"><?php if (!empty($data['image'])): ?><figure class="sense-block-media<?= $focus($data) ?>"><img src="<?= $e($data['image']) ?>" alt="<?= $e($data['image_alt'] ?? '') ?>" loading="lazy"></figure><?php endif; ?><div><?= $heading($data) ?><?= $action($data['cta_label'] ?? '', $data['cta_url'] ?? '') ?></div></section>
+<section class="sense-block sense-block-image-text"><?php if (!empty($data['image'])): ?><figure class="sense-block-media<?= $focus($data) ?>"><img src="<?= $e($data['image']) ?>" alt="<?= $e($data['image_alt'] ?? '') ?>"<?= $editorialImageSize((string)$data['image']) ?> loading="lazy"></figure><?php endif; ?><div><?= $heading($data) ?><?= $action($data['cta_label'] ?? '', $data['cta_url'] ?? '') ?></div></section>
 <?php elseif ($type === 'separator'): ?>
 <div class="sense-block sense-block-separator" style="--separator-space:<?= max(0,min(240,(int)($shared['spacing']??48))) ?>px;--separator-weight:<?= max(1,min(8,(int)($shared['weight']??1))) ?>px"><hr class="is-<?= $e(in_array(($shared['style']??''),['solid','dashed','dotted'],true)?$shared['style']:'solid') ?>"></div>
 <?php elseif ($type === 'spacer'): ?>

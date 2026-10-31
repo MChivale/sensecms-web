@@ -9,7 +9,7 @@ declare(strict_types=1);
                 <span class="eyebrow"><?= $e($tr('THE SENSE CMS PLATFORM', 'PLATFORMA SENSE CMS')) ?></span>
                 <h1><?= $e($page['title']) ?></h1>
                 <?php if ($page['description'] !== ''): ?><p><?= $e($page['description']) ?></p><?php endif; ?>
-                <div class="actions"><a class="button inverse" href="<?= $e($localUrl('/contact')) ?>"><?= $e($tr('Let’s talk', 'Porozmawiajmy')) ?> <span aria-hidden="true">↗</span></a><a class="platform-docs" href="/docs"><?= $e($tr('Explore the documentation', 'Poznaj dokumentację')) ?> <span aria-hidden="true">→</span></a></div>
+                <div class="actions"><a class="button inverse" href="<?= $e($localUrl('/contact')) ?>"><?= $e($tr('Let’s talk', 'Porozmawiajmy')) ?> <span aria-hidden="true">↗</span></a><a class="platform-docs" href="<?= $e($localUrl('/docs')) ?>"><?= $e($tr('Explore the documentation', 'Poznaj dokumentację')) ?> <span aria-hidden="true">→</span></a></div>
             </div>
             <div class="subpage-emblem" aria-hidden="true"><img src="/theme-assets/logo.svg" alt="" width="64" height="72"></div>
         </div>
