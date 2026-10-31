@@ -5,6 +5,7 @@
       <span class="eyebrow"><span class="status-dot"></span> <?= $e($tr('SENSE CMS · CONTENT MANAGEMENT','SENSE CMS · ZARZĄDZANIE TREŚCIĄ')) ?></span>
       <h1><?= $e($themeSettings['home_title']) ?><br><span class="blue"><?= $e($themeSettings['home_accent']) ?></span></h1>
       <p class="intro"><?= $e($themeSettings['home_intro']) ?> <?= $e($themeSettings['home_intro_end']) ?></p>
+      <a class="chatbot-hero-link" href="<?= $e($localUrl('/platform/ai')) ?>#private-ai-chatbot"><span aria-hidden="true">✦</span> <?= $e($tr('Your Private, Personalized AI Chatbot', 'Twój prywatny, spersonalizowany AI Chatbot')) ?> <span aria-hidden="true">→</span></a>
       <div class="actions"><a class="button" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer"><?= $e($tr('Try the demo','Wypróbuj demo')) ?> <span aria-hidden="true">↗</span></a><a class="secondary-button" href="<?= $e($localUrl('/platform')) ?>"><?= $e($tr('Explore the features','Poznaj możliwości')) ?> <span aria-hidden="true">→</span></a></div>
     </div>
     <aside class="hero-editorial"><span class="section-index"><?= $e($tr('01 / YOUR DIGITAL WORKSPACE','01 / TWOJA CYFROWA PRZESTRZEŃ')) ?></span><p><?= $e($themeSettings['home_detail']) ?></p><div class="hero-notes"><span><?= $e($tr('Your server','Twój serwer')) ?></span><span><?= $e($tr('Your content','Twoje treści')) ?></span><span><?= $e($tr('Your rules','Twoje zasady')) ?></span></div></aside>
@@ -18,6 +19,7 @@
   </div>
 </div>
 <section class="product-principles container" aria-label="<?= $e($tr('Platform principles','Założenia platformy')) ?>"><div><span>01</span><strong><?= $e($tr('Content without clutter','Treści bez chaosu')) ?></strong><small><?= $e($tr('Pages, media & publishing','Strony, media i publikacje')) ?></small></div><div><span>02</span><strong><?= $e($tr('Connected teams','Współpracujące zespoły')) ?></strong><small><?= $e($tr('Roles & facility-scoped access','Role i dostęp według placówek')) ?></small></div><div><span>03</span><strong><?= $e($tr('Freedom to build','Swoboda tworzenia')) ?></strong><small><?= $e($tr('Independent, replaceable themes','Niezależne, wymienne motywy')) ?></small></div><div><span>04</span><strong><?= $e($tr('Ownership by design','Kontrola nad własnym systemem')) ?></strong><small><?= $e($tr('Self-hosted on your infrastructure','Instalacja na własnej infrastrukturze')) ?></small></div></section>
+<div class="container chatbot-home"><?php require __DIR__ . '/chatbot.php'; ?></div>
 <section class="section container product-features">
   <div class="section-heading"><div><span class="eyebrow"><?= $e($tr('LESS FRICTION. MORE POSSIBILITY.','MNIEJ PRZESZKÓD. WIĘCEJ MOŻLIWOŚCI.')) ?></span><h2><?= $e($themeSettings['features_title']) ?></h2></div><p><?= $e($themeSettings['features_intro']) ?></p></div>
   <div class="home-sections"><?php require __DIR__ . '/blocks.php'; ?></div>

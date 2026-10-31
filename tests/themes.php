@@ -72,7 +72,10 @@ foreach ($pages as $path => $page) {
     $assert($status === 200 && str_contains($body, htmlspecialchars($page['title'], ENT_QUOTES, 'UTF-8')), 'page and title ' . $path);
     $assert(str_contains($body, 'rel="canonical" href="https://www.sensecms.com' . $path . '"'), 'canonical ' . $path);
     $assert($theme->response($path, 'HEAD')[2] === '', 'HEAD ' . $path);
-    $assert(!preg_match('/href="[^" ]*#[^" ]+"/', str_replace('href="#main"', '', $body)), 'navigation uses real page URLs ' . $path);
+    preg_match('~<nav id="navigation".*?</nav>~s', $body, $primaryNav);
+    $assert(isset($primaryNav[0]) && !preg_match('/href="[^" ]*#[^" ]+"/', $primaryNav[0]), 'navigation uses real page URLs ' . $path);
+    preg_match_all('/href="([^"#]+)#([^" ]+)"/', $body, $anchors, PREG_SET_ORDER);
+    foreach ($anchors as $anchor) $assert(str_contains($theme->response($anchor[1])[2], 'id="'.$anchor[2].'"'), 'content anchor resolves to an existing section ' . $anchor[1]);
     preg_match_all('/(?:href|src)="(\/[^"#]*)(?:#[^"]*)?"/', $body, $links);
     foreach (array_unique($links[1]) as $link) {
         if($link==='/system/update'){$assert($theme->response($link,'HEAD')[0]===404,'Core Update link is not owned by the public theme');continue;}
@@ -254,6 +257,14 @@ $assert(!str_contains($platform, 'unsafe()') && !str_contains($platform, 'onerro
 $assert(!str_contains($html, 'class="platform-hero"'), 'default managed template stays unchanged');
 $assert(str_contains($managed(['template'=>'product','title'=>'Empty','blocks'=>[]]), 'class="platform-hero"'), 'product template handles an empty block collection');
 $assert(str_contains($theme->response('/platform')[2], 'class="platform-hero"'), 'starter platform uses same presentation as managed template');
+$chatbotAi=$managed(['template'=>'product','public_path'=>'/platform/ai','title'=>'AI','blocks'=>[['type'=>'text','payload'=>['title'=>'Editorial introduction','text'=>'<p>Review the draft.</p>']],['type'=>'text','payload'=>['title'=>'Provider configuration','text'=>'<p>Configure the provider.</p>']]]],null,['/platform/ai'=>'platform-ai','/contact'=>'contact']);
+$assert(substr_count($chatbotAi,'id="private-ai-chatbot"')===1&&strpos($chatbotAi,'Editorial introduction')<strpos($chatbotAi,'id="private-ai-chatbot"')&&strpos($chatbotAi,'id="private-ai-chatbot"')<strpos($chatbotAi,'Provider configuration'),'AI promotion appears once immediately after the editorial introduction');
+$assert(str_contains($chatbotAi,'Twój prywatny, spersonalizowany AI Chatbot.')&&str_contains($chatbotAi,'wybrany dostawca AI otrzymuje pytanie')&&str_contains($chatbotAi,'nie jest ponownym trenowaniem modelu'),'Polish promotion explains provider processing and knowledge-based personalization');
+$assert(str_contains($chatbotAi,'href="/pl/contact"')&&str_contains($chatbotAi,'<details class="chatbot-explainer">'),'AI promotion has a localized action and native accessible disclosure');
+$chatbotDocs=$managed(['public_path'=>'/docs','title'=>'Docs','blocks'=>[]],null,['/platform/ai'=>'platform-ai']);
+$assert(str_contains($chatbotDocs,'chatbot-compact')&&str_contains($chatbotDocs,'href="/pl/platform-ai#private-ai-chatbot"')&&!str_contains($chatbotDocs,'class="chatbot-visual"'),'Related-page promotion stays compact and links to the localized feature');
+$chatbotCustom=$theme->response('/','GET',['theme_settings'=>['chatbot_title'=>'Your <custom> assistant','chatbot_text'=>'A <script> label.']])[2];
+$assert(str_contains($chatbotCustom,'Your &lt;custom&gt; assistant')&&str_contains($chatbotCustom,'A &lt;script&gt; label.')&&!str_contains($chatbotCustom,'<script> label.'),'Configurable chatbot copy is escaped');
 $assert(str_contains($platform, 'aria-label="Wróć na górę" aria-hidden="true" tabindex="-1"') && str_contains($platform, '<main id="main" tabindex="-1">'), 'return control starts hidden and has an accessible focus destination');
 $seoFixture=App\Core\SeoMeta::resolve([],[],['title'=>'Installation','excerpt'=>'Install Sense CMS'],['base_url'=>'https://www.sensecms.com','current_path'=>'/docs/installation','locale'=>'en','fallback_image'=>'/theme-assets/og.image.jpg','fallback_image_type'=>'image/jpeg','fallback_image_width'=>1200,'fallback_image_height'=>630]);
 $seoPage=$managed(['title'=>'Installation','excerpt'=>'Install Sense CMS','public_path'=>'/docs/installation','blocks'=>[]],$seoFixture);

@@ -57,4 +57,5 @@ $featuredResource = $section === 'resources';
 </div>
 <?php endif; ?>
 <?php $blocks=$contactBlocks; unset($blockIcons, $featuredResource); ?>
+<?php if (in_array($publicPath, ['/docs', '/extensions/catalog/system/sensecms'], true)): ?><div class="container"><?php require __DIR__ . '/chatbot.php'; ?></div><?php endif; ?>
 <?php if (!in_array($section,['contact','guide'],true)): ?><section class="container subpage-next"><div><span class="eyebrow"><?= $e($tr('LET’S MAKE THE NEXT STEP CLEAR','ZAPLANUJMY KOLEJNY KROK')) ?></span><h2><?= $e($tr('Have a project in mind?','Masz pomysł na projekt?')) ?></h2></div><a class="button" href="<?= $e($localUrl('/contact')) ?>"><?= $e($tr('Start a conversation','Porozmawiajmy')) ?> <span aria-hidden="true">↗</span></a></section><?php endif; ?>

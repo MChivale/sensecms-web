@@ -41,7 +41,7 @@ $pages = [
     ]],
     '/download' => ['title' => 'Start with a verified release.', 'description' => 'Sense CMS release availability and the checks required before a public stable distribution.', 'kind' => 'download'],
     '/update' => ['title'=>'Stay current. Stay in control.', 'description'=>'Explore the latest Stable Sense CMS releases, release notes and requirements.', 'kind'=>'managed', 'sections'=>[]],
-    '/platform/ai' => ['title'=>'AI that supports your team.', 'description'=>'Editorial assistance, managed knowledge and a visitor assistant, with your choice of provider and human control over publishing.', 'kind'=>'article', 'sections'=>[
+    '/platform/ai' => ['title'=>'AI that supports your team.', 'description'=>'Editorial assistance, managed knowledge and a visitor assistant, with your choice of provider and human control over publishing.', 'kind'=>'platform', 'sections'=>[
         ['Editorial assistance', 'Draft and improve page sections in Page Builder and post content. Review and edit suggestions before choosing what to publish.'],
         ['Your provider and limits', 'Configure supported AI providers and their usage limits. Provider credentials remain encrypted within your installation.'],
         ['Knowledge and visitor support', 'Use approved sources to support answers and source links. Keep knowledge up to date and hand the conversation to your team when more help is needed.'],

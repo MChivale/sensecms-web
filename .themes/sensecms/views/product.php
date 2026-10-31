@@ -21,5 +21,6 @@ declare(strict_types=1);
         <div class="platform-overview"><span class="eyebrow"><?= $e($tr('ONE WORKSPACE. A WIDER VIEW.', 'JEDNA PRZESTRZEŃ. SZERSZE MOŻLIWOŚCI.')) ?></span><?php $productBlocks = $blocks; $blocks = array_slice($productBlocks, 0, 1); require __DIR__ . '/blocks.php'; ?></div>
         <figure class="platform-preview"><div class="frame-bar"><span class="frame-dots" aria-hidden="true">● ● ●</span><span>Sense CMS / Workspace</span></div><img src="/theme-assets/workspace.png" width="1440" height="940" alt="<?= $e($tr('Sense CMS administration workspace with content, facilities and publishing controls', 'Panel administracyjny Sense CMS z treściami, placówkami i narzędziami publikacji')) ?>" loading="lazy"><figcaption><?= $e($tr('The real workspace · illustrative data from our private test environment', 'Panel administracyjny · przykładowe dane z prywatnego środowiska testowego')) ?></figcaption></figure>
     </div>
+    <?php if (in_array($canonicalPath, ['/platform', '/platform/ai'], true)): require __DIR__ . '/chatbot.php'; endif; ?>
     <div class="platform-capabilities"><?php $blocks = array_slice($productBlocks, 1); require __DIR__ . '/blocks.php'; $blocks = $productBlocks; ?></div>
 </div>
