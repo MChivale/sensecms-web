@@ -17,8 +17,9 @@ if (($locale ?? 'en') === 'pl') {
 }
 $fallbackNav = [
     ['label'=>'Platform', 'url'=>'/platform'],
+    ['label'=>'AI', 'url'=>'/platform/ai'],
     ['label'=>'Extensions', 'url'=>'/extensions'],
-    ['label'=>'Update', 'url'=>'/update'],
+    ['label'=>'Licensing', 'url'=>'/docs/licensing'],
     ['label'=>'Documentation', 'url'=>'/docs'],
     ['label'=>'Contact', 'url'=>'/contact'],
 ];

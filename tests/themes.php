@@ -252,7 +252,7 @@ $assert(!str_contains($composed, 'unsafe()') && substr_count($composed, 'data-co
 $fallback = $formView($contactCopy, false);
 $assert(!str_contains($fallback, 'contact-composed') && substr_count($fallback, 'Managed contact details') === 1, 'preview without form context preserves content');
 $docsHtml = $theme->response('/docs')[2];
-$assert(substr_count($docsHtml, 'resource-start') === 1 && substr_count($docsHtml, 'class="section-symbol"') === 5, 'documentation has one featured start and five category icons');
+$assert(substr_count($docsHtml, 'resource-start') === 1 && substr_count($docsHtml, 'class="section-symbol"') === 7, 'documentation has one featured start and seven category icons');
 $assert(!str_contains($theme->response('/docs/installation')[2], 'resource-start'), 'guide pages do not inherit the landing featured layout');
 $assert(substr_count($theme->response('/extensions')[2], 'class="section-symbol"') === 4, 'extension categories share the icon system');
 $heroCss = (string) file_get_contents($source . '/assets/product.css');

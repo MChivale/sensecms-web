@@ -11,7 +11,7 @@ $section = match (true) {
     default => 'page',
 };
 $labels = ['contact'=>$tr('Let’s build something meaningful','Stwórzmy coś wartościowego'), 'release'=>$tr('Built carefully. Released responsibly.','Tworzymy starannie. Wydajemy odpowiedzialnie.'), 'resources'=>$tr('For people who build','Dla twórców'), 'guide'=>$tr('Sense CMS documentation','Dokumentacja Sense CMS'), 'extensions'=>$tr('A system shaped around you','System dopasowany do Ciebie'), 'page'=>$tr('Discover Sense CMS','Poznaj Sense CMS')];
-$docs = ['/docs/installation'=>$tr('Installation','Instalacja'),'/docs/licensing'=>$tr('Licensing','Licencjonowanie'),'/docs/packages'=>$tr('Package contract','Zasady pakietów'),'/docs/themes'=>$tr('Theme development','Tworzenie motywów'),'/docs/server'=>$tr('Server configuration','Konfiguracja serwera')];
+$docs = ['/docs/installation'=>$tr('Installation','Instalacja'),'/docs/licensing'=>$tr('Licensing','Licencjonowanie'),'/docs/packages'=>$tr('Package contract','Specyfikacja pakietów'),'/docs/themes'=>$tr('Theme development','Tworzenie motywów'),'/docs/server'=>$tr('Server configuration','Konfiguracja serwera'),'/update'=>$tr('Updates','Aktualizacje')];
 $categories = ['/extensions/modules'=>$tr('Modules','Moduły'),'/extensions/plugins'=>$tr('Plugins','Wtyczki'),'/extensions/addons'=>$tr('Addons','Dodatki'),'/extensions/themes'=>$tr('Themes','Motywy')];
 $categoryHome = str_starts_with($publicPath, '/extensions/catalog') ? '/extensions/catalog' : '/extensions';
 if ($categoryHome === '/extensions/catalog') $categories = ['/extensions/catalog/module'=>$tr('Modules','Moduły'),'/extensions/catalog/plugin'=>$tr('Plugins','Wtyczki'),'/extensions/catalog/addon'=>$tr('Addons','Dodatki'),'/extensions/catalog/theme'=>$tr('Themes','Motywy')];
@@ -25,6 +25,8 @@ $blockIcons = [
     '/docs/packages'=>'m12 3 9 5v9l-9 5-9-5V8zM3 8l9 5 9-5m-9 5v9M8 5l9 5',
     '/docs/themes'=>'m8 5-7 7 7 7m8-14 7 7-7 7m-3-16-2 18',
     '/docs/server'=>'M3 3h18v7H3zM3 14h18v7H3zM7 6h1m-1 11h1M12 6h5m-5 11h5',
+    '/update'=>'M20 7v5h-5M4 17v-5h5M6 7a7 7 0 0 1 12-2l2 7M4 12l2 7a7 7 0 0 0 12-2',
+    '/platform/ai'=>'m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5Z',
 ];
 $contactBlocks = $blocks;
 $contactSplit = $section === 'contact' && !empty($formCsrf) && count(array_filter($blocks, static fn(array $block): bool => $block['type'] === 'contact-form')) > 0;
