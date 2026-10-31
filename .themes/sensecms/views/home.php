@@ -21,6 +21,7 @@
 <section class="product-principles container" aria-label="<?= $e($tr('Platform principles','Założenia platformy')) ?>"><div><span>01</span><strong><?= $e($tr('Content without clutter','Treści bez chaosu')) ?></strong><small><?= $e($tr('Pages, media & publishing','Strony, media i publikacje')) ?></small></div><div><span>02</span><strong><?= $e($tr('Connected teams','Współpracujące zespoły')) ?></strong><small><?= $e($tr('Roles & facility-scoped access','Role i dostęp według placówek')) ?></small></div><div><span>03</span><strong><?= $e($tr('Freedom to build','Swoboda tworzenia')) ?></strong><small><?= $e($tr('Independent, replaceable themes','Niezależne, wymienne motywy')) ?></small></div><div><span>04</span><strong><?= $e($tr('Ownership by design','Kontrola nad własnym systemem')) ?></strong><small><?= $e($tr('Your infrastructure or our servers','Twoja infrastruktura lub nasze serwery')) ?></small></div></section>
 <div class="container chatbot-home"><?php require __DIR__ . '/chatbot.php'; ?></div>
 <div class="container"><?php require __DIR__ . '/solutions.php'; ?></div>
+<div class="container"><?php require __DIR__ . '/apps.php'; ?></div>
 <section class="section container product-features">
   <div class="section-heading"><div><span class="eyebrow"><?= $e($tr('LESS FRICTION. MORE POSSIBILITY.','MNIEJ PRZESZKÓD. WIĘCEJ MOŻLIWOŚCI.')) ?></span><h2><?= $e($themeSettings['features_title']) ?></h2></div><p><?= $e($themeSettings['features_intro']) ?></p></div>
   <div class="home-sections"><?php require __DIR__ . '/blocks.php'; ?></div>

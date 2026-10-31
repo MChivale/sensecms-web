@@ -1,0 +1,36 @@
+<?php
+declare(strict_types=1);
+$appLocale = ($locale ?? 'en') === 'pl' ? 'pl' : 'en';
+$appFull = $canonicalPath === '/platform';
+?>
+<section class="app-presentation" id="app-sensecms" aria-labelledby="app-heading">
+    <div class="app-intro">
+        <div><span class="eyebrow">APP SENSE CMS</span><h2 id="app-heading"><?= $e($tr('Closer to your team. Wherever work takes you.','Bliżej zespołu. Tam, gdzie pracujesz.')) ?></h2></div>
+        <div><p><?= $e($tr('A conversation, a visit, a change of plan. Explore the APP Sense CMS interface for keeping everyday communication and schedules together — on a phone and at your desk.','Rozmowa, wizyta, zmiana planów. Poznaj interfejs APP Sense CMS, który łączy codzienną komunikację i organizację pracy — na telefonie i przy biurku.')) ?></p><p class="app-platforms"><?= $e($tr('Mobile & desktop interface','Interfejs mobilny i komputerowy')) ?><span>Android · iOS · Windows · macOS · Linux</span></p></div>
+    </div>
+    <div class="app-stage">
+        <div class="app-stage-heading"><span><?= $e($tr('YOUR DAY. CONNECTED.','TWÓJ DZIEŃ. WSZYSTKO BLISKO.')) ?></span><small><?= $e($tr('Interface previews · example data','Podglądy interfejsu · przykładowe dane')) ?></small></div>
+        <div class="app-phones">
+            <?php foreach ([
+                ['chat',$tr('People, not just messages','Ludzie i rozmowy'),$tr('Follow a conversation between a website visitor and a team member. Personal support stays at the centre.','Zobacz rozmowę gościa strony z członkiem zespołu. W centrum pozostaje osobisty kontakt i pomoc.')],
+                ['calendar',$tr('A clearer working day','Przejrzysty dzień pracy'),$tr('A daily schedule, a reservation and its details. One view brings people, places and time together.','Plan dnia, rezerwacja i jej szczegóły. Jeden widok łączy ludzi, miejsca i terminy.')],
+                ['notifications',$tr('The right moment to respond','Właściwy moment na reakcję'),$tr('A chat connection request, an appointment reminder or a schedule change — with the context that matters.','Prośba o połączenie na czacie, przypomnienie o wizycie lub zmiana grafiku — z potrzebnym kontekstem.')]
+            ] as [$screen,$title,$copy]): ?>
+            <figure class="app-phone-card"><a class="app-phone" href="/theme-assets/app-<?= $screen ?>-<?= $appLocale ?>.jpg" target="_blank" rel="noopener" aria-label="<?= $e($tr('Enlarge interface preview: ','Powiększ podgląd interfejsu: ').$title) ?>"><img src="/theme-assets/app-<?= $screen ?>-<?= $appLocale ?>.jpg" width="390" height="980" loading="lazy" decoding="async" alt="<?= $e($title.' — '.$tr('APP Sense CMS mobile interface preview with example data','mobilny podgląd interfejsu APP Sense CMS z przykładowymi danymi')) ?>"></a><figcaption><h3><?= $e($title) ?></h3><p><?= $e($copy) ?></p></figcaption></figure>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php if ($appFull): ?>
+    <div class="app-desktop"><div><span class="eyebrow"><?= $e($tr('SPACE TO FOCUS','PRZESTRZEŃ DO SKUPIENIA')) ?></span><h3><?= $e($tr('The same idea. More room to work.','Ta sama idea. Więcej miejsca do pracy.')) ?></h3><p><?= $e($tr('The desktop layout puts your conversation list, active chat and workspace navigation side by side. The interface direction covers Windows, macOS and Linux alongside mobile screens.','Układ komputerowy pokazuje obok siebie listę rozmów, aktywny czat i nawigację przestrzeni pracy. Kierunek interfejsu obejmuje Windows, macOS i Linux obok ekranów mobilnych.')) ?></p><p class="app-scope-note"><?= $e($tr('Calendars, reservations, work plans and notification channels are tailored to your installation through the relevant addons and integrations.','Kalendarze, rezerwacje, plany pracy i kanały powiadomień dopasowujemy do wdrożenia przez odpowiednie dodatki i integracje.')) ?></p></div><figure><a href="/theme-assets/app-desktop-<?= $appLocale ?>.jpg" target="_blank" rel="noopener" aria-label="<?= $e($tr('Enlarge desktop interface preview','Powiększ komputerowy podgląd interfejsu')) ?>"><img src="/theme-assets/app-desktop-<?= $appLocale ?>.jpg" width="1280" height="850" loading="lazy" decoding="async" alt="<?= $e($tr('APP Sense CMS desktop interface preview: conversation list and a chat with a visitor, using example data','Podgląd komputerowego interfejsu APP Sense CMS: lista rozmów i czat z gościem strony, z przykładowymi danymi')) ?>"></a><figcaption><?= $e($tr('APP Sense CMS · Interface preview · Example data','APP Sense CMS · Podgląd interfejsu · Przykładowe dane')) ?></figcaption></figure></div>
+    <?php endif; ?>
+    <div class="app-actions"><a class="text-link" href="<?= $e($localUrl($appFull ? '/contact' : '/platform')) ?><?= $appFull ? '' : '#workspace-tour' ?>"><?= $e($appFull ? $tr('Discuss your workspace and integrations →','Porozmawiajmy o Twojej przestrzeni i integracjach →') : $tr('See the workspace and desktop interface →','Zobacz panel pracy i interfejs komputerowy →')) ?></a></div>
+</section>
+<?php if ($appFull): ?>
+<section class="workspace-tour" id="workspace-tour" aria-labelledby="workspace-tour-heading">
+    <div class="solutions-heading"><span class="eyebrow"><?= $e($tr('INSIDE SENSE CMS','WEWNĄTRZ SENSE CMS')) ?></span><h2 id="workspace-tour-heading"><?= $e($tr('Real screens. Everyday work.','Prawdziwe ekrany. Codzienna praca.')) ?></h2><p><?= $e($tr('Take a closer look at the Sense CMS administration panel. These screenshots show the actual interface with fictional conversations and appointments in an isolated installation.','Przyjrzyj się panelowi administracyjnemu Sense CMS. Zrzuty pokazują rzeczywisty interfejs z fikcyjnymi rozmowami i wydarzeniami w odizolowanej instalacji.')) ?></p></div>
+    <div class="workspace-tour-grid"><?php foreach([
+        ['chat',$tr('From a visitor’s question to a personal reply','Od pytania gościa do osobistej odpowiedzi'),$tr('A shared inbox, the assigned operator and the conversation history help your team respond with context.','Wspólna skrzynka, przypisany konsultant i historia rozmowy pomagają zespołowi odpowiadać z pełnym kontekstem.')],
+        ['calendar',$tr('People, facilities and resources in one schedule','Ludzie, placówki i zasoby w jednym planie'),$tr('The Calendar addon brings events, participants and rooms into a clear agenda, with facility filters and configurable categories.','Dodatek Kalendarz łączy wydarzenia, uczestników i sale w czytelny plan, z filtrowaniem placówek i konfigurowalnymi kategoriami.')]
+    ] as [$screen,$title,$copy]): ?><figure><a href="/theme-assets/workspace-<?= $screen ?>-<?= $appLocale ?>.jpg" target="_blank" rel="noopener" aria-label="<?= $e($tr('Enlarge screenshot: ','Powiększ zrzut: ').$title) ?>"><img src="/theme-assets/workspace-<?= $screen ?>-<?= $appLocale ?>.jpg" width="1440" height="1080" loading="lazy" decoding="async" alt="<?= $e($title.' — '.$tr('actual Sense CMS administration with fictional sample data','rzeczywisty panel Sense CMS z fikcyjnymi danymi przykładowymi')) ?>"><span><?= $e($tr('Enlarge screenshot ↗','Powiększ zrzut ↗')) ?></span></a><figcaption><h3><?= $e($title) ?></h3><p><?= $e($copy) ?></p></figcaption></figure><?php endforeach; ?></div>
+</section>
+<?php endif; ?>

@@ -23,5 +23,6 @@ declare(strict_types=1);
     </div>
     <?php if (in_array($canonicalPath, ['/platform', '/platform/ai'], true)): require __DIR__ . '/chatbot.php'; endif; ?>
     <?php if ($canonicalPath === '/platform'): require __DIR__ . '/solutions.php'; endif; ?>
+    <?php if ($canonicalPath === '/platform'): require __DIR__ . '/apps.php'; endif; ?>
     <div class="platform-capabilities"><?php $blocks = array_slice($productBlocks, 1); require __DIR__ . '/blocks.php'; $blocks = $productBlocks; ?></div>
 </div>
