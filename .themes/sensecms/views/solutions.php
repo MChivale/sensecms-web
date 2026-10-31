@@ -42,8 +42,8 @@
             ['Schools','Szkoły','School profiles, educational offers, announcements and information for families.','Prezentacja szkół, oferta edukacyjna, ogłoszenia i informacje dla rodziców.'],
             ['Tourism & accommodation','Turystyka i noclegi','Present properties, rooms and local attractions; connect your reservation service as part of the project.','Prezentuj obiekty, pokoje i lokalne atrakcje; w ramach projektu połącz serwis z obsługą rezerwacji.'],
             ['Beauty salons','Gabinety kosmetyczne','Local treatments, teams and contact details, with appointment integrations tailored to your workflow.','Lokalna oferta zabiegów, zespoły i dane kontaktowe oraz integracje zapisów dopasowane do sposobu pracy.'],
-        ] as [$titleEn,$titlePl,$textEn,$textPl]): ?>
-        <li><h3><?= $e($tr($titleEn,$titlePl)) ?></h3><p><?= $e($tr($textEn,$textPl)) ?></p></li>
+        ] as $industryIndex=>[$titleEn,$titlePl,$textEn,$textPl]): ?>
+        <li><h3><?= $e($tr($titleEn,$titlePl)) ?></h3><p><?= $e($tr($textEn,$textPl)) ?></p><a class="text-link" href="<?= $e($localUrl(['/platform/companies','/platform/companies','/platform/schools','/platform/hospitality','/platform/beauty'][$industryIndex])) ?>"><?= $e($tr('Explore this use case →','Poznaj zastosowanie →')) ?></a></li>
         <?php endforeach; ?>
     </ul>
     <a class="text-link" href="<?= $e($localUrl('/contact')) ?>"><?= $e($tr('Plan your website and branch experience →', 'Zaplanuj serwis i strony swoich placówek →')) ?></a>

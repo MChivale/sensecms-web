@@ -103,6 +103,7 @@ $currentLabel = match ($path) {
 $breadcrumbPath = (string)($page['public_path'] ?? $path);
 $breadcrumbItems = $breadcrumbPath === '/' ? [] : [['label'=>$tr('Home','Strona główna'),'url'=>$homeUrl]];
 if (str_starts_with($breadcrumbPath, '/docs/') && $breadcrumbPath !== '/docs') $breadcrumbItems[] = ['label'=>$tr('Documentation','Dokumentacja'),'url'=>$localUrl('/docs')];
+if (isset((require __DIR__ . '/industry-pages.php')[$breadcrumbPath])) $breadcrumbItems[] = ['label'=>$tr('Platform','Platforma'),'url'=>$localUrl('/platform')];
 if (str_starts_with($breadcrumbPath, '/extensions/') && $breadcrumbPath !== '/extensions') $breadcrumbItems[] = ['label'=>$tr('Extensions','Rozszerzenia'),'url'=>$localUrl('/extensions')];
 if ($locale === 'pl') $currentLabel = (string)($page['title'] ?? $currentLabel);
 if ($breadcrumbItems) $breadcrumbItems[] = ['label'=>$currentLabel,'url'=>''];

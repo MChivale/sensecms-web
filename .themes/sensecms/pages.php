@@ -115,5 +115,6 @@ $pages['/docs/themes'] = ['title'=>'Build an independent theme', 'description'=>
     ['Independent administration', 'Do not style or replace the administration panel from a public theme. Keep configuration declarative so Core can provide draft, preview and publication controls. Test a second theme, preserved content, routing, keyboard access, mobile layout and rollback before release.'],
 ]];
 foreach ($content as $path => $sections) $pages[$path]['sections'] = $sections;
+foreach (require __DIR__ . '/industry-pages.php' as $path => $industry) $pages[$path] = ['title'=>$industry['en']['title'], 'description'=>$industry['en']['description'], 'kind'=>'platform', 'sections'=>$industry['en']['sections']];
 return $pages;
 })();

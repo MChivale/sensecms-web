@@ -55,6 +55,7 @@ $appFull = $canonicalPath === '/platform';
     </ol>
     <p class="journey-note"><?= $e($tr('Example workflow. Reservations, recipient groups and notification channels depend on the addons, permissions and integrations selected for your deployment.','Przykładowy przebieg pracy. Rezerwacje, grupy odbiorców i kanały powiadomień zależą od dodatków, uprawnień i integracji wybranych dla wdrożenia.')) ?></p>
 </section>
+<?php require __DIR__ . '/working-together.php'; ?>
 <section class="platform-faq" id="platform-questions" aria-labelledby="faq-heading">
     <div class="solutions-heading"><span class="eyebrow"><?= $e($tr('YOUR QUESTIONS, ANSWERED','ODPOWIEDZI NA TWOJE PYTANIA')) ?></span><h2 id="faq-heading"><?= $e($tr('A platform that fits your organisation.','Platforma dopasowana do Twojej organizacji.')) ?></h2></div>
     <div class="platform-faq-list"><?php foreach([

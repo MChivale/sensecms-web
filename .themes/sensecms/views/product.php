@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+if (isset((require dirname(__DIR__) . '/industry-pages.php')[$canonicalPath])) { require __DIR__ . '/industry.php'; return; }
 ?>
 <section class="platform-hero">
     <div class="container">
@@ -16,6 +17,11 @@ declare(strict_types=1);
         <div class="platform-foundations"><span>01 <strong><?= $e($tr('A focused Core', 'Przemyślany rdzeń')) ?></strong></span><span>02 <strong><?= $e($tr('A connected workspace', 'Wspólna przestrzeń pracy')) ?></strong></span><span>03 <strong><?= $e($tr('An independent theme', 'Niezależny motyw')) ?></strong></span></div>
     </div>
 </section>
+<?php if ($canonicalPath === '/platform'): ?>
+<nav class="platform-shortcuts container" aria-label="<?= $e($tr('Explore the platform','Poznaj platformę')) ?>" data-platform-shortcuts>
+<?php foreach (['private-ai-chatbot'=>$tr('AI Chatbot','AI Chatbot'),'local-websites'=>$tr('Branches','Placówki'),'app-sensecms'=>'APP','workspace-tour'=>$tr('CMS workspace','Panel CMS'),'working-together'=>$tr('Working together','Współpraca'),'platform-questions'=>'FAQ'] as $anchor=>$label): ?><a href="#<?= $anchor ?>"><?= $e($label) ?></a><?php endforeach; ?>
+</nav>
+<?php endif; ?>
 <div class="container platform-body">
     <div class="platform-showcase">
         <div class="platform-overview"><span class="eyebrow"><?= $e($tr('ONE WORKSPACE. A WIDER VIEW.', 'JEDNA PRZESTRZEŃ. SZERSZE MOŻLIWOŚCI.')) ?></span><?php $productBlocks = $blocks; $blocks = array_slice($productBlocks, 0, 1); require __DIR__ . '/blocks.php'; ?></div>
