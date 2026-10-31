@@ -6,6 +6,7 @@ from pathlib import Path
 import re
 import secrets
 import socket
+import ssl
 import subprocess
 import time
 import urllib.error
@@ -16,6 +17,11 @@ root = Path(__file__).resolve().parents[1]
 source = root / '.cms/source'
 if not re.fullmatch(r'sensecms-install-test\.[A-Za-z0-9]{8}', root.name):
     raise SystemExit('This destructive test is restricted to an isolated deployment test directory.')
+external_url = os.environ.get('SENSE_INSTALL_TEST_URL', '')
+if external_url:
+    endpoint = urllib.parse.urlsplit(external_url)
+    if endpoint.scheme not in ('http', 'https') or endpoint.hostname != '127.0.0.1' or not endpoint.port or endpoint.path or endpoint.query or endpoint.fragment or endpoint.username or endpoint.password:
+        raise SystemExit('An external QA server must use an explicit loopback HTTP(S) port.')
 cfg = {}
 for line in (root / '.cfg/License.txt').read_text().splitlines():
     match = re.match(r'^\s*License\s*Key\s*[:=]\s*(\S+)\s*$', line, re.I)
@@ -42,9 +48,12 @@ def check(condition, label):
     print('PASS ' + label, flush=True)
 
 jar = http.cookiejar.CookieJar()
-http = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+tls = ssl.create_default_context(cafile=os.environ.get('SENSE_INSTALL_TEST_CA') or None)
+http = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar), urllib.request.HTTPSHandler(context=tls))
 def request(path, data=None, headers=None):
-    req = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode() if data is not None else None, headers=headers or {})
+    # Match the prepared/licensed host while keeping every QA request on loopback.
+    request_headers = {'Host': 'www.sensecms.com'} if external_url.startswith('https:') else {}
+    req = urllib.request.Request(base + path, data=urllib.parse.urlencode(data).encode() if data is not None else None, headers={**request_headers, **(headers or {})})
     try:
         with http.open(req, timeout=40) as response:
             return response.status, response.read().decode(), response.headers
@@ -74,10 +83,16 @@ try:
     with socket.socket() as sock:
         sock.bind(('127.0.0.1', 0))
         port = sock.getsockname()[1]
-    base = f'http://127.0.0.1:{port}'
+    base = external_url or f'http://127.0.0.1:{port}'
     log = (root / 'php-test.log').open('w')
-    server = subprocess.Popen(['php', '-S', f'127.0.0.1:{port}', '-t', str(source / 'public'), str(source / 'public/index.php')],
-                              env=dict(os.environ, SENSE_LOCAL_HTTP='1'), stdout=log, stderr=log)
+    if external_url:
+        # The isolated FPM account owns the extracted source; preparation ran as the test operator.
+        owner = source.stat()
+        for path in [source / 'storage', *(source / 'storage').rglob('*')]:
+            os.chown(path, owner.st_uid, owner.st_gid)
+    else:
+        server = subprocess.Popen(['php', '-S', f'127.0.0.1:{port}', '-t', str(source / 'public'), str(source / 'public/index.php')],
+                                  env=dict(os.environ, SENSE_LOCAL_HTTP='1'), stdout=log, stderr=log)
     for attempt in range(40):
         try:
             status, page, headers = request('/install')
@@ -143,6 +158,9 @@ try:
     check(workspace.get('enabled') is True and re.fullmatch('[a-f0-9]{64}', workspace.get('secret', '')), 'fresh installation provisions a private Workspace identity')
     check(workspace['secret'] == workspace_secret, 'finalization preserves an existing valid private identity')
     migrate = ['php', str(source / 'scripts/migrate-workspace.php')]
+    if external_url:
+        import pwd
+        migrate = ['runuser', '-u', pwd.getpwuid(source.stat().st_uid).pw_name, '--', *migrate]
     cli_status = subprocess.run(migrate + ['--status'], capture_output=True, text=True)
     check(cli_status.returncode == 0 and json.loads(cli_status.stdout)['ready'], 'licensed CLI reports completed schema readiness')
     check(subprocess.run(migrate + ['--unknown'], capture_output=True).returncode == 1, 'CLI rejects unknown flags')

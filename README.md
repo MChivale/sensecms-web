@@ -155,7 +155,20 @@ not a Stable production release or an automatic updater.
 resumption and licence-first checks plus private-path denial through isolated
 loopback Nginx/PHP-FPM processes on Linux (root required). It does not modify
 system services or use a production database. This covers preparation only;
-licensed database completion and target HTTPS/Apache acceptance remain separate.
+licensed database completion uses the guarded `tests/installer-http.py` fixture.
+It can target an isolated loopback Nginx/Apache server using
+`SENSE_INSTALL_TEST_URL`; HTTPS requires normal certificate verification, with an
+optional fixture CA in `SENSE_INSTALL_TEST_CA`. Never point these fixtures at an
+existing installation or production database.
+
+On 2026-10-31 the current 433-file candidate passed exact-artifact extraction,
+licensed fresh-database installation, and isolated Nginx/Apache acceptance. The
+reviewed two-file pair is retained in `.local/sensecms-web-installer-20261031`;
+its `install.zip` SHA-256 is
+`c797a7052c71f242c6631103b8c63ce89f211337129fd6a6a4f054d50283bd6e`.
+The older `.install/web` pair was not replaced. See the latest work-log entry for
+test evidence and scope. The candidate remains unsigned DEVELOPMENT; these checks
+do not publish a signed Stable release or enable automatic Core updates.
 
 ## Product website and packages
 
