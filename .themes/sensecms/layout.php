@@ -123,6 +123,13 @@ if (isset($seo) && $breadcrumbItems) {
     foreach ($seo['json_ld']['@graph'] as &$node) if (($node['@id'] ?? '') === ($seo['canonical'] ?? '') . '#webpage') $node['breadcrumb'] = ['@id'=>$breadcrumbId];
     unset($node);
 }
+if (isset($seo) && in_array($canonicalPath, ['/', '/platform', '/extensions/catalog/system/sensecms'], true)) {
+    $siteUrl = rtrim((string) $seo['site_url'], '/');
+    $softwareId = $siteUrl . '/#software';
+    $seo['json_ld']['@graph'][] = ['@type'=>'SoftwareApplication','@id'=>$softwareId,'name'=>'Sense CMS','url'=>$siteUrl . '/platform','description'=>$seo['description'],'applicationCategory'=>'BusinessApplication','operatingSystem'=>'Web browser; PHP server','inLanguage'=>$locale,'publisher'=>['@id'=>$siteUrl . '/#organization'],'license'=>$siteUrl . $localUrl('/docs/licensing'),'softwareHelp'=>['@type'=>'WebPage','url'=>$siteUrl . $localUrl('/docs')]];
+    foreach ($seo['json_ld']['@graph'] as &$node) if (($node['@id'] ?? '') === $seo['canonical'] . '#webpage') $node['mainEntity'] = ['@id'=>$softwareId];
+    unset($node);
+}
 ?>
 <!doctype html>
 <html lang="<?= $e($locale ?? 'en') ?>">

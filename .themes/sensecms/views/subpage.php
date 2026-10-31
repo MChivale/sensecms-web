@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 $publicPath = (string) ($page['public_path'] ?? $path);
-$marketplace = $publicPath === '/extensions' || (bool) preg_match('~^/extensions/catalog(?:/(?:theme|plugin|addon|module))?$~D', $publicPath);
+$marketplace = (bool) preg_match('~^/extensions/catalog(?:/(?:theme|plugin|addon|module))?$~D', $publicPath);
 $section = match (true) {
     $publicPath === '/contact' => 'contact',
     in_array($publicPath, ['/download','/update'], true) => 'release',
