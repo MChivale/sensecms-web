@@ -92,6 +92,33 @@ $polishBody = (static function () use ($source, $pages, $settings): string {
     ob_start(); try { require $source . '/layout.php'; return (string)ob_get_contents(); } finally { ob_end_clean(); }
 })();
 $assert(str_contains($polishBody, 'QA &lt;unsafe&gt;') && !str_contains($polishBody, 'QA <unsafe>') && str_contains($polishBody, 'Wypróbuj demo'), 'Polish homepage settings and labels render safely');
+$navigationBody = static function (string $canonical, string $locale) use ($source): string {
+    $localizedPaths=['/platform'=>'platform','/platform/ai'=>'platform-ai','/docs'=>'docs','/docs/licensing'=>'docs-licensing','/docs/server'=>'docs-server'];
+    $path=$locale==='pl'?'/pl/'.($localizedPaths[$canonical]??'missing'):$canonical;
+    $baseUrl='https://www.sensecms.com'; $status=200; $themeSettings=[]; $blocks=[];
+    $page=['kind'=>'managed','title'=>'Navigation test','description'=>'','public_path'=>$canonical];
+    $languages=[['locale'=>'en','name'=>'English','native_name'=>'English','is_default'=>true],['locale'=>'pl','name'=>'Polish','native_name'=>'Polski']];
+    $languageUrls=['en'=>$canonical,'pl'=>'/pl/'.($localizedPaths[$canonical]??'missing')];
+    $e=static fn(mixed $value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    ob_start(); try { require $source.'/layout.php'; return (string)ob_get_contents(); } finally { ob_end_clean(); }
+};
+foreach (['en','pl'] as $navLocale) {
+    foreach (['/platform'=>'/platform','/platform/ai'=>'/platform/ai','/docs/licensing'=>'/docs/licensing','/docs'=>'/docs','/docs/server'=>'/docs','/platform/ai/details'=>'/platform/ai','/platform-other'=>null] as $route=>$selected) {
+        $html=$navigationBody($route,$navLocale);
+        $document=new DOMDocument(); @$document->loadHTML($html);
+        $xpath=new DOMXPath($document);
+        $active=$xpath->query('//nav[@id="navigation"]/a[@aria-current or @class="nav-parent"]');
+        $expected=$selected===null?null:($navLocale==='pl'?'/pl/'.str_replace('/','-',ltrim($selected,'/')):$selected);
+        $assert($active->length===($selected===null?0:1)&&($selected===null||$active->item(0)->getAttribute('href')===$expected),'one most specific navigation destination '.$navLocale.' '.$route);
+        if ($selected!==null) $assert(($active->item(0)->getAttribute('aria-current')==='page')===($route===$selected),'exact page differs from parent section '.$navLocale.' '.$route);
+    }
+    $assert($xpath->query('//details[@class="language-menu"]//a[@lang="en"]//img[@src="/theme-assets/flag-uk.svg"]')->length===1&&$xpath->query('//details[@class="language-menu"]//a[@lang="pl"]//img[@src="/theme-assets/flag-pl.svg"]')->length===1,'language choices retain labels and decorative UK/Polish flags '.$navLocale);
+    $assert($xpath->query('//details[@class="language-menu"]/summary/img[@src="/theme-assets/flag-'.($navLocale==='en'?'uk':'pl').'.svg"]')->length===1,'current language displays its flag '.$navLocale);
+}
+foreach (['uk','pl'] as $flag) {
+    [$flagStatus,$flagHeaders,$flagBody]=$theme->response('/theme-assets/flag-'.$flag.'.svg');
+    $assert($flagStatus===200&&$flagHeaders['Content-Type']==='image/svg+xml'&&str_contains($flagBody,'<svg'),'language flag served as a local SVG '.$flag);
+}
 $defaultFooter = $theme->response('/')[2];
 $assert(str_contains($defaultFooter, '© Copyright by Sense CMS · QUANT Software House Limited. All rights reserved.') && !str_contains($defaultFooter, 'Independent by design.'), 'product footer uses the requested copyright text');
 $assert(str_contains($defaultFooter,'src="/theme-assets/logo-light.svg"')&&str_contains($defaultFooter,'Sense CMS is a flexible, self-hosted content management system')&&str_contains($footerCss=(string)file_get_contents($source.'/assets/site.css'),'.footer-brand>p{max-width:390px;text-align:justify'),'footer logo, brand and justified SEO description use configurable theme fields');

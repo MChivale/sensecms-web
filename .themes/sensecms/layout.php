@@ -36,12 +36,24 @@ if (($page['kind'] ?? '') === 'home') {
 $safeUrl = static fn(string $url): bool => (str_starts_with($url, '/') && !str_starts_with($url, '//') && !preg_match('/[\s<>"\'\\\\]/u', $url))
     || (bool) preg_match('/^(?:mailto|tel):[^\s<>]+$/iD', $url)
     || ((bool) filter_var($url, FILTER_VALIDATE_URL) && (bool) preg_match('/^https:\/\//iD', $url));
-$renderLinks = static function (array $links) use ($e, $path, $safeUrl, $localUrl): void {
-    foreach ($links as $link) {
+$canonicalPath = (string) ($page['public_path'] ?? $path);
+$renderLinks = static function (array $links) use ($e, $path, $canonicalPath, $safeUrl, $localUrl): void {
+    $active = null;
+    $score = 0;
+    $exact = false;
+    foreach ($links as $index => $link) {
+        $url = trim((string) ($link['url'] ?? ''));
+        if (!$safeUrl($url) || !str_starts_with($url, '/') || str_starts_with($url, '//')) continue;
+        $route = (string) parse_url($url, PHP_URL_PATH);
+        $matches = $localUrl($route) === $path || $route === $canonicalPath;
+        $rank = $matches ? PHP_INT_MAX : ($route !== '/' && str_starts_with($canonicalPath, $route . '/') ? strlen($route) : 0);
+        if ($rank > $score) { $active = $index; $score = $rank; $exact = $matches; }
+    }
+    foreach ($links as $index => $link) {
         $url = $localUrl(trim((string) ($link['url'] ?? '')));
         if (!$safeUrl($url)) continue;
         $target = ($link['target'] ?? '') === '_blank' ? ' target="_blank" rel="noopener noreferrer"' : '';
-        $current = $url === $path ? ' aria-current="page"' : ($url !== '/' && str_starts_with($path, $url . '/') ? ' class="nav-parent"' : '');
+        $current = $index === $active ? ($exact ? ' aria-current="page"' : ' class="nav-parent"') : '';
         echo '<a href="' . $e($url) . '"' . $target . $current . '>' . $e($link['label'] ?? '') . '</a>';
     }
 };
@@ -64,6 +76,10 @@ $renderBrandText = static function (string $text) use ($e): void {
     echo $e($text);
 };
 $activeLocale = preg_match('/^[a-z]{2,8}(?:-[a-z0-9]{2,8})?$/iD', (string) ($locale ?? 'en')) ? strtolower((string) ($locale ?? 'en')) : 'en';
+$renderLanguageFlag = static function (string $code): void {
+    $flag = match ($code) { 'en'=>'uk', 'pl'=>'pl', default=>null };
+    if ($flag !== null) echo '<img class="language-flag" src="/theme-assets/flag-' . $flag . '.svg" width="18" height="12" alt="">';
+};
 $availableLanguages = isset($languages) && is_array($languages) ? $languages : [['locale'=>$activeLocale, 'name'=>strtoupper($activeLocale), 'native_name'=>strtoupper($activeLocale), 'is_default'=>true]];
 $availableLanguageUrls = isset($languageUrls) && is_array($languageUrls) ? $languageUrls : [$activeLocale=>$path];
 $languageLinks = [];
@@ -122,7 +138,7 @@ if (isset($seo) && $breadcrumbItems) {
 <body class="product-design"><a class="skip" href="#main"><?= $e($tr('Skip to content','Przejdź do treści')) ?></a>
 <header class="header"><div class="container header-inner"><a class="brand" href="<?= $e($homeUrl) ?>" aria-label="<?= $e($tr('Sense CMS home','Strona główna Sense CMS')) ?>"><img src="/theme-assets/logo.svg" width="34" height="38" alt=""><span><?php $renderBrandText('SenseCMS.'); ?></span></a>
 <nav id="navigation" class="primary-nav" aria-label="<?= $e($tr('Main navigation','Nawigacja główna')) ?>"><?php $renderLinks($primaryLinks); ?><a class="mobile-demo" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer"><?= $e($tr('Try the demo','Wypróbuj demo')) ?> <span aria-hidden="true">↗</span></a></nav>
-<div class="header-actions"><div class="accessibility-menu"><button class="accessibility-toggle" type="button" aria-label="<?= $e($tr('Accessibility','Dostępność')) ?>" aria-expanded="false" aria-controls="accessibility-panel" aria-haspopup="dialog" data-accessibility-toggle><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5c2.3 1 4.6 1.5 7 1.5s4.7-.5 7-1.5M12 10v10M8.5 21 12 15l3.5 6"/></svg></button><section id="accessibility-panel" class="accessibility-panel" role="dialog" aria-labelledby="accessibility-title" hidden data-accessibility-panel><div class="accessibility-panel-head"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5c2.3 1 4.6 1.5 7 1.5s4.7-.5 7-1.5M12 10v10M8.5 21 12 15l3.5 6"/></svg></span><div><h2 id="accessibility-title"><?= $e($tr('Accessibility','Dostępność')) ?></h2><p><?= $e($tr('Adjust text from 100% to 200%.','Zmień wielkość tekstu od 100% do 200%.')) ?></p></div><button type="button" aria-label="<?= $e($tr('Close accessibility settings','Zamknij ustawienia dostępności')) ?>" data-accessibility-close>×</button></div><div class="accessibility-controls"><button type="button" aria-label="<?= $e($tr('Decrease text size','Zmniejsz tekst')) ?>" data-text-decrease>A−</button><output for="accessibility-scale" aria-live="polite" data-text-scale>100%</output><button type="button" aria-label="<?= $e($tr('Increase text size','Powiększ tekst')) ?>" data-text-increase>A+</button><button type="button" data-text-reset><?= $e($tr('Reset','Przywróć')) ?></button></div><label for="accessibility-scale"><?= $e($tr('Text size','Wielkość tekstu')) ?></label><input id="accessibility-scale" type="range" min="100" max="200" step="10" value="100" data-text-range></section></div><details class="language-menu"><summary aria-label="<?= $e($tr('Choose language','Wybierz język')) ?>"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3Z"/></svg><span><?= $e(strtoupper($activeLocale)) ?></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div><?php foreach ($languageLinks as $language): ?><a href="<?= $e($language['url']) ?>" hreflang="<?= $e($language['code']) ?>" lang="<?= $e($language['code']) ?>"<?= $language['code'] === $activeLocale ? ' aria-current="page"' : '' ?>><span><?= $e($language['native']) ?></span><small><?= $e($language['name']) ?></small></a><?php endforeach; ?></div></details>
+<div class="header-actions"><div class="accessibility-menu"><button class="accessibility-toggle" type="button" aria-label="<?= $e($tr('Accessibility','Dostępność')) ?>" aria-expanded="false" aria-controls="accessibility-panel" aria-haspopup="dialog" data-accessibility-toggle><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5c2.3 1 4.6 1.5 7 1.5s4.7-.5 7-1.5M12 10v10M8.5 21 12 15l3.5 6"/></svg></button><section id="accessibility-panel" class="accessibility-panel" role="dialog" aria-labelledby="accessibility-title" hidden data-accessibility-panel><div class="accessibility-panel-head"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5c2.3 1 4.6 1.5 7 1.5s4.7-.5 7-1.5M12 10v10M8.5 21 12 15l3.5 6"/></svg></span><div><h2 id="accessibility-title"><?= $e($tr('Accessibility','Dostępność')) ?></h2><p><?= $e($tr('Adjust text from 100% to 200%.','Zmień wielkość tekstu od 100% do 200%.')) ?></p></div><button type="button" aria-label="<?= $e($tr('Close accessibility settings','Zamknij ustawienia dostępności')) ?>" data-accessibility-close>×</button></div><div class="accessibility-controls"><button type="button" aria-label="<?= $e($tr('Decrease text size','Zmniejsz tekst')) ?>" data-text-decrease>A−</button><output for="accessibility-scale" aria-live="polite" data-text-scale>100%</output><button type="button" aria-label="<?= $e($tr('Increase text size','Powiększ tekst')) ?>" data-text-increase>A+</button><button type="button" data-text-reset><?= $e($tr('Reset','Przywróć')) ?></button></div><label for="accessibility-scale"><?= $e($tr('Text size','Wielkość tekstu')) ?></label><input id="accessibility-scale" type="range" min="100" max="200" step="10" value="100" data-text-range></section></div><details class="language-menu"><summary aria-label="<?= $e($tr('Choose language','Wybierz język')) ?>"><?php $renderLanguageFlag($activeLocale); ?><span><?= $e(strtoupper($activeLocale)) ?></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div><?php foreach ($languageLinks as $language): ?><a href="<?= $e($language['url']) ?>" hreflang="<?= $e($language['code']) ?>" lang="<?= $e($language['code']) ?>"<?= $language['code'] === $activeLocale ? ' aria-current="page"' : '' ?>><span class="language-label"><?php $renderLanguageFlag($language['code']); ?><?= $e($language['native']) ?></span><small><?= $e($language['name']) ?></small></a><?php endforeach; ?></div></details>
 <a class="header-demo" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer">Demo<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg></a>
 <button class="menu-button" aria-expanded="false" aria-controls="navigation" aria-label="<?= $e($tr('Open navigation','Otwórz nawigację')) ?>" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div></div></header>
 <main id="main" tabindex="-1">
