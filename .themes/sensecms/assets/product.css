@@ -113,3 +113,8 @@ html[data-text-scale-large] .ecosystem-packages{grid-template-columns:minmax(0,1
 
 /* One breadcrumb treatment for every product page and its structured trail. */
 .subpage-breadcrumb{font-weight:550}.subpage-breadcrumb a{text-decoration:none}.subpage-breadcrumb a:is(:hover,:focus-visible){text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:4px}.subpage-breadcrumb [aria-current=page]{font-weight:650}
+.primary-nav>.mobile-demo{display:none}
+.market-core-scope{margin:24px 0;color:var(--muted);font-size:.85rem;line-height:1.7}.market-core-scope h3{font-size:1rem;color:var(--ink)}.market-core-scope ul{padding-left:20px}.market-core-scope li+li{margin-top:8px}
+.market-dialog-footer{flex-wrap:wrap;gap:12px}.market-dialog-footer .text-link{font:inherit;font-size:.85rem;background:transparent;border:0;cursor:pointer}
+@media(max-width:600px){.product-intro{gap:16px;padding-block:30px 26px}.product-intro h1{margin-bottom:20px}.product-intro .intro{margin-bottom:22px}.hero-editorial>p{display:none}.product-intro .actions{display:grid;grid-template-columns:1fr}.product-intro .actions>a{justify-content:center}.market-dialog-footer>[data-core-enquiry]{width:100%;justify-content:center}}
+@media(max-width:430px){.primary-nav>.mobile-demo{display:block;color:var(--blue)}}

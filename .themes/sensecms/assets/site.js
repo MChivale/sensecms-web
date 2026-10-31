@@ -97,6 +97,8 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
         if (dialog.open) return;
         opener = control;
         selected = identity(card);
+        dialog.querySelector('[data-core-scope]').hidden = selected !== 'system:sensecms';
+        dialog.querySelector('[data-core-enquiry]').hidden = selected !== 'system:sensecms';
         downloadForm.reset(); downloadResult.textContent = '';
         const offer = offers[selected];
         downloadForm.hidden = !offer;

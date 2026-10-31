@@ -57,7 +57,7 @@ $content = [
         ['Content and publishing', 'Create multilingual pages and posts, organise categories, build pages from supported sections and manage media, navigation and SEO. Draft, publication and review controls keep editorial work structured.'],
         ['Teams and facilities', 'Assign responsibility through roles and facility-scoped permissions. Manage each location’s profile and content in a shared workspace.'],
         ['Presentation without lock-in', 'Pages, public paths and editorial records remain in Core when you change the public theme. Compatible themes declare their settings, page templates and supported blocks.', null, 'Read the theme contract →', '/docs/themes'],
-        ['A development platform', 'The Workspace is running on this product website. Public stable distribution and the complete extension lifecycle still require release verification. Demo access will be published separately.', null, 'Check release status →', '/download'],
+        ['Explore the working demo', 'Sense CMS runs this website, and a separate public demo is available to explore. The current installer has passed isolated licensed installation tests on Nginx and Apache over HTTPS. It remains a development candidate; no Stable Core release has been published.', null, 'Try the demo →', 'https://demo.sensecms.com/'],
     ],
     '/extensions' => [
         ['Modules', 'Application capabilities with their own routes, data and lifecycle.', null, 'About modules →', '/extensions/modules'],
@@ -74,9 +74,9 @@ $content = [
         ['Server configuration', 'Configure public document roots, HTTPS, Nginx or Apache.', null, 'Server guide →', '/docs/server'],
     ],
     '/download' => [
-        ['Development, not a stable release', 'The current Core and Workspace are being verified in isolated environments. Public installation downloads will appear here only after the release passes installation, update and recovery checks.'],
+        ['Development, not a stable release', 'The current installer has passed isolated licensed installation tests, including Nginx and Apache over HTTPS. It remains a development candidate. No Stable Core release has been published, and automatic Core installation is not available.'],
         ['What is implemented', 'License-first installation; owner authentication; multilingual pages, posts and media; navigation and SEO; facility-scoped access; theme settings with draft and publication; signed theme installation, activation and rollback.'],
-        ['What remains under verification', 'The complete extension lifecycle, public package distribution and deployment acceptance for new installations. The separate public demonstration site is not open yet.'],
+        ['Demo and package availability', 'The public demo is open. Selected signed development packages are available through the catalogue with the required licence; each product lists its own status. Stable Core publication remains separate from the completed installation tests.', null, 'Try the demo →', 'https://demo.sensecms.com/'],
         ['Prepare your environment', 'Read the requirements and installation flow before choosing a production release. No payment or release date is being offered on this page.', null, 'Read the installation guide →', '/docs/installation'],
     ],
     '/contact' => [

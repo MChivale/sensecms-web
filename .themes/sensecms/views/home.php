@@ -2,10 +2,10 @@
 <div class="product-hero">
   <section class="container product-intro">
     <div class="hero-copy">
-      <span class="eyebrow"><span class="status-dot"></span> <?= $e($tr('CONTENT. PEOPLE. POSSIBILITIES.','TREŚCI. LUDZIE. MOŻLIWOŚCI.')) ?></span>
+      <span class="eyebrow"><span class="status-dot"></span> <?= $e($tr('SENSE CMS · CONTENT MANAGEMENT','SENSE CMS · ZARZĄDZANIE TREŚCIĄ')) ?></span>
       <h1><?= $e($themeSettings['home_title']) ?><br><span class="blue"><?= $e($themeSettings['home_accent']) ?></span></h1>
       <p class="intro"><?= $e($themeSettings['home_intro']) ?> <?= $e($themeSettings['home_intro_end']) ?></p>
-      <div class="actions"><a class="button" href="<?= $e($localUrl('/platform')) ?>"><?= $e($tr('Discover Sense CMS','Poznaj Sense CMS')) ?> <span aria-hidden="true">↗</span></a><a class="secondary-button" href="<?= $e($localUrl('/extensions')) ?>"><?= $e($tr('Explore the ecosystem','Poznaj ekosystem')) ?> <span aria-hidden="true">→</span></a></div>
+      <div class="actions"><a class="button" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer"><?= $e($tr('Try the demo','Wypróbuj demo')) ?> <span aria-hidden="true">↗</span></a><a class="secondary-button" href="<?= $e($localUrl('/platform')) ?>"><?= $e($tr('Explore the features','Poznaj możliwości')) ?> <span aria-hidden="true">→</span></a></div>
     </div>
     <aside class="hero-editorial"><span class="section-index"><?= $e($tr('01 / YOUR DIGITAL WORKSPACE','01 / TWOJA CYFROWA PRZESTRZEŃ')) ?></span><p><?= $e($themeSettings['home_detail']) ?></p><div class="hero-notes"><span><?= $e($tr('Your server','Twój serwer')) ?></span><span><?= $e($tr('Your content','Twoje treści')) ?></span><span><?= $e($tr('Your rules','Twoje zasady')) ?></span></div></aside>
   </section>

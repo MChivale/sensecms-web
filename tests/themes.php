@@ -91,7 +91,7 @@ $polishBody = (static function () use ($source, $pages, $settings): string {
     $e=static fn(mixed $value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     ob_start(); try { require $source . '/layout.php'; return (string)ob_get_contents(); } finally { ob_end_clean(); }
 })();
-$assert(str_contains($polishBody, 'QA &lt;unsafe&gt;') && !str_contains($polishBody, 'QA <unsafe>') && str_contains($polishBody, 'Poznaj Sense CMS'), 'Polish homepage settings and labels render safely');
+$assert(str_contains($polishBody, 'QA &lt;unsafe&gt;') && !str_contains($polishBody, 'QA <unsafe>') && str_contains($polishBody, 'Wypróbuj demo'), 'Polish homepage settings and labels render safely');
 $defaultFooter = $theme->response('/')[2];
 $assert(str_contains($defaultFooter, '© Copyright by Sense CMS · QUANT Software House Limited. All rights reserved.') && !str_contains($defaultFooter, 'Independent by design.'), 'product footer uses the requested copyright text');
 $assert(str_contains($defaultFooter,'src="/theme-assets/logo-light.svg"')&&str_contains($defaultFooter,'Sense CMS is a flexible, self-hosted content management system')&&str_contains($footerCss=(string)file_get_contents($source.'/assets/site.css'),'.footer-brand>p{max-width:390px;text-align:justify'),'footer logo, brand and justified SEO description use configurable theme fields');
