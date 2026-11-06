@@ -105,7 +105,7 @@ final class DashboardController extends Controller
         if (!$this->auth->changePassword($this->auth->id() ?? 0, $current, $new, $confirm)) $this->result(false, 'The current password is incorrect.', null, 422);
         $this->result(true, 'Password changed securely.', '/settings');
     }
-    public function email(): never { $this->guard();$this->access->assert('system.manage');if(!$this->emailSystem)throw new \RuntimeException('The e-mail system is unavailable.');$data=$this->emailSystem->dashboard();$this->render('E-mail','email',['emailSettings'=>$data['settings'],'emailTemplates'=>$data['templates'],'placeholders'=>$data['placeholders']]); }
+    public function email(): never { $this->guard();$this->access->assert('system.manage');if(!$this->emailSystem)throw new \RuntimeException('The e-mail system is unavailable.');$data=$this->emailSystem->dashboard();$this->render('E-mail','email',['emailSettings'=>$data['settings'],'emailTemplates'=>$data['templates'],'placeholders'=>$data['placeholders'],'callbackTeams'=>$this->ai->teams(false)]); }
     public function saveEmailServer(): never
     {
         $this->guard();$this->access->assert('system.manage');$this->emailCsrf();try{$this->emailSystem?->saveServer($_POST,$this->auth->id()??0);$this->result(true,'E-mail server settings saved securely.','/system/email');}catch(\RuntimeException$error){$this->result(false,$error->getMessage(),null,422);}
@@ -146,10 +146,12 @@ final class DashboardController extends Controller
         $document['media']=$this->media->qualityMetadata(PageBuilder::mediaPaths($document['blocks'],$catalog),[(int)$document['facility_id']]);
         $languages=$this->cms->languages();$defaultLocale=$this->cms->defaultLocale('en');
         $facilityId=(int)$document['facility_id'];$canEdit=$this->access->allows('content.pages.edit',$facilityId);$canReview=$this->access->allows('content.pages.review',$facilityId);$collaborators=$this->access->builderCollaborators($facilityId);
+        $document['preview_timezone'] = $this->facilities->activeById($facilityId, $defaultLocale, $defaultLocale)['timezone'] ?? 'UTC';
+        $document['publication'] = $this->cms->builderPublication($selected);
         $aiAllowed=$canEdit&&$this->access->allows('content.pages.ai',$facilityId);$aiProviders=[];if($aiAllowed)foreach($this->ai->enabledProviders('builder')as$provider)$aiProviders[]=['slug'=>(string)$provider['slug'],'name'=>(string)$provider['name'],'driver'=>(string)$provider['driver'],'model'=>(string)$provider['default_model'],'verified'=>(bool)($provider['verified_at']??false)];
-        $this->render('Page Builder', 'page-builder', ['pages'=>$pages,'builderDocument'=>$document,'builderDraft'=>$canEdit?$this->cms->builderDraft($selected,$this->auth->id()??0):null,'builderClipboard'=>$canEdit?$this->cms->builderClipboard($this->auth->id()??0):null,'builderCatalog'=>$catalog,'builderPatterns'=>PageBuilder::patterns($catalog),'builderLayouts'=>PageBuilder::layoutPresets(),'builderAppearance'=>PageBuilder::appearanceOptions(),'builderCollections'=>$this->cms->builderCollectionOptions($facilityId,$defaultLocale,$defaultLocale,$selected),'builderQuality'=>PageBuilder::qualityReport($document['blocks'],$catalog,$languages,$document),'builderGlobals'=>$this->cms->globalSections(),'builderRevisions'=>$this->cms->builderRevisions($selected),'builderCollaboration'=>$this->cms->builderCollaboration($selected,$this->auth->id()??0),'builderCollaborators'=>$collaborators,'builderAiProviders'=>$aiProviders,'builderAiActions'=>PageBuilder::aiActions($this->plugins->all(),$this->cms->activePluginSlugs(),$this->addons->all(),array_keys(array_filter($this->extensionStates()))),'builderPermissions'=>['edit'=>$canEdit,'review'=>$canReview,'ai'=>$aiAllowed],'languages'=>$languages,'builderTheme'=>$theme]);
+        $this->render('Page Builder', 'page-builder', ['pages'=>$pages,'builderDocument'=>$document,'builderDraft'=>$canEdit?$this->cms->builderDraft($selected,$this->auth->id()??0):null,'builderClipboard'=>$canEdit?$this->cms->builderClipboard($this->auth->id()??0):null,'builderCatalog'=>$catalog,'builderPatterns'=>PageBuilder::patterns($catalog),'builderLayouts'=>PageBuilder::layoutPresets(),'builderAppearance'=>PageBuilder::appearanceOptions(),'builderCollections'=>$this->cms->builderCollectionOptions($facilityId,$defaultLocale,$defaultLocale,$selected),'builderQuality'=>PageBuilder::qualityReport($document['blocks'],$catalog,$languages,$document),'builderGlobals'=>$this->cms->globalSections(),'builderRevisions'=>$this->cms->builderRevisions($selected),'builderCollaboration'=>$this->cms->builderCollaboration($selected,$this->auth->id()??0),'builderCollaborators'=>$collaborators,'builderAiProviders'=>$aiProviders,'builderAiActions'=>PageBuilder::aiActions($this->plugins->all(),$this->cms->activePluginSlugs(),$this->addons->all(),array_keys(array_filter($this->extensionStates()))),'builderPermissions'=>['edit'=>$canEdit,'pageElement'=>$canEdit && $this->access->allows('content.pages.publish',$facilityId) && !$this->access->isDemoUser(),'banner'=>$this->access->allows('appearance.manage') && !$this->access->isDemoUser(),'review'=>$canReview,'ai'=>$aiAllowed],'languages'=>$languages,'builderTheme'=>$theme]);
     }
-    public function savePageBuilder(int $pageId): never
+    public function savePageBuilder(int $pageId, bool $review=false): never
     {
         $this->guard(); $payload = json_decode((string) file_get_contents('php://input'), true);
         if (!is_array($payload)) $this->result(false, 'The Page Builder payload is invalid.', null, 400);
@@ -158,10 +160,29 @@ final class DashboardController extends Controller
         $themeSlug = (string) $this->cms->setting('active_theme', 'sensecms'); $catalog = $this->builderCatalog($this->themes->find($themeSlug)); $locales = array_column($this->cms->languages(), 'locale');
         try {
             $blocks = PageBuilder::sanitizeBlocks((array) ($payload['blocks'] ?? []), $catalog, $locales);
-            $version = $this->cms->saveBuilderDocument($pageId, max(0, (int) ($payload['version'] ?? 0)), $this->auth->id() ?? 0, $themeSlug, $blocks, array_keys($catalog));
-            $this->result(true, 'Page sections saved.', null, 200, ['version'=>$version,'blocks'=>count($blocks),'revisions'=>$this->cms->builderRevisions($pageId),'globals'=>$this->cms->globalSections()]);
+            $edits=$this->canvasEdits($pageId,$payload['themeEdits']??[],$locales,$themeSlug);
+            $expected=max(0,(int)($payload['version']??0));
+            $impact=function() use ($pageId,$catalog,$locales,$blocks,$edits,$expected,$themeSlug): array {
+                $pages=\App\Core\BuilderPublicationScope::resolve($this->cms,$this->access,$pageId,$catalog,$locales,$blocks,$edits);
+                return ['pages'=>$pages,'token'=>hash_hmac('sha256',json_encode([$pageId,$expected,$themeSlug,$blocks,$edits,$pages],JSON_THROW_ON_ERROR),$_SESSION['csrf'])];
+            };
+            $checkVersion=function() use ($pageId,$expected): void {
+                $doc=$this->cms->builderDocument($pageId);
+                $draft=$this->cms->builderDraft($pageId,$this->auth->id()??0);
+                if ((int)$doc['builder_version']!==$expected || ($draft && $draft['base_version']!==$expected))
+                    throw new \DomainException('Merge your draft with the newer version before publication.');
+            };
+            $checkVersion();
+            if ($review) $this->result(true,'Publication scope ready.',null,200,$impact());
+            $version=$this->cms->saveBuilderDocument($pageId,$expected,$this->auth->id()??0,$themeSlug,$blocks,array_keys($catalog),function() use ($edits,$impact,$payload,$pageId,$themeSlug,$checkVersion) {
+                $checkVersion();
+                if ($edits) $this->cms->lockThemeConfiguration();
+                if ($themeSlug!==$this->cms->setting('active_theme','sensecms') || !hash_equals($impact()['token'],(string)($payload['reviewToken']??''))) throw new \DomainException('Review the current publication scope before saving.');
+                $this->commitCanvasEdits($pageId,$themeSlug,$edits);
+            });
+            $this->result(true, 'Page sections saved.', null, 200, ['version'=>$version,'publication'=>$this->cms->builderPublication($pageId),'blocks'=>count($blocks),'revisions'=>$this->cms->builderRevisions($pageId),'globals'=>$this->cms->globalSections()]);
         } catch (\DomainException $error) { $this->result(false, $error->getMessage(), null, 409); }
-        catch (\RuntimeException $error) { $this->result(false, $error->getMessage(), null, 422); }
+        catch (\RuntimeException $error) { $this->result(false, $error->getMessage(), null, $error->getCode()===409?409:422); }
     }
     public function savePageBuilderDraft(int $pageId): never
     {
@@ -169,8 +190,71 @@ final class DashboardController extends Controller
         if(!is_array($payload))$this->result(false,'The Page Builder recovery payload is invalid.',null,400);
         if(!$this->auth->verifyCsrf($payload['csrf']??null))$this->result(false,'Your session token is invalid. Refresh and try again.',null,419);
         $this->editableBuilderDocument($pageId);$themeSlug=(string)$this->cms->setting('active_theme','sensecms');$catalog=$this->builderCatalog($this->themes->find($themeSlug));$locales=array_column($this->cms->languages(),'locale');
-        try{$blocks=PageBuilder::sanitizeBlocks((array)($payload['blocks']??[]),$catalog,$locales,true);$draft=$this->cms->saveBuilderDraft($pageId,$this->auth->id()??0,max(0,(int)($payload['version']??0)),$blocks);$this->result(true,'Recovery draft saved.',null,200,$draft);}catch(\DomainException$error){$this->result(false,$error->getMessage(),null,409);}catch(\RuntimeException$error){$this->result(false,$error->getMessage(),null,422);}
+        try{$blocks=PageBuilder::sanitizeBlocks((array)($payload['blocks']??[]),$catalog,$locales,true);$base=isset($payload['openedBase'])?PageBuilder::sanitizeBlocks((array)$payload['openedBase'],$catalog,$locales,true):null;$draft=$this->cms->saveBuilderDraft($pageId,$this->auth->id()??0,max(0,(int)($payload['version']??0)),$blocks,$this->canvasEdits($pageId,$payload['themeEdits']??[],$locales,$themeSlug),null,$base);$this->result(true,'Recovery draft saved.',null,200,$draft);}catch(\DomainException$error){$this->result(false,$error->getMessage(),null,409);}catch(\RuntimeException$error){$this->result(false,$error->getMessage(),null,422);}
     }
+    public function mergeBuilderDraft(int $pageId): never
+    {
+        $this->guard();
+        $input=$this->jsonPayload();
+        $this->builderCsrf($input);
+        $this->editableBuilderDocument($pageId);
+        $userId=$this->auth->id()??0;
+        $theme=(string)$this->cms->setting('active_theme','sensecms');
+        $catalog=$this->builderCatalog($this->themes->find($theme));
+        $locales=array_column($this->cms->languages(),'locale');
+        $apply=isset($input['token']);
+        $plan=function(?array $stored) use ($input,$pageId,$theme,$catalog,$locales,$apply): array {
+            $document=$this->cms->builderDocument($pageId);
+            $version=(int)$document['builder_version'];
+            $normalize=static function(array $blocks) use ($catalog,$locales): array {
+                $blocks=array_values(array_filter($blocks,static fn($b)=>isset($catalog[$b['type']??''])));
+                foreach ($blocks as &$block) {
+                    $def=$catalog[$block['type']];
+                    foreach ($locales as $locale) $block['localized'][$locale]=array_replace($def['localized_defaults'][$locale]??$def['defaults'],$block['localized'][$locale]??[]);
+                    $block['shared']=array_replace($def['shared_defaults'],$block['shared']??[]);
+                }
+                return PageBuilder::sanitizeBlocks($blocks,$catalog,$locales,true);
+            };
+            $live=$normalize($document['blocks']);
+            if (($input['source']??'')==='saved') {
+                if (!$stored) throw new \DomainException('The private draft is no longer available.');
+                $from=$stored['base_version'];
+                $base=$stored['baseBlocks']??$this->cms->builderMergeBase($pageId,$from);
+                $mine=$stored['blocks']; $items=$stored['themeEdits'];
+            } else {
+                $from=(int)($input['from']??-1);
+                $base=$input['base']??null; $mine=$input['blocks']??[]; $items=$input['themeEdits']??[];
+            }
+            foreach ($mine as $section) if (!isset($catalog[$section['type']??'']))
+                throw new \RuntimeException('The draft contains an unavailable section type. Re-enable it to merge this draft.');
+            $merge=new \App\Core\BuilderDraftMerge((array)($input['choices']??[]));
+            $blocks=$merge->blocks(is_array($base)?$normalize($base):null,$normalize($mine),$live);
+            $edits=$this->canvasEdits($pageId,$items,$locales,$theme);
+            $themeEdits=[]; $themeVersions=[];
+            foreach ($edits as $edit) {
+                $published=$this->publishedCanvasValue($pageId,$theme,$edit['id'],$edit['locale'],$edit['defaults']);
+                $themeVersions[]=$published['revision'];
+                $original=$edit['revision']===$published['revision']?$published['values']:$edit['baseValues'];
+                $values=$merge->value(['theme',$edit['locale'],$edit['id']],$original,$edit['values'],$published['values'],$original!==null);
+                if ($values===$published['values']) continue;
+                $edit['values']=$values; $edit['reset']=false; $edit['revision']=$published['revision'];
+                $themeEdits[]=$edit;
+            }
+            $token=hash_hmac('sha256',json_encode([$pageId,$theme,$version,$from,$base,$mine,$items,$live,$themeVersions,$stored],JSON_THROW_ON_ERROR),$this->auth->csrf());
+            if (!$apply) return ['version'=>$version,'from'=>$from,'token'=>$token,'conflicts'=>$merge->conflicts,'known'=>$base!==null];
+            if (!is_string($input['token']) || !hash_equals($token,$input['token'])) throw new \DomainException('The page or draft changed. Compare the versions again.');
+            if ($merge->unresolved) throw new \RuntimeException('Choose content for every conflict.');
+            return ['live'=>$live,'blocks'=>PageBuilder::sanitizeBlocks($blocks,$catalog,$locales,true),
+                'themeEdits'=>$this->canvasEdits($pageId,$themeEdits,$locales,$theme),'version'=>$version];
+        };
+        try {
+            if (!$apply) $this->result(true,'Draft comparison ready.',null,200,$plan($this->cms->builderDraft($pageId,$userId)));
+            $result=$this->cms->saveBuilderDraft($pageId,$userId,(int)($input['version']??-1),[],[],$plan);
+            $this->result(true,'Merged draft saved privately.',null,200,$result);
+        } catch (\DomainException $e) { $this->result(false,$e->getMessage(),null,409); }
+        catch (\RuntimeException $e) { $this->result(false,$e->getMessage(),null,422); }
+    }
+
     public function inspectPageBuilder(int$pageId):never
     {
         $this->guard();$payload=json_decode((string)file_get_contents('php://input'),true);
@@ -284,6 +368,25 @@ final class DashboardController extends Controller
     {
         $this->guard();$payload=json_decode((string)file_get_contents('php://input'),true);if(!is_array($payload)||!$this->auth->verifyCsrf($payload['csrf']??null))$this->result(false,'Your session token is invalid. Refresh and try again.',null,419);try{$this->cms->renameGlobalSection($globalId,(string)($payload['name']??''),$this->auth->id()??0);$this->result(true,'Shared section renamed.',null,200,['globals'=>$this->cms->globalSections()]);}catch(\RuntimeException$error){$this->result(false,$error->getMessage(),null,422);}
     }
+    public function pageBuilderSharedUsage(int $pageId, int $sharedId): never
+    {
+        $this->guard();
+        $this->collaborativeBuilderDocument($pageId);
+        $pages = $this->cms->sharedSectionPages($sharedId, $this->cms->defaultLocale('en'), $this->access->facilityIds());
+        header('Cache-Control: private, no-store');
+        $this->result(true, 'Saved page links loaded.', null, 200, ['pages'=>$pages]);
+    }
+
+    public function pageBuilderRevisionSections(int $pageId, int $revisionId): never
+    {
+        $this->guard();
+        $this->editableBuilderDocument($pageId);
+        $revision = $this->cms->builderRevision($pageId, $revisionId);
+        if (!$revision) $this->result(false, 'This revision is unavailable on this page.', null, 404);
+        header('Cache-Control: private, no-store');
+        $this->result(true, 'Revision sections loaded.', null, 200, ['blocks' => $revision['snapshot']['blocks'] ?? []]);
+    }
+
     public function restorePageBuilderRevision(int $pageId,int $revisionId):never
     {
         $this->guard();$payload=json_decode((string)file_get_contents('php://input'),true);if(!is_array($payload)||!$this->auth->verifyCsrf($payload['csrf']??null))$this->result(false,'Your session token is invalid. Refresh and try again.',null,419);$revision=$this->cms->builderRevision($pageId,$revisionId);if(!$revision)$this->result(false,'The selected revision no longer exists.',null,404);
@@ -312,7 +415,7 @@ final class DashboardController extends Controller
         try { $seo = SeoMeta::sanitizeGlobal($_POST, $this->cms->languages()); }
         catch (\InvalidArgumentException $error) { $this->result(false, $error->getMessage(), null, 422); }
         $this->cms->saveSetting('seo_global', $seo); $this->cms->recordActivity($this->auth->id()??0,'seo.global.saved','seo',['languages'=>count($seo['localized'])]);
-        $this->result(true,'Global SEO, social and verification settings saved.','/seo');
+        $this->result(true,'Global SEO, social and verification settings saved.','/seo?scope=global&lang='.$this->safeLocale((string)($_POST['ui_locale']??'')));
     }
     public function saveSeoPage(): never
     {
@@ -350,7 +453,7 @@ final class DashboardController extends Controller
 
     public function facilities():never
     {
-        $this->guard();$scope=$this->access->facilityIds();$edit=max(0,(int)($_GET['edit']??0));$document=$edit?$this->facilities->admin($edit):null;if($edit&&!$document)$this->result(false,'The facility was not found.','/content/facilities',404);$this->render('Facilities','facilities',['facilityList'=>$this->facilities->adminList($scope),'facilityDocument'=>$document,'languages'=>$this->cms->languages(),'facilityPages'=>$edit?$this->facilities->pageOptions($edit):[],'geolocation'=>$this->facilityGeolocationSettings(),'geolocationActive'=>(bool)($this->extensionStates()['facility-geolocation']??true)]);
+        $this->guard();$scope=$this->access->facilityIds();$list=$this->facilities->adminList($scope);$edit=max(0,(int)($_GET['edit']??0));if(!$edit&&($_GET['new']??'')!=='1'&&($_GET['tab']??'')!=='geolocation')$edit=(int)($list[0]['id']??0);if($edit&&$scope!==null&&!in_array($edit,$scope,true))$this->result(false,'You do not have access to this facility.',null,403);$document=$edit?$this->facilities->admin($edit):null;if($edit&&!$document)$this->result(false,'The facility was not found.','/content/facilities',404);$this->render('Facilities','facilities',['facilityList'=>$list,'facilityDocument'=>$document,'languages'=>$this->cms->languages(),'facilityPages'=>$edit?$this->facilities->pageOptions($edit):[],'geolocation'=>$this->facilityGeolocationSettings(),'geolocationActive'=>(bool)($this->extensionStates()['facility-geolocation']??true)]);
     }
 
     public function saveFacility():never
@@ -488,6 +591,137 @@ final class DashboardController extends Controller
         $active=(string)$this->cms->setting('active_theme','sensecms');$theme=$this->themes->find($active);$setting=ThemeContract::sanitize($theme,$setting);$this->cms->saveSetting('theme_settings',$setting);$configs=(array)$this->cms->setting('theme_configurations',[]);$parent=(string)($theme['parent']??'');$configs[$active]=$parent!==''?ThemeContract::overrides($theme,$setting,$this->themeConfiguration($parent,$this->themes->find($parent),$configs)):$setting;$this->cms->saveSetting('theme_configurations',$configs);
         $this->result(true, 'Appearance settings saved.', '/appearance');
     }
+    private function canvasEdits(int $pageId, mixed $items, array $locales, string $theme): array
+    {
+        if (!is_array($items) || count($items)>250) throw new \RuntimeException('Invalid theme draft.');
+        if (!$items) return [];
+        if ($theme!=='sensecms' || $this->access->isDemoUser()) throw new \RuntimeException('Theme editing is unavailable.');
+        $savedDraft=$this->cms->builderDraft($pageId,$this->auth->id()??0);
+        $old=[]; foreach ($savedDraft['themeEdits']??[] as $edit) $old[$edit['locale'].':'.$edit['id']]=$edit;
+        $result=[];
+        foreach ($items as $item) {
+            $locale=$item['locale']??null; $id=$item['id']??null; $revision=$item['revision']??null;
+            if (!is_string($id)||(!in_array($locale,$locales,true) && !($id==='banner' && $locale==='en' && array_diff($locales,['pl'])))||!is_string($revision)||!preg_match('/^[a-f0-9]{64}$/D',$revision)) throw new \RuntimeException('Reopen the element in the canvas.');
+            $index=$locale.':'.$id;
+            if (isset($result[$index])) throw new \RuntimeException('Duplicate theme edit.');
+            $reset=($item['reset']??false)===true; $defaults=[];
+            if ($id==='banner') {
+                if (!$this->access->allows('appearance.manage')||!in_array($locale,['en','pl'],true)) throw new \RuntimeException('Banner editing is unavailable.');
+                $base=$this->bannerOperation($theme,$locale);
+                $values=[];
+                foreach ($base['limits'] as $field=>$limit) {
+                    $v=$item['values'][$field]??null;
+                    if (!is_string($v)||trim($v)===''||mb_strlen(trim($v))>$limit) throw new \RuntimeException('Enter banner text within the field limit.');
+                    $values[$field]=trim($v);
+                }
+            } else {
+                if (!$this->access->allows('content.pages.publish',(int)$this->cms->pageAdmin($pageId)['facility_id'])) throw new \RuntimeException('A publisher is required for theme elements.');
+                $key=\App\Core\CanvasThemeContent::key($pageId,$locale);
+                $defaults=$_SESSION['canvas_theme_fields'][$key][$id]??$old[$index]['defaults']??null;
+                if (!preg_match('/^[a-f0-9]{32}$/D',$id)||!is_array($defaults)) throw new \RuntimeException('Refresh the canvas before editing this element.');
+                $values=$reset?$defaults:\App\Core\CanvasThemeContent::validate($defaults,$item['values']??null);
+            }
+            $published=$this->publishedCanvasValue($pageId,$theme,$id,$locale,$defaults);
+            $previous=$old[$index]??null;
+            $baseValues=$revision===$published['revision']?$published['values']:
+                (($previous['revision']??null)===$revision?($previous['baseValues']??null):null);
+            if ($baseValues===null && is_array($item['baseValues']??null)) {
+                $candidate=$item['baseValues'];
+                $digest=$id==='banner'?hash('sha256',json_encode([$theme,$this->themes->find($theme)['version'],$locale,$candidate],JSON_THROW_ON_ERROR)):
+                    \App\Core\CanvasThemeContent::revision($candidate);
+                if (hash_equals($revision,$digest)) $baseValues=$candidate;
+            }
+            $result[$index]=compact('id','locale','revision','values','reset','defaults','baseValues');
+        }
+        return array_values($result);
+    }
+
+    private function publishedCanvasValue(int $pageId,string $theme,string $id,string $locale,array $defaults): array
+    {
+        if ($id==='banner') return $this->bannerOperation($theme,$locale);
+        $saved=(array)$this->cms->setting(\App\Core\CanvasThemeContent::key($pageId,$locale),[]);
+        $values=$saved[$id]??$defaults;
+        return ['values'=>$values,'revision'=>\App\Core\CanvasThemeContent::revision($values)];
+    }
+
+    private function commitCanvasEdits(int $pageId,string $slug,array $edits): void
+    {
+        foreach ($edits as $edit) {
+            if ($edit['id']==='banner') { $this->bannerOperation($slug,$edit['locale'],$edit); continue; }
+            $key=\App\Core\CanvasThemeContent::key($pageId,$edit['locale']); $id=$edit['id'];
+            $saved=(array)$this->cms->setting($key,[]);
+            if (\App\Core\CanvasThemeContent::revision($saved[$id]??$edit['defaults'])!==$edit['revision']) throw new \DomainException('This element changed. Reopen the canvas before publishing.');
+            if ($edit['values']===$edit['defaults']) unset($saved[$id]); else $saved[$id]=$edit['values'];
+            $this->cms->saveSetting($key,$saved);
+        }
+    }
+
+    public function publishCanvasElement(int $pageId): never
+    {
+        $this->guard(); $this->result(false,'Reload the Builder to apply this element to your draft.',null,409);
+    }
+
+    public function chatbotBannerText(string $slug, bool $publish): never
+    {
+        $this->guard(); $this->access->assert('appearance.manage');
+        header('Cache-Control: private, no-store');
+        if ($publish) $this->result(false,'Reload the Builder to apply this banner to your draft.',null,409);
+        $locale=$_GET['locale']??'en';
+        if (!in_array($locale,['en','pl'],true)) $this->result(false,'This banner language is unavailable.',null,422);
+        try { $data=$this->bannerOperation($slug,$locale); }
+        catch (\RuntimeException $e) { $this->result(false,$e->getMessage(),null,422); }
+        $this->result(true,'Banner text loaded.',null,200,$data);
+    }
+
+    private function bannerOperation(string $slug,string $locale,?array $input=null): array
+    {
+        $publish=$input!==null;
+        if ($slug !== $this->cms->setting('active_theme','sensecms')) throw new \RuntimeException('The active theme has changed. Reload the editor.', 409);
+        $theme = $this->themes->find($slug);
+        $definitions = array_column((array)($theme['configuration'] ?? []), null, 'key');
+        $configs = (array)$this->cms->setting('theme_configurations', []);
+        $current = $this->themeConfiguration($slug, $theme, $configs);
+        $values = $limits = $updates = [];
+        foreach (['title','intro','text'] as $field) {
+            $key = 'chatbot_'.$field.($locale === 'pl' ? '_pl' : '');
+            if (($definitions[$key]['type'] ?? '') !== 'text') throw new \RuntimeException('This theme does not provide editable banner text.', 404);
+            $values[$field] = (string)($current[$key] ?: $definitions[$key]['default']);
+            $limits[$field] = min(500, (int)$definitions[$key]['max_length']);
+            if (!$publish) continue;
+            $value = $input['values'][$field] ?? null;
+            if (!is_string($value) || trim($value) === '' || mb_strlen(trim($value)) > $limits[$field]) throw new \RuntimeException('Enter text within the limit for each field.', 422);
+            if (trim($value) !== $values[$field]) $updates[$key] = trim($value);
+        }
+        $revision = hash('sha256', json_encode([$slug,$theme['version'],$locale,$values], JSON_THROW_ON_ERROR));
+        if (!$publish) return ['values'=>$values,'limits'=>$limits,'revision'=>$revision];
+        if ($revision !== ($input['revision'] ?? null)) throw new \RuntimeException('Someone changed this banner. Reopen it to review the latest text.', 409);
+        if (!$updates) return ['changed'=>false];
+
+        // Keep unrelated theme work intact, including other languages and unpublished drafts.
+        $drafts = (array)$this->cms->setting('theme_drafts', []);
+        if (isset($drafts[$slug])) {
+            foreach ($updates as $key=>$value) {
+                $draftValue = $drafts[$slug]['settings'][$key] ?? $current[$key];
+                if ($draftValue !== $current[$key] || in_array($key, $drafts[$slug]['inherit'] ?? [], true))
+                    throw new \RuntimeException('This text also has an unpublished theme edit. Review it in Theme settings before publishing.', 409);
+                $drafts[$slug]['settings'][$key] = $value;
+            }
+            $this->cms->saveSetting('theme_drafts', $drafts);
+        }
+        $updated = ThemeContract::sanitize($theme, $updates, $current);
+        $overrides = $configs[$slug] ?? $current;
+        if (!isset($configs[$slug]) && !empty($theme['parent'])) {
+            $parent = $theme['parent'];
+            $overrides = ThemeContract::overrides($theme, $current, $this->themeConfiguration($parent, $this->themes->find($parent), $configs));
+        }
+        foreach ($updates as $key=>$value) $overrides[$key] = $updated[$key];
+        $configs[$slug] = $overrides;
+        $this->cms->saveSetting('theme_configurations', $configs);
+        $this->cms->saveSetting('theme_settings', $updated);
+        $this->cms->recordActivity($this->auth->id() ?? 0, 'theme.banner.published', 'theme', ['slug'=>$slug,'locale'=>$locale,'fields'=>array_keys($updates)]);
+        return ['changed'=>true];
+    }
+
     public function saveThemeDraft(string $slug): never
     {
         $this->guard(); $this->access->assert('appearance.manage'); $payload = $this->jsonPayload();
@@ -775,7 +1009,31 @@ final class DashboardController extends Controller
     }
     public function knowledgeBase():never
     {
-        $this->guard();$this->access->assert('ai.manage');if(!$this->aiKnowledge)$this->result(false,'The Core Knowledge Base service is unavailable.','/ai',503);$query=mb_substr(trim((string)($_GET['q']??'')),0,120);$type=(string)($_GET['type']??'all');$status=(string)($_GET['status']??'all');$page=max(1,(int)($_GET['page']??1));$edit=max(0,(int)($_GET['edit']??0));$this->render('Knowledge Base','ai-knowledge',['knowledgeSummary'=>$this->aiKnowledge->summary(),'knowledgeDocuments'=>$this->aiKnowledge->documents($query,$type,$status,$page),'knowledgeSiteContent'=>$this->aiKnowledge->siteContent($query,(string)($_GET['content_type']??'all')),'knowledgeTraining'=>$this->aiKnowledge->trainingSummary(),'knowledgeTrainingWorkspace'=>$this->aiKnowledge->trainingWorkspace(),'knowledgeProviders'=>$this->ai->providers(),'knowledgeQuery'=>$query,'knowledgeType'=>$type,'knowledgeStatus'=>$status,'knowledgeEdit'=>$edit?$this->aiKnowledge->document($edit):null,'languages'=>$this->cms->languages()]);
+        $this->guard();
+        $this->access->assert('ai.manage');
+        if (!$this->aiKnowledge) $this->result(false,'The Core Knowledge Base service is unavailable.','/ai',503);
+        $languages=$this->cms->languages();
+        $scenarioData=[];
+        if (($_GET['tab']??'')==='scenarios') {
+            $locale=(string)($_GET['language']??$this->cms->defaultLocale());
+            if (!in_array($locale,array_column($languages,'locale'),true)) $locale=$this->cms->defaultLocale();
+            $scenarios=$this->ai->scenarios();
+            $scenarioData=['scenarioLocale'=>$locale,'scenarioRules'=>$scenarios->rules($locale),'scenarioSources'=>$scenarios->sources($locale)];
+        }
+        $query=mb_substr(trim((string)($_GET['q']??'')),0,120);$type=(string)($_GET['type']??'all');$status=(string)($_GET['status']??'all');$page=max(1,(int)($_GET['page']??1));$edit=max(0,(int)($_GET['edit']??0));$this->render('Knowledge Base','ai-knowledge',['knowledgeSummary'=>$this->aiKnowledge->summary(),'knowledgeDocuments'=>$this->aiKnowledge->documents($query,$type,$status,$page),'knowledgeSiteContent'=>$this->aiKnowledge->siteContent($query,(string)($_GET['content_type']??'all')),'knowledgeTraining'=>$this->aiKnowledge->trainingSummary(),'knowledgeTrainingWorkspace'=>$this->aiKnowledge->trainingWorkspace(),'knowledgeProviders'=>$this->ai->providers(),'knowledgeQuery'=>$query,'knowledgeType'=>$type,'knowledgeStatus'=>$status,'knowledgeEdit'=>$edit?$this->aiKnowledge->document($edit):null,'languages'=>$languages]+$scenarioData);
+    }
+    public function saveChatScenario(): never
+    {
+        $this->guard();
+        $this->access->assert('ai.manage');
+        if (!$this->auth->verifyCsrf($_POST['csrf']??null)) $this->result(false,'Invalid session token.',null,419);
+        try {
+            $this->ai->scenarios()->save($_POST,array_column($this->cms->languages(),'locale'),$this->auth->id()??0);
+        } catch (\RuntimeException $error) {
+            if ($error instanceof \PDOException) throw $error;
+            $this->result(false,$error->getMessage(),null,422);
+        }
+        $this->result(true,'Scenario updated.','/ai/knowledge?tab=scenarios&language='.rawurlencode($_POST['locale']));
     }
     public function saveKnowledgeDocument():never
     {

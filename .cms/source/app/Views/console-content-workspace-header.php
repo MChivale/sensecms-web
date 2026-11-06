@@ -13,7 +13,6 @@ $workspaceSelect = (string) ($contentWorkspace['select'] ?? '');
 $workspaceForm = (string) ($contentWorkspace['form'] ?? '');
 $workspaceIcon = (string) ($contentWorkspace['icon'] ?? 'panels-top-left');
 $workspaceLabel = (string) ($contentWorkspace['label'] ?? 'Editing page');
-$workspaceStatus = (string) ($contentWorkspace['status'] ?? 'Saved');
 $workspaceAction = (string) ($contentWorkspace['action'] ?? 'Save changes');
 $workspacePreview = (string) ($contentWorkspace['preview_url'] ?? '');
 $workspaceTitle = (string) ($contentWorkspace['title'] ?? ($workspacePage['title'] ?? 'Untitled page'));
@@ -23,22 +22,22 @@ $workspaceSeoType = (string) ($contentWorkspace['seo_type'] ?? 'page');
 <header class="sensecms-content-toolbar card" data-content-workspace="<?= $escape($workspaceForm) ?>">
     <div class="sensecms-content-document">
         <span class="sensecms-content-icon"><i data-lucide="<?= $escape($workspaceIcon) ?>"></i></span>
-        <label>
-            <small><?= $escape($workspaceLabel) ?></small>
-            <?php if (in_array($workspaceSelect, ['seo', 'popup'], true)): ?><select aria-label="Select <?= $workspaceSelect==='seo'?$escape($workspaceSeoType):'page' ?>" <?= $workspaceSelect === 'seo' ? 'data-seo-page data-seo-type="'.$escape($workspaceSeoType).'"' : 'data-popup-page' ?>>
+        <label class="sensecms-document-picker">
+            <small class="sensecms-editing-label"><?= $escape($uiText($workspaceLabel)) ?></small>
+            <?php if (in_array($workspaceSelect, ['seo', 'popup'], true)): ?><select aria-label="<?= $escape($uiText($workspaceSelect === 'seo' && $workspaceSeoType === 'post' ? 'Select post' : 'Select page')) ?>" <?= $workspaceSelect === 'seo' ? 'data-seo-page data-seo-type="'.$escape($workspaceSeoType).'"' : 'data-popup-page' ?>>
+                <button type="button"><selectedcontent></selectedcontent></button>
                 <?php foreach ($workspacePages as $page): ?>
                     <option value="<?= (int) ($page['id'] ?? 0) ?>" <?= (int) ($page['id'] ?? 0) === $workspaceSelected ? 'selected' : '' ?>><?= $escape((!empty($page['facility_name'])?$page['facility_name'].' · ':'').($page['title'] ?? ('Page #' . ($page['id'] ?? '')))) ?></option>
                 <?php endforeach; ?>
             </select><?php elseif($workspaceTitle!==($title??'')): ?><strong><?= $escape($workspaceTitle) ?></strong><?php endif; ?>
         </label>
         <span class="sensecms-content-state-stack">
-            <span class="sensecms-content-status is-saved" data-content-status aria-live="polite"><i data-lucide="circle-check"></i><?= $escape($workspaceStatus) ?></span>
-            <span class="sensecms-content-save-state" data-content-save-state><i></i><b>All changes saved</b></span>
+            <?php $saveStateNew = !empty($contentWorkspace['is_new']); require __DIR__.'/console-save-state.php'; unset($saveStateNew); ?>
         </span>
     </div>
     <div class="sensecms-content-actions">
-        <?php if ($workspaceBack !== ''): ?><a class="btn bg-default-150" href="<?= $escape($workspaceBack) ?>" data-content-link><i data-lucide="arrow-left"></i>Back</a><?php endif; ?>
-        <?php if ($workspacePreview !== ''): ?><a class="btn bg-default-150" href="<?= $escape($workspacePreview) ?>" target="_blank" rel="noopener"><i data-lucide="external-link"></i>Preview</a><?php endif; ?>
-        <button class="btn bg-primary text-white" type="submit" form="<?= $escape($workspaceForm) ?>"><i data-lucide="save"></i><?= $escape($workspaceAction) ?></button>
+        <?php if ($workspaceBack !== ''): ?><a class="btn bg-default-150" href="<?= $escape($workspaceBack) ?>" data-content-link><i data-lucide="arrow-left"></i><?= $escape($uiText('Back')) ?></a><?php endif; ?>
+        <?php if ($workspacePreview !== ''): ?><a class="btn bg-default-150" href="<?= $escape($workspacePreview) ?>" target="_blank" rel="noopener"><i data-lucide="external-link"></i><?= $escape($uiText('Preview')) ?></a><?php endif; ?>
+        <button class="btn bg-primary text-white" type="submit" form="<?= $escape($workspaceForm) ?>"><i data-lucide="save"></i><?= $escape($uiText($workspaceAction)) ?></button>
     </div>
 </header>

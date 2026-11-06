@@ -15,8 +15,9 @@ $check(str_contains($migration,'audio_media_id')&&str_contains($migration,'video
 $check(str_contains($migration,'post_tags')&&str_contains($migration,'post_tag_map'),'migration stores localized reusable tags');
 $view=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console-content-post-form.php');
 $check(!str_contains($view,'Editorial guidance')&&strpos($view,'data-sidebar-section="publication"')<strpos($view,'data-sidebar-section="media"'),'post sidebar has the approved structure');
-$check(!str_contains($view,'form method="dialog"')&&str_contains($view,'data-media-picker-close'),'media picker closes without submitting the post form');
-$check(str_contains($view,'data-media-picker-search')&&str_contains($view,'data-media-picker-folders')&&str_contains($view,'data-media-folder-create'),'media picker exposes search, folders and creation controls');
+$picker=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console.php');
+$check(!str_contains($view,'form method="dialog"')&&str_contains($picker,'data-media-picker-close'),'media picker closes without submitting the post form');
+$check(str_contains($picker,'data-media-picker-search')&&str_contains($picker,'data-media-picker-folders')&&str_contains($picker,'data-media-folder-create'),'media picker exposes search, folders and creation controls');
 $console=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console.php');
 $check(str_contains($console,'/assets/lib/quill/quill.js')&&!str_contains($console,'cdn.quilljs.com'),'post editor uses only the self-hosted Core Quill bundle');
 $postEditor=(string)file_get_contents(dirname(__DIR__).'/.cms/source/public/theme/sensecms-post-editor.js');
@@ -29,7 +30,7 @@ $check(str_contains($management,"postEditor().then")||str_contains($management,'
 $check(str_contains($style,'.ql-container{height:auto;min-height:330px'),'rich editor participates in layout without overlapping SEO fields');
 $check(str_contains($postEditor,'sensecms-tag-chip')&&str_contains($postEditor,"event.key==='Enter'||event.key===','"),'post keywords become removable chips on comma or Enter');
 $check(str_contains($postEditor,"value.addEventListener('change'")&&str_contains($postEditor,'tags=parse(value.value)'),'external reviewed proposals refresh visible keyword chips');
-$check(str_contains($postEditor,'data-media-folder-save')&&str_contains($postEditor,'/trash'),'post media workspace supports upload, folders and protected trash actions');
+$check(str_contains($management,'data-media-folder-save')&&str_contains($management,'/trash')&&str_contains($postEditor,'SenseCMSMedia.open'),'post media workspace supports upload, folders and protected trash actions');
 $check(str_contains($style,'width:min(1180px')&&str_contains($style,'.sensecms-media-picker-workspace'),'post media workspace is large, centered and responsive');
 $media=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Core/MediaLibrary.php');
 $check(str_contains($media,'p.featured_media_id=? OR p.audio_media_id=? OR p.video_media_id=?'),'media usage protects every post media role');

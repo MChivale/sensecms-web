@@ -11,12 +11,12 @@
 .sensecms-dashboard-hero {
     position: relative;
     display: flex;
-    min-height: 250px;
+    min-height: 150px;
     align-items: center;
     justify-content: space-between;
     gap: 2rem;
     overflow: hidden;
-    padding: 2.25rem 2.5rem;
+    padding: 1.25rem 1.5rem;
     border: 1px solid #164b83;
     border-radius: 18px;
     background:
@@ -67,9 +67,9 @@
 .sensecms-dashboard-kpi-icon.is-rose { background: #ffedf0; color: #cc3a51; }
 .sensecms-dashboard-kpi-icon.is-violet { background: #f1edff; color: #7357d8; }
 .sensecms-dashboard-kpi > span:nth-child(2) { min-width: 0; }
-.sensecms-dashboard-kpi small { display: block; overflow: hidden; color: var(--dash-muted); font-size: .67rem; font-weight: 700; text-overflow: ellipsis; text-transform: uppercase; white-space: nowrap; }
+.sensecms-dashboard-kpi small { display: block; color: var(--dash-muted); font-size: .67rem; font-weight: 700; text-transform: uppercase; white-space: normal; }
 .sensecms-dashboard-kpi strong { display: inline-block; margin-top: .15rem; color: var(--dash-ink); font-size: 1.55rem; letter-spacing: -.04em; line-height: 1; }
-.sensecms-dashboard-kpi em { display: block; overflow: hidden; margin-top: .3rem; color: #8291a3; font-size: .65rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.sensecms-dashboard-kpi em { display:block; margin-top:.3rem; color:var(--color-default-600); font-size:.75rem; line-height:1.4; font-style:normal; overflow-wrap:anywhere; }
 .sensecms-dashboard-kpi-arrow { width: 15px; height: 15px; color: #a3b0bf; }
 
 .sensecms-dashboard-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(330px, .85fr); gap: 18px; align-items: start; }
@@ -256,3 +256,43 @@
     .sensecms-dashboard-status { display: none; }
     .sensecms-dashboard-list-row { grid-template-columns: 34px minmax(0,1fr); }
 }
+
+/* Compact daily workspace, with recent work in the first row. */
+.sensecms-dashboard { gap:14px; }
+.sensecms-dashboard-hero { min-height:0; padding:16px 20px; gap:16px; border-radius:12px; }
+.sensecms-dashboard-hero h2 { font-size:clamp(1.2rem,2vw,1.5rem); }
+.sensecms-dashboard-hero-copy p { margin:4px 0 0; font-size:13px; }
+.sensecms-dashboard-hero > a { display:inline-flex; align-items:center; gap:8px; flex:none; padding:10px 14px; border-radius:8px; background:white; color:#164774; font-size:13px; font-weight:600; }
+.sensecms-dashboard-hero > a svg { width:17px; height:17px; }
+.sensecms-dashboard-quick-actions { display:flex; flex-wrap:wrap; border-radius:10px; }
+.sensecms-dashboard-quick-actions a { flex:1 1 145px; min-height:44px; padding:10px 14px; border:0; }
+.sensecms-dashboard-quick-actions a strong { font-size:13px; white-space:normal; }
+.sensecms-dashboard-quick-actions a small { display:none; }
+.sensecms-dashboard-kpis { grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.sensecms-dashboard-kpi { min-height:80px; grid-template-columns:30px minmax(0,1fr); gap:8px; padding:12px; }
+.sensecms-dashboard-kpi-icon { width:30px; height:30px; border-radius:8px; }
+.sensecms-dashboard-kpi-arrow { display:none; }
+.sensecms-dashboard-kpi small { color:var(--color-default-700); font-size:.8125rem; line-height:1.35; text-transform:none; overflow-wrap:anywhere; }
+.sensecms-dashboard-grid { align-items:start; grid-template-columns:minmax(0,1.4fr) minmax(0,1fr); }
+.sensecms-dashboard-panel > header { min-height:54px; padding:12px 16px; }
+.sensecms-dashboard-panel h3 { font-size:15px; }
+.sensecms-dashboard-panel > header a { font-size:12px; }
+.sensecms-dashboard-recent-list strong,.sensecms-dashboard-channel-list strong,.sensecms-dashboard-list-copy strong { font-size:13px; white-space:normal; overflow-wrap:anywhere; }
+.sensecms-dashboard-recent-list small,.sensecms-dashboard-channel-list small,.sensecms-dashboard-list-copy small,.sensecms-dashboard-empty p { font-size:12px; color:var(--color-default-600); }
+.sensecms-dashboard-recent-list em { font-size:10px; }
+.sensecms-dashboard-empty,.sensecms-dashboard-empty.is-compact { min-height:90px; justify-content:flex-start; padding:16px; }
+.sensecms-dashboard-readiness-list a { color:var(--color-primary); text-decoration:underline; }
+@media(max-width:940px) { .sensecms-dashboard-grid { grid-template-columns:1fr; } }
+@media(max-width:700px) {
+    .sensecms-dashboard-kpis { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .sensecms-dashboard-kpi { grid-template-columns:minmax(0,1fr) auto; align-content:start; align-items:start; gap:4px 6px; }
+    .sensecms-dashboard-kpi > span:nth-child(2) { display:contents; }
+    .sensecms-dashboard-kpi-icon { grid-column:2; grid-row:1; width:26px; height:26px; }
+    .sensecms-dashboard-kpi strong { grid-column:1; grid-row:1; }
+    .sensecms-dashboard-kpi small { grid-column:1 / -1; grid-row:2; }
+    .sensecms-dashboard-kpi em { grid-column:1 / -1; }
+    .sensecms-dashboard-hero { display:flex; flex-wrap:wrap; padding:16px; }
+    .sensecms-dashboard-quick-actions a { flex-basis:120px; }
+}
+@media(max-width:360px) { .sensecms-dashboard-kpis { grid-template-columns:1fr; } }
+@media(prefers-reduced-motion:reduce) { .sensecms-dashboard a { transition:none; } }

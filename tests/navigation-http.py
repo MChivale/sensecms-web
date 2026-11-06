@@ -54,6 +54,10 @@ with tempfile.TemporaryDirectory(prefix='sense-nav-qa-') as temp:
         check(status == 200 and 'Alpha page' in page and 'Beta page' in page, 'All-facilities lists include both units')
         check('aria-label="Filter by facility"' in page and 'All facilities · shared workspace' not in page, 'All-facilities scope keeps its optional filter and does not imply global settings')
         check(page.count('<h1>Pages</h1>') == 1 and '<h2>Pages</h2>' not in page, 'Pages has one primary heading and a compact action strip')
+        check(page.count('class="sensecms-row-more"') == 2 and 'data-sensecms-confirm="Move this page to the trash without deleting its content?"' in page, 'Secondary actions retain the guarded archive flow for each page')
+        dashboard = owner('/dashboard')[1]
+        check('Platform operational' not in dashboard and 'languages</p>' in dashboard and 'Review license' in dashboard, 'Dashboard does not assert unmeasured health or licence validity')
+        check(dashboard.index('aria-label="Quick actions"') < dashboard.index('class="sensecms-dashboard-kpis"'), 'Daily actions precede summary counters in reading and keyboard order')
         menu = page[page.index('<ul class="side-nav'):page.index('</ul>', page.index('<ul class="side-nav'))]
         order = ['/dashboard','/content/facilities','/content/workflow','/content/pages','/content/builder','/content/posts','/content/categories','/content/media','/content/navigation','/seo']
         check([menu.index('href="'+p+'"') for p in order] == sorted(menu.index('href="'+p+'"') for p in order), 'Workspace and Content navigation follow the agreed order')
@@ -65,11 +69,35 @@ with tempfile.TemporaryDirectory(prefix='sense-nav-qa-') as temp:
         check(url.endswith('/content/pages'), 'Switching removes stale facility and pagination filters')
         state = json.loads(owner('/context-state')[1])
         check(state['scope'] == [ids[1]] and state['authorized'] is None, 'Working context narrows lists without changing owner permissions')
-        page=owner('/content/facilities?lang=pl')[1]
-        check('Current facility: Beta' in page and '>Current facility</span>' in page and 'aria-label="Work in Alpha"' in page, 'Facility directory distinguishes current context from the visible Work here action')
+        page=owner('/content/facilities?edit='+str(ids[1])+'&lang=pl')[1]
+        check('Current facility: Beta' in page and '>Current facility</span>' in page and 'new=1' in page, 'Facility directory distinguishes current context from the visible Work here action')
         check('aria-current="page" href="/content/facilities"' in page and 'aria-label="Facility sections"' in page, 'Facility directory announces its active section')
         owner('/content/facilities?edit='+str(ids[0])+'&lang=pl')
         check(json.loads(owner('/context-state')[1])['id']==ids[1], 'Editing another facility does not change the working context')
+        page=owner('/content/facilities?lang=pl')[1]
+        form=re.search(r'<form[^>]*id="facility-form".*?</form>',page,re.S)[0]
+        check(f'name="id" value="{ids[0]}"' in form and 'Create facility' not in form, 'Directory opens an existing facility rather than an empty create form')
+        page=owner('/content/facilities?new=1&lang=pl')[1]
+        form=re.search(r'<form[^>]*id="facility-form".*?</form>',page,re.S)[0]
+        check('name="id" value="0"' in form and 'Create facility' in form and 'data-content-form' in form and '>Cancel</a>' in form, 'New facility has an explicit blank guarded form and cancellation')
+        check(editor('/content/facilities?edit='+str(ids[1]))[0]==403, 'Facility configuration cannot expose an unassigned facility')
+        fields={'csrf':token,'id':0,'city_slug':'qa-city','facility_slug':'qa-facility','status':'draft','timezone':'UTC','ui_locale':'pl','translations[en][name]':'QA facility','translations[en][city_name]':'QA city','translations[pl][name]':'Placowka QA','translations[pl][city_name]':'Miasto QA'}
+        check(owner('/content/facilities',dict(fields,csrf='invalid'))[0]==419, 'Facility creation retains CSRF protection')
+        invalid=dict(fields);invalid['translations[en][name]']=''
+        check(owner('/content/facilities',invalid)[0]==422, 'Facility creation rejects missing default identity')
+        status,result,_=owner('/content/facilities',fields);saved=json.loads(result)
+        check(status==200 and saved['ok'] and '&lang=pl' in saved['redirect'], 'Facility creation succeeds and retains the selected translation')
+        page=owner(saved['redirect'])[1];form=re.search(r'<form[^>]*id="facility-form".*?</form>',page,re.S)[0]
+        new_id=int(re.search(r'name="id" value="(\d+)"',form)[1])
+        check('value="QA facility"' in form and 'value="Placowka QA"' in form, 'Both translations survive creation and reopen in the main editor')
+        check(owner('/content/facilities',fields)[0]==422, 'Duplicate route is rejected without replacing existing data')
+        fields.update(id=new_id,phone='+441234567890')
+        check(json.loads(owner('/content/facilities',fields)[1])['ok'] and 'value="+441234567890"' in owner(saved['redirect'])[1], 'Facility configuration persists through the existing save endpoint')
+        check(json.loads(owner('/context-state')[1])['id']==ids[1], 'Creating and saving facilities leave the CMS working context unchanged')
+        check(json.loads(owner('/content/facilities/'+str(new_id)+'/archive',{'csrf':token})[1])['ok'], 'Archiving preserves the existing facility action')
+        archived=owner(saved['redirect'])[1]
+        check('<fieldset disabled>' in archived and 'Restore facility' in archived, 'Archived configuration is read-only until explicitly restored')
+        check(json.loads(owner('/content/facilities/'+str(new_id)+'/restore',{'csrf':token})[1])['ok'] and '<fieldset disabled>' not in owner(saved['redirect'])[1], 'Restoring makes the original configuration editable again')
         page=owner('/content/facilities?tab=geolocation&lang=pl')[1]
         check('aria-current="page" href="/content/facilities?tab=geolocation"' in page, 'Geolocation announces its own active section')
         page = owner('/content/posts')[1]
@@ -83,6 +111,8 @@ with tempfile.TemporaryDirectory(prefix='sense-nav-qa-') as temp:
         page = owner('/content/pages/2/edit?return='+urllib.parse.quote('/content/pages?q=Beta&status=published', safe=''))[1]
         check('href="/content/pages?q=Beta&amp;status=published"' in page, 'Editor Back preserves the original query and status')
         check('aria-label="Current page tools"' in page and '/seo?type=page&amp;document=2' in page, 'Document tools retain page identity and provide contextual SEO navigation')
+        check('<legend class="sr-only">Title and introduction</legend>' in page and '<summary>SEO and social preview</summary>' in page, 'Page editor groups primary content and optional metadata semantically')
+        check(page.count('name="translations[en][title]"') == 1 and page.count('name="translations[en][seo_title]"') == 1 and page.count('name="seo[en][og_image]"') == 1, 'Collapsible metadata retains one successful control for each saved value')
         status, page, _ = owner('/content/pages/1/edit')
         check(status == 200 and json.loads(owner('/context-state')[1])['id'] == ids[0], 'Authorized direct record links align the working context')
         status, page, _ = editor('/content/pages')

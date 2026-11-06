@@ -18,7 +18,25 @@ final class ConsoleSearchIndex
 
     public function overview(): array
     {
-        return $this->ensure();
+        return $this->localized($this->ensure());
+    }
+
+    /** Localize the presentation of the shared index, never the index stored for all users. */
+    private function localized(array $index): array
+    {
+        if (ConsoleLocale::resolve($_COOKIE[ConsoleLocale::COOKIE] ?? null) !== 'pl') return $index;
+        $translate = ConsoleLocale::messages();
+        $core = array_column($this->baseItems(), 'title', 'url');
+        foreach ($index['items'] as &$item) {
+            if (($core[$item['url']] ?? null) === $item['title']) {
+                $item['keywords'][] = $item['title'];
+                $item['title'] = $translate($item['title']);
+                $item['description'] = $translate($item['description']);
+            }
+            $item['section'] = $translate($item['section']);
+        }
+        unset($item);
+        return $index;
     }
 
     public function rebuild(int $userId = 0): array
@@ -85,7 +103,7 @@ final class ConsoleSearchIndex
 
     public function search(string $query, array $permissions, int $limit = 10): array
     {
-        $index = $this->ensure();
+        $index = $this->overview();
         $query = mb_strtolower(trim(preg_replace('/\s+/u', ' ', $query) ?? ''));
         if ($query === '') return [];
         $owner = in_array('system.owner', $permissions, true);

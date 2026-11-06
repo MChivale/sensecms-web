@@ -14,9 +14,9 @@ final class CalendarController
     private CalendarIntegrationManager $integrations;
     private CalendarI18n $i18n;
 
-    public function __construct(private readonly ExtensionContext $context, private readonly string $root)
+    public function __construct(private readonly ExtensionContext $context, private readonly string $root, ?CalendarI18n $copy = null)
     {
-        $this->i18n = new CalendarI18n($root, (string) ($_GET['lang'] ?? ''), (string) ($context->config['default_locale'] ?? 'en'));
+        $this->i18n = $copy ?? new CalendarI18n($root, is_string($_GET['lang'] ?? null) ? $_GET['lang'] : null, (string) ($context->config['default_locale'] ?? 'en'));
         $this->calendar = new CalendarRepository($context->db, $context->auth->id() ?? 0, $context->access->allows('system.owner'), [$this->i18n, 't']);
         $this->integrations = new CalendarIntegrationManager($context->db, $context->root, (string) ($context->config['secrets_key'] ?? ''));
     }
@@ -68,7 +68,7 @@ final class CalendarController
     {
         $this->context->access->assert('calendar.view');
         $event = $this->calendar->event($id, $this->context->access->facilityIds());
-        if (!$event) $this->json(false, $this->i18n->t('errors.The calendar event was not found.'), null, 404);
+        if (!$event) $this->json(false, 'The calendar event was not found.', null, 404);
         $this->json(true, $this->i18n->t('messages.event_loaded'), ['event' => $event]);
     }
 
@@ -198,7 +198,7 @@ final class CalendarController
             $this->json(false, 'Calendar could not complete the operation. Please try again.', null, 500);
         }
         $status = in_array($error->getCode(), [403, 404, 409, 422], true) ? $error->getCode() : 422;
-        $this->json(false, $this->i18n->message($error->getMessage()), null, $status);
+        $this->json(false, $error->getMessage(), null, $status);
     }
 
     private function json(bool $ok, string $message, mixed $data = null, int $status = 200): never
@@ -206,7 +206,7 @@ final class CalendarController
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         header('Cache-Control: no-store');
-        echo json_encode(['ok' => $ok, 'message' => $message, 'data' => $data], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        echo json_encode(['ok' => $ok, 'message' => $ok ? $message : $this->i18n->message($message), 'data' => $data], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         exit;
     }
 }

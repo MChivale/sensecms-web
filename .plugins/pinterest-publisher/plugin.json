@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Pinterest Publisher",
   "slug": "pinterest-publisher",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Publishes reviewed Sense CMS posts as image Pins to connected Pinterest boards.",
@@ -36,6 +36,8 @@
     "/social-publishing/pinterest/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.1.3", "summary": "Translate connected-account summaries and fallback labels."},
+    {"version": "0.1.2", "summary": "Localize the administration interface in Polish and English."},
     {"version": "0.1.1", "summary": "Align board cards, connection metadata, empty state and publishing workflow with the shared Social Publishing interface."},
     {"version": "0.1.0", "summary": "Connect multiple Pinterest boards through OAuth and publish reviewed image Pins with canonical links."}
   ]

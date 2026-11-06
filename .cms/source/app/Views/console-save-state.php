@@ -1,0 +1,1 @@
+<span class="sensecms-content-save-state<?= !empty($saveStateNew) ? ' is-new' : '' ?>" data-content-save-state aria-live="polite"><i></i><b><?= $escape($uiText($saveStateLabel ?? (!empty($saveStateNew) ? 'Not saved yet' : 'All changes saved'))) ?></b></span>

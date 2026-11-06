@@ -14,6 +14,23 @@ $sectionHero = array_replace([
     'action_icon' => 'arrow-right',
     'action_button' => '',
 ], is_array($sectionHero ?? null) ? $sectionHero : []);
+foreach (['status','status_detail'] as $key) {
+    $value = (string) $sectionHero[$key];
+    if (preg_match('/^(\d+) (sections?) · (\d+) available sections$/D', $value, $parts)) {
+        $sectionHero[$key] = $uiText('{sections} '.$parts[2].' · {available} available sections', ['{sections}' => $parts[1], '{available}' => $parts[3]]);
+    } elseif (preg_match('/^(\d+) ([a-z ]+)$/D', $value, $parts)) {
+        $sectionHero[$key] = $uiText('{n} '.$parts[2], ['{n}' => $parts[1]]);
+    } elseif (str_starts_with($value, 'Last rebuilt ')) {
+        $sectionHero[$key] = $uiText('Last rebuilt {date}', ['{date}' => substr($value, 13)]);
+    } elseif (str_ends_with($value, ' driver selected')) {
+        $sectionHero[$key] = $uiText('{driver} driver selected', ['{driver}' => substr($value, 0, -16)]);
+    } else {
+        $sectionHero[$key] = $uiText($value);
+    }
+}
+foreach (['description', 'overline', 'action_label'] as $key) {
+    $sectionHero[$key] = $uiText((string) $sectionHero[$key]);
+}
 $sectionHeroActionButton = preg_match('/^data-[a-z0-9-]+$/', (string) $sectionHero['action_button']) === 1
     ? (string) $sectionHero['action_button']
     : '';
@@ -24,11 +41,11 @@ $sectionHeroActionButton = preg_match('/^data-[a-z0-9-]+$/', (string) $sectionHe
         <div>
             <?php if(!isset($screen)): ?><span class="sensecms-section-overline"><?= $escape($sectionHero['overline']) ?></span>
             <h2><?= $escape($sectionHero['title']) ?></h2><?php endif; ?>
-            <?php if ($sectionHero['description'] !== ''): ?><p><?= $escape($sectionHero['description']) ?></p><?php endif; ?>
+            <?php if ($sectionHero['description'] !== ''): ?><?php if(isset($screen)): ?><details class="sensecms-section-help"><summary><i data-lucide="info" aria-hidden="true"></i><?= $escape($uiText('About this section')) ?></summary><p><?= $escape($sectionHero['description']) ?></p></details><?php else: ?><p><?= $escape($sectionHero['description']) ?></p><?php endif; ?><?php endif; ?>
         </div>
     </div>
     <?php if ($sectionHero['status'] !== ''): ?>
-        <div class="sensecms-section-hero-state">
+        <div class="sensecms-section-hero-state<?= !empty($sectionHero['status_neutral'])?' is-neutral':'' ?>">
             <i data-lucide="<?= $escape($sectionHero['status_icon']) ?>"></i>
             <span><strong><?= $escape($sectionHero['status']) ?></strong><?php if ($sectionHero['status_detail'] !== ''): ?><small><?= $escape($sectionHero['status_detail']) ?></small><?php endif; ?></span>
         </div>

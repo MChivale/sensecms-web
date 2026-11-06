@@ -5,3 +5,15 @@ body[data-sensecms-builder-preview] [data-sensecms-builder-uid].is-builder-hidde
 body[data-sensecms-builder-preview] [data-sensecms-builder-uid].is-builder-hidden::after{content:'Hidden section';position:absolute;right:10px;bottom:10px;z-index:1001;padding:5px 8px;border-radius:999px;background:#17233c;color:#fff;font:700 10px/1 system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase}
 .sensecms-builder-preview-toolbar{position:fixed;z-index:2147483646;display:flex;gap:3px;padding:5px;border:1px solid rgba(15,32,58,.14);border-radius:11px;background:rgba(15,32,58,.94);box-shadow:0 10px 30px rgba(15,32,58,.25);backdrop-filter:blur(8px)}
 .sensecms-builder-preview-toolbar[hidden]{display:none}.sensecms-builder-preview-toolbar button{display:grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border:0;border-radius:7px;background:transparent;color:#fff;font:700 12px/1 system-ui,sans-serif;cursor:pointer}.sensecms-builder-preview-toolbar button:hover,.sensecms-builder-preview-toolbar button:focus-visible{background:#2f7df6;outline:0}.sensecms-builder-preview-toolbar button[data-action=remove]:hover,.sensecms-builder-preview-toolbar button[data-action=remove]:focus-visible{background:#d9394c}
+body[data-sensecms-builder-preview] .sensecms-builder-preview-insert{position:absolute;z-index:1002;top:4px;right:8px;min-height:30px;padding:4px 10px;border:1px solid #2f7df6;border-radius:99px;background:#fff;color:#0b2e61;font:600 12px/1 system-ui,sans-serif;cursor:pointer}
+body[data-sensecms-builder-preview] .sensecms-builder-preview-insert:focus-visible{outline:2px solid #2f7df6;outline-offset:2px}
+body[data-sensecms-builder-preview] [data-sense-inline]{cursor:text;border-radius:2px}
+body[data-sensecms-builder-preview] :is(a,img,video,button,article)[data-sense-inline]{cursor:pointer}
+body[data-sensecms-builder-preview] [data-sense-inline]:hover,body[data-sensecms-builder-preview] [data-sense-inline]:focus-visible{outline:2px dashed #2f7df6;outline-offset:4px}
+body[data-sensecms-builder-preview] .sensecms-template-header{position:relative;cursor:pointer}
+body[data-sensecms-builder-preview] .sensecms-template-header:hover{outline:2px dashed #2f7df6;outline-offset:-2px}
+body[data-sensecms-builder-preview] .sensecms-header-owner{position:absolute;z-index:101;top:8px;right:8px;max-width:90%;border:1px solid #2f7df6;border-radius:7px;padding:7px 10px;background:white;color:#0b2e61;font:600 12px/1.3 system-ui;cursor:pointer}
+.chatbot-feature:has(> .sensecms-banner-edit) {position:relative;cursor:pointer}
+.sensecms-banner-edit {position:absolute;z-index:2;top:.5rem;right:.75rem;border:1px solid #6898c5;border-radius:.45rem;padding:.35rem .65rem;background:#fff;color:#12365b;font:600 13px/1.3 system-ui;cursor:pointer}
+.sensecms-banner-edit:focus-visible {outline:3px solid #58a9ff;outline-offset:2px}
+.chatbot-feature:has(> .sensecms-banner-edit) :is(#chatbot-title,.chatbot-lead,.chatbot-copy > p:not([class])):hover {outline:2px dashed #9fccff;outline-offset:3px}

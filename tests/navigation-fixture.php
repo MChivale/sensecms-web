@@ -51,7 +51,8 @@ try{
     if($path==='/seo')$controller->seo();
     if($path==='/surveys')$controller->surveys();
     if($path==='/content/media')$controller->mediaLibrary();
-    if($path==='/content/facilities')$controller->facilities();
+    if($path==='/content/facilities')$method==='POST'?$controller->saveFacility():$controller->facilities();
+    if(preg_match('~^/content/facilities/(\d+)/(primary|archive|restore)$~',$path,$m)&&$method==='POST')$controller->facilityAction((int)$m[1],$m[2]);
     if($path==='/content/workflow')$controller->workflow();
     if($path==='/dashboard')$controller->dashboard();
     http_response_code(404);

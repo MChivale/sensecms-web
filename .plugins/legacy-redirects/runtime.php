@@ -18,6 +18,7 @@ return static function (string $method, string $path, ExtensionContext $context)
         $context->access->assert('extensions.manage');
         if ($method==='POST') {
             header('Content-Type: application/json; charset=utf-8');
+            $uiText = class_exists(\App\Core\ConsoleLocale::class) ? \App\Core\ConsoleLocale::messages() : static fn(string $s):string=>$s;
             try {
                 if (!$context->auth->verifyCsrf($_POST['csrf']??null)) throw new RuntimeException('Your session expired. Refresh and try again.',419);
                 $rules=RedirectRules::fromInput($_POST['rules']??[]);
@@ -26,12 +27,12 @@ return static function (string $method, string $path, ExtensionContext $context)
                 $context->db->prepare('UPDATE installed_plugins SET settings=? WHERE slug=? AND active=1')->execute([json_encode($current,JSON_THROW_ON_ERROR),'legacy-redirects']);
                 $context->db->prepare('INSERT INTO activity_log (user_id,event,subject_type,subject_id,context,created_at) VALUES (?,"plugin.settings.updated","plugin",0,?,NOW())')->execute([$context->auth->id(),json_encode(['slug'=>'legacy-redirects','groups'=>count($rules)],JSON_THROW_ON_ERROR)]);
                 $context->db->commit();
-                echo json_encode(['ok'=>true,'message'=>'Redirect rules saved.','count'=>count($rules)],JSON_THROW_ON_ERROR);
+                echo json_encode(['ok'=>true,'message'=>$uiText('Redirect rules saved.'),'count'=>count($rules)],JSON_THROW_ON_ERROR);
             } catch (Throwable $error) {
                 if ($context->db->inTransaction()) $context->db->rollBack();
                 $status=in_array($error->getCode(),[419,422],true)?$error->getCode():503;
                 http_response_code($status);
-                echo json_encode(['ok'=>false,'message'=>$status===503?'Unable to save redirect rules.':$error->getMessage()],JSON_THROW_ON_ERROR);
+                echo json_encode(['ok'=>false,'message'=>$uiText($status===503?'Unable to save redirect rules.':$error->getMessage())],JSON_THROW_ON_ERROR);
             }
             exit;
         }
