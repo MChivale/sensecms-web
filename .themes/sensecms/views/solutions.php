@@ -5,6 +5,17 @@
         <h2 id="local-websites-title"><?= $e($tr('One website address. Your nearest branch’s own website.', 'Jeden adres. Spersonalizowana strona najbliższej placówki.')) ?></h2>
         <p><?= $e($tr('Give every location a recognisable place within your brand. Visitors enter one shared website address and can be directed to the nearest branch’s personalised website, with its own offer, local news and contact details.', 'Daj każdej placówce własne miejsce w ramach wspólnej marki. Odwiedzający wpisuje jeden adres strony i może trafić na spersonalizowaną stronę najbliższej placówki — z jej ofertą, lokalnymi aktualnościami i danymi kontaktowymi.')) ?></p>
     </div>
+    <?php if (($page['kind']??'')==='home'): ?>
+    <nav class="industry-links" aria-label="<?= $e($tr('Sense CMS by industry','Sense CMS dla branż')) ?>">
+      <?php foreach (require dirname(__DIR__) . '/industry-pages.php' as $route => $example): ?>
+        <a href="<?= $e($localUrl($route)) ?>">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="<?= $e($example['icon']) ?>"/></svg>
+          <?= $e($example[$tr('en','pl')]['label']) ?> <span aria-hidden="true">→</span>
+        </a>
+      <?php endforeach; ?>
+    </nav>
+    <a class="text-link" href="<?= $e($localUrl('/platform')) ?>#local-websites"><?= $e($tr('How branch websites work','Jak działają strony placówek')) ?> →</a>
+    <?php else: ?>
     <figure class="branch-visual">
         <div class="branch-entry"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18M5 6h14M5 18h14"/></svg><div><small><?= $e($tr('ONE SHARED ADDRESS', 'JEDEN WSPÓLNY ADRES')) ?></small><strong><?= $e($tr('your-brand.example', 'twoja-marka.example')) ?></strong></div></div>
         <div class="branch-routing"><span aria-hidden="true">↓</span><p><?= $e($tr('Location shared with permission → nearest branch', 'Lokalizacja za zgodą odwiedzającego → najbliższa placówka')) ?></p><small><?= $e($tr('Or choose a location yourself', 'Lub samodzielny wybór placówki')) ?></small></div>
@@ -47,9 +58,13 @@
         <?php endforeach; ?>
     </ul>
     <a class="text-link" href="<?= $e($localUrl('/contact')) ?>"><?= $e($tr('Plan your website and branch experience →', 'Zaplanuj serwis i strony swoich placówek →')) ?></a>
+    <?php endif; ?>
 </section>
 <section id="your-platform" class="solutions-section solutions-offering" aria-labelledby="your-platform-title">
     <div class="solutions-heading"><span class="eyebrow"><?= $e($tr('SOFTWARE. HOSTING. ROOM TO GROW.', 'SYSTEM. HOSTING. MOŻLIWOŚCI ROZWOJU.')) ?></span><h2 id="your-platform-title"><?= $e($tr('What do you get with Sense CMS?', 'Co zyskujesz z Sense CMS?')) ?></h2><p><?= $e($tr('Start with a shared foundation for your website and team. Choose the hosting, everyday tools and integrations that fit your organisation. We also build custom addons and connections for requirements unique to your business.', 'Zacznij od wspólnej podstawy dla strony i zespołu. Wybierz hosting, narzędzia codziennej pracy i integracje dopasowane do organizacji. Tworzymy również dodatki i połączenia na zamówienie, odpowiadające na indywidualne potrzeby firmy.')) ?></p></div>
+    <?php if (($page['kind']??'')==='home'): ?>
+    <a class="text-link" href="<?= $e($localUrl('/platform')) ?>#your-platform"><?= $e($tr('Explore features, hosting and extensions','Poznaj funkcje, hosting i rozszerzenia')) ?> →</a>
+    <?php else: ?>
     <div class="solutions-offer-grid">
         <?php foreach ([
             ['01','CORE','RDZEŃ SYSTEMU','Your content and team','Twoje treści i zespół','Multilingual pages, media, editorial work, users, roles and facility-scoped access. An integrated personalised AI chatbot can answer using your materials and a configured AI provider.','Wielojęzyczne strony, media, praca redakcyjna, użytkownicy, role i dostęp według placówek. Zintegrowany spersonalizowany AI Chatbot odpowiada na podstawie Twoich materiałów, z użyciem skonfigurowanego dostawcy AI.','/platform/ai','Explore the AI chatbot','Poznaj AI Chatbota'],
@@ -63,4 +78,5 @@
         <?php endforeach; ?>
     </div>
     <p class="solutions-availability"><?= $e($tr('Core capabilities, optional packages and custom services have separate scopes. Check the catalogue for each package’s current availability and requirements; custom development and hosting are agreed individually.', 'Funkcje rdzenia, opcjonalne pakiety i usługi na zamówienie mają odrębny zakres. Aktualną dostępność i wymagania pakietów znajdziesz w katalogu; prace indywidualne i hosting ustalamy osobno.')) ?></p>
+    <?php endif; ?>
 </section>

@@ -4,11 +4,12 @@ declare(strict_types=1);
 return [
  '/platform/companies'=>[
   'slug'=>'platform-companies','visual'=>'branches',
+  'icon'=>'M3 21h18M5 21V4h10v17m0-12h4v12M8 8h4m-4 4h4m-4 4h4',
   'en'=>[
    'label'=>'Companies & branch networks','title'=>'One brand. Every branch in focus.',
    'description'=>'Connect your company website, local branch pages and customer conversations with Sense CMS. Shared content, local responsibility and hosting on your terms.',
    'keywords'=>'CMS for companies, multi branch website, local branch pages, customer chat, Sense CMS',
-   'brand'=>'YOUR COMPANY','screen'=>'Find your local team','items'=>['City Centre · Your nearest branch','Riverside · Local services','North · Meet the team'],
+   'brand'=>'CITY CENTRE BRANCH','screen'=>'Talk to our local team','items'=>['Business support and training','Monday to Friday · 9 am–5 pm','Reception · 12 Market Street'],
    'sections'=>[
     ['A shared brand with a local voice','A growing company needs consistent information without making every update a central bottleneck. Opening hours, contacts, offers and news can differ between branches. Sense CMS gives the organisation a shared workspace while allowing authorised teams to maintain the information for their own location.'],
     ['One address, a relevant local destination','A visitor enters your main website address and looks for a nearby service. As part of the deployment, we can configure routing to the nearest personalised branch website, using location permission and a manual choice when location is unavailable. The branch page then presents its own offer, news, contact details and next step. Visitors can also return directly to that branch’s address.'],
@@ -21,7 +22,7 @@ return [
    'label'=>'Firmy i sieci placówek','title'=>'Jedna marka. Każda placówka w centrum uwagi.',
    'description'=>'Połącz stronę firmy, lokalne strony placówek i rozmowy z klientami w Sense CMS. Wspólne treści, lokalna odpowiedzialność i wybór hostingu.',
    'keywords'=>'CMS dla firm, strona firmy z oddziałami, strony placówek, czat z klientem, Sense CMS',
-   'brand'=>'TWOJA FIRMA','screen'=>'Znajdź lokalny zespół','items'=>['Centrum · Najbliższa placówka','Nad rzeką · Lokalne usługi','Północ · Poznaj zespół'],
+   'brand'=>'ODDZIAŁ CENTRUM','screen'=>'Skontaktuj się z lokalnym zespołem','items'=>['Doradztwo i szkolenia dla firm','Poniedziałek–piątek · 9.00–17.00','Recepcja · ul. Rynkowa 12'],
    'sections'=>[
     ['Wspólna marka i lokalny charakter','Rozwijająca się firma potrzebuje spójnych informacji, ale nie każda aktualizacja musi przechodzić przez centralę. Godziny otwarcia, kontakty, oferta i aktualności mogą różnić się między placówkami. Sense CMS daje organizacji wspólny panel, a uprawnionym zespołom pozwala utrzymywać informacje dotyczące własnej lokalizacji.'],
     ['Jeden adres i właściwa lokalna strona','Odwiedzający wpisuje główny adres witryny i szuka usługi w pobliżu. W ramach wdrożenia możemy skonfigurować kierowanie do najbliższej spersonalizowanej strony placówki, z wykorzystaniem zgody na lokalizację i ręcznym wyborem, gdy lokalizacja jest niedostępna. Strona placówki prezentuje własną ofertę, aktualności, kontakt i kolejny krok. Można też wrócić bezpośrednio pod jej adres.'],
@@ -33,11 +34,12 @@ return [
  ],
  '/platform/schools'=>[
   'slug'=>'platform-schools','visual'=>'school',
+  'icon'=>'M2 9l10-5 10 5-10 5L2 9zm4 2v6c4 3 8 3 12 0v-6m3-1v7',
   'en'=>[
    'label'=>'Schools & education','title'=>'A clear school website. A connected community.',
    'description'=>'Present your school, publish multilingual information and organise communication with Sense CMS. Local pages, editorial roles and calendar tools for your team.',
    'keywords'=>'school CMS, school website, multilingual education website, school calendar, Sense CMS',
-   'brand'=>'YOUR SCHOOL','screen'=>'A place to learn and belong','items'=>['Educational offer','Open day · Meet the school','News for families'],
+   'brand'=>'CENTRAL SCHOOL','screen'=>'School open day','items'=>['18 May · 10 am','4 Linden Street · meet at reception','Meet the teachers and visit the classrooms. School office: office@school.example'],
    'sections'=>[
     ['Make the important information easy to find','Families visit a school website with practical questions: what the school offers, where it is, how to make contact and which dates matter. A clear structure brings the educational offer, school introduction, announcements and contact information together. Language versions help the same information reach the audiences your school serves.'],
     ['Give each school its own place','For a group of schools, shared information can sit alongside each location’s own pages and updates. Local teams maintain their announcements within their assigned access, while the central team looks after shared presentation. A configured location flow can help families choose a nearby school, and direct school addresses remain available for returning visitors.'],
@@ -50,7 +52,7 @@ return [
    'label'=>'Szkoły i edukacja','title'=>'Czytelna strona szkoły. Blisko społeczności.',
    'description'=>'Prezentuj szkołę, publikuj informacje w wielu językach i organizuj komunikację w Sense CMS. Lokalne strony, role redakcyjne i kalendarz dla zespołu.',
    'keywords'=>'CMS dla szkoły, strona internetowa szkoły, wielojęzyczna strona szkoły, kalendarz szkolny, Sense CMS',
-   'brand'=>'TWOJA SZKOŁA','screen'=>'Miejsce nauki i wspólnoty','items'=>['Oferta edukacyjna','Dzień otwarty · Poznaj szkołę','Aktualności dla rodziców'],
+   'brand'=>'SZKOŁA CENTRUM','screen'=>'Dzień otwarty w naszej szkole','items'=>['18 maja · godz. 10.00','ul. Lipowa 4 · zbiórka przy recepcji','Poznaj nauczycieli i odwiedź sale lekcyjne. Sekretariat: sekretariat@szkola.example'],
    'sections'=>[
     ['Ułatw znalezienie ważnych informacji','Rodzice odwiedzają stronę szkoły z konkretnymi pytaniami: jaka jest oferta, gdzie znajduje się placówka, jak się skontaktować i które terminy są ważne. Czytelna struktura łączy ofertę edukacyjną, prezentację szkoły, ogłoszenia i kontakt. Wersje językowe pomagają dotrzeć z informacją do odbiorców Twojej placówki.'],
     ['Daj każdej szkole własne miejsce','W grupie szkół informacje wspólne mogą towarzyszyć stronom i aktualnościom poszczególnych placówek. Lokalne zespoły utrzymują ogłoszenia w ramach przydzielonego dostępu, a centrala dba o wspólną prezentację. Skonfigurowany wybór lokalizacji może pomóc rodzicom znaleźć szkołę w pobliżu. Bezpośrednie adresy szkół pozostają dostępne dla powracających gości.'],
@@ -62,11 +64,12 @@ return [
  ],
  '/platform/hospitality'=>[
   'slug'=>'platform-hospitality','visual'=>'stay',
+  'icon'=>'M3 19V7m0 9h18v3m0-3v-5a2 2 0 0 0-2-2h-7v7M3 13h9M6 9h3v4H6z',
   'en'=>[
    'label'=>'Tourism & accommodation','title'=>'Show the place. Welcome the guest.',
    'description'=>'Build a multilingual website for accommodation and tourism with Sense CMS. Present properties, rooms and local experiences, with booking connections tailored to your project.',
    'keywords'=>'hospitality CMS, accommodation website, tourism website, multilingual property website, Sense CMS',
-   'brand'=>'YOUR STAY','screen'=>'Your next stay starts here','items'=>['Rooms & accommodation','Discover the local area','Ask about your stay'],
+   'brand'=>'LAKESIDE GUESTHOUSE','screen'=>'A weekend by the lake','items'=>['Double room · lake view','Arrival after 3 pm · departure by 11 am','Ask reception about room availability'],
    'sections'=>[
     ['Help guests picture their stay','Guests need more than a list of rooms. They want to understand the setting, facilities, arrival arrangements and nearby experiences. Organise photographs, room descriptions, practical information and contact routes into a website that makes the next step clear. Prepare each language version for the guests you welcome.'],
     ['A distinct page for each property','A group of hotels, guesthouses or tourism locations can keep a shared identity while presenting each property’s own offer and contact details. Local pages make it easier to maintain different facilities, seasonal information and arrival guidance. Where appropriate, a configured location choice can lead visitors to a nearby property; guests can always use direct property addresses.'],
@@ -79,7 +82,7 @@ return [
    'label'=>'Turystyka i obiekty noclegowe','title'=>'Pokaż miejsce. Przywitaj gościa.',
    'description'=>'Twórz wielojęzyczne strony obiektów noclegowych i turystycznych z Sense CMS. Prezentuj pokoje, obiekty i okolicę, z połączeniami rezerwacji dopasowanymi do projektu.',
    'keywords'=>'CMS dla noclegów, strona obiektu turystycznego, strona hotelu, wielojęzyczna strona pensjonatu, Sense CMS',
-   'brand'=>'TWÓJ OBIEKT','screen'=>'Tutaj zaczyna się Twój pobyt','items'=>['Pokoje i noclegi','Poznaj okolicę','Zapytaj o pobyt'],
+   'brand'=>'PENSJONAT NAD JEZIOREM','screen'=>'Weekend nad jeziorem','items'=>['Pokój dwuosobowy · widok na jezioro','Przyjazd od 15.00 · wyjazd do 11.00','O dostępność pokoi zapytaj w recepcji'],
    'sections'=>[
     ['Pomóż wyobrazić sobie pobyt','Goście potrzebują czegoś więcej niż listy pokoi. Chcą poznać otoczenie, udogodnienia, zasady przyjazdu i atrakcje w pobliżu. Uporządkuj zdjęcia, opisy pokoi, praktyczne informacje i kontakt w witrynie z czytelnym kolejnym krokiem. Przygotuj wersje językowe dla osób, które przyjmujesz.'],
     ['Osobna strona dla każdego obiektu','Grupa hoteli, pensjonatów lub atrakcji turystycznych może zachować wspólną markę, prezentując ofertę i kontakt każdego miejsca. Lokalne strony ułatwiają utrzymywanie informacji o udogodnieniach, sezonie i dojeździe. Gdy ma to sens, skonfigurowany wybór lokalizacji może wskazać obiekt w pobliżu; zawsze pozostają też jego bezpośrednie adresy.'],
@@ -91,11 +94,12 @@ return [
  ],
  '/platform/beauty'=>[
   'slug'=>'platform-beauty','visual'=>'beauty',
+  'icon'=>'M12 20c-5 0-9-4-9-10 4 0 7 1 9 5 2-4 5-5 9-5 0 6-4 10-9 10zm-4-9c0-3 2-6 4-8 2 2 4 5 4 8',
   'en'=>[
    'label'=>'Beauty salons & studios','title'=>'Your local expertise. A personal welcome.',
    'description'=>'Present your beauty salon, treatments and team with Sense CMS. Local branch pages, customer conversations and appointment connections fitted to your workflow.',
    'keywords'=>'beauty salon CMS, beauty salon website, treatment website, appointment integration, Sense CMS',
-   'brand'=>'YOUR STUDIO','screen'=>'A moment just for you','items'=>['Treatments & services','Meet your local team','Arrange a consultation'],
+   'brand'=>'LINDEN STUDIO','screen'=>'Visit our city centre salon','items'=>['Skin consultations and facial treatments','Marta and Anna · skincare team','Tuesday to Saturday · 10 am–6 pm · 6 Linden Street'],
    'sections'=>[
     ['Let clients get to know your studio','A salon website should make services, location, team and contact easy to understand. Present treatments in clear language, organise useful photographs and explain how to arrange a visit. Keep service descriptions and practical guidance under editorial review so the website reflects what the team actually offers.'],
     ['Keep each location personal','For a network of salons, every branch can present its own team, opening hours and offer within a common brand. Authorised local staff can maintain their pages while shared information remains centrally organised. A configured nearest-location flow can help a visitor find a relevant studio, with manual selection available when location is not shared.'],
@@ -108,7 +112,7 @@ return [
    'label'=>'Gabinety kosmetyczne i salony','title'=>'Lokalna wiedza. Osobiste powitanie.',
    'description'=>'Prezentuj gabinet, zabiegi i zespół w Sense CMS. Lokalne strony placówek, rozmowy z klientami i połączenia zapisów dopasowane do sposobu pracy.',
    'keywords'=>'CMS dla gabinetu kosmetycznego, strona salonu beauty, oferta zabiegów, integracja zapisów, Sense CMS',
-   'brand'=>'TWÓJ GABINET','screen'=>'Chwila tylko dla Ciebie','items'=>['Zabiegi i usługi','Poznaj lokalny zespół','Umów konsultację'],
+   'brand'=>'GABINET LIPOWA','screen'=>'Odwiedź nasz gabinet w centrum','items'=>['Konsultacje i zabiegi pielęgnacyjne twarzy','Marta i Anna · zespół kosmetologów','Wtorek–sobota · 10.00–18.00 · ul. Lipowa 6'],
    'sections'=>[
     ['Pomóż poznać Twój gabinet','Strona gabinetu powinna jasno pokazywać usługi, lokalizację, zespół i kontakt. Opisuj zabiegi zrozumiałym językiem, dobieraj przydatne zdjęcia i wyjaśnij sposób umawiania wizyty. Poddawaj opisy usług i wskazówki redakcyjnej weryfikacji, aby witryna odpowiadała rzeczywistej ofercie zespołu.'],
     ['Zachowaj osobisty charakter placówek','W sieci salonów każda placówka może prezentować własny zespół, godziny i ofertę w ramach wspólnej marki. Uprawnione osoby lokalnie utrzymują strony, a informacje wspólne pozostają uporządkowane centralnie. Skonfigurowana ścieżka najbliższej lokalizacji może pomóc znaleźć odpowiedni gabinet, z ręcznym wyborem, gdy odwiedzający nie udostępnia położenia.'],

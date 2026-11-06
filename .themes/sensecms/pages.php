@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return (static function (): array {
 $pages = [
-    '/' => ['title' => 'A clear foundation for your next website', 'description' => 'Sense CMS is a modular PHP content management system. Explore its independent themes, licensing-first setup and development documentation.', 'kind' => 'home'],
+    '/' => ['title' => 'Self-hosted CMS for multilingual websites', 'description' => 'Build multilingual websites with Sense CMS. Edit pages in Page Builder, manage content for each branch and see how your team works in the demo.', 'kind' => 'home'],
     '/platform' => ['title' => 'One foundation. Room to grow.', 'description' => 'Understand the Sense CMS Core, independent administration and separately packaged extensions.', 'kind' => 'platform'],
     '/extensions' => ['title' => 'Add what your project needs.', 'description' => 'Modules, plugins, addons and themes: four clear roles in the Sense CMS package architecture.', 'kind' => 'extensions'],
     '/docs' => ['title' => 'A practical place to start.', 'description' => 'Sense CMS documentation for installation, licensing, server configuration and extension development.', 'kind' => 'docs'],

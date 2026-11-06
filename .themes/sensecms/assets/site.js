@@ -254,7 +254,7 @@ document.querySelectorAll('.app-presentation').forEach(section => {
 });
 const gallery = document.querySelector('[data-screenshot-gallery]');
 if (gallery && typeof gallery.showModal === 'function') {
-    const links = [...document.querySelectorAll('.app-phone, .app-desktop figure a, .workspace-tour-grid figure a')];
+    const links = [...document.querySelectorAll('.editor-image-link, .app-phone, .app-desktop figure a, .workspace-tour-grid figure a')];
     const image = gallery.querySelector('[data-gallery-image]');
     const stage = gallery.querySelector('.gallery-image-stage');
     const title = gallery.querySelector('#gallery-title');
@@ -271,7 +271,7 @@ if (gallery && typeof gallery.showModal === 'function') {
         index = (next + links.length) % links.length;
         const link = links[index], source = link.querySelector('img');
         fit(); error.hidden = true; image.hidden = false; stage.setAttribute('aria-busy', 'true');
-        title.textContent = link.closest('figure').querySelector('h3')?.textContent || siteText('APP Sense CMS — desktop', 'APP Sense CMS — komputer');
+        title.textContent = link.dataset.galleryTitle || link.closest('figure').querySelector('h3')?.textContent || siteText('APP Sense CMS — desktop', 'APP Sense CMS — komputer');
         caption.textContent = source.alt;
         position.textContent = (index + 1) + ' / ' + links.length;
         image.alt = source.alt; image.src = link.href;
@@ -354,10 +354,20 @@ accessibilityPanel?.querySelector('[data-text-increase]')?.addEventListener('cli
 accessibilityPanel?.querySelector('[data-text-reset]')?.addEventListener('click', () => saveTextScale(100));
 accessibilityPanel?.querySelector('[data-text-range]')?.addEventListener('input', event => saveTextScale(event.target.value));
 applyTextScale(textScale);
-const closeMenu = () => { menu?.setAttribute('aria-expanded', 'false'); nav?.classList.remove('open'); };
+const closeMenu = () => {
+    menu?.setAttribute('aria-expanded', 'false');
+    if (menu) menu.setAttribute('aria-label', menu.dataset.openLabel);
+    nav?.classList.remove('open');
+};
 menu?.addEventListener('click', () => {
     const open = menu.getAttribute('aria-expanded') !== 'true';
-    menu.setAttribute('aria-expanded', String(open)); nav?.classList.toggle('open', open);
+    if (!open) { closeMenu(); return; }
+    closeAccessibility(false);
+    languageMenus.forEach(details => details.open = false);
+    menu.setAttribute('aria-expanded', 'true');
+    menu.setAttribute('aria-label', menu.dataset.closeLabel);
+    nav?.classList.add('open');
+    nav?.querySelector('a[href]')?.focus();
 });
 document.addEventListener('keydown', event => {
     if (event.key !== 'Escape') return;
@@ -366,10 +376,18 @@ document.addEventListener('keydown', event => {
     closeAccessibility(true);
 });
 document.addEventListener('click', event => {
+    if (nav?.classList.contains('open') && !nav.contains(event.target) && !menu.contains(event.target)) closeMenu();
     languageMenus.forEach(details => { if (!details.contains(event.target)) details.open = false; });
     if (accessibilityMenu && !accessibilityMenu.contains(event.target)) closeAccessibility(false);
 });
 nav?.addEventListener('click', event => { if (event.target.closest('a')) closeMenu(); });
+document.addEventListener('focusin', event => {
+    if (nav?.classList.contains('open') && !nav.contains(event.target) && event.target !== menu) closeMenu();
+});
+document.querySelector('[data-contact-jump]')?.addEventListener('click', event => {
+    const field = document.querySelector('.contact-fields input:not([type="hidden"]), .contact-fields select, .contact-fields textarea');
+    if (field) { event.preventDefault(); field.focus(); field.scrollIntoView({block:'center'}); }
+});
 matchMedia('(min-width: 901px)').addEventListener('change', closeMenu);
 const topButton = document.querySelector('[data-back-to-top]');
 if (topButton) {

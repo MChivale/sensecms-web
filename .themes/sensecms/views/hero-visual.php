@@ -8,13 +8,17 @@ $heroTopics = match (true) {
     in_array($canonicalPath, ['/download','/update'], true) => [['Review availability','Sprawdź dostępność'],['Prepare your environment','Przygotuj środowisko'],['Verify your deployment','Zweryfikuj wdrożenie']],
     default => [['Your content','Twoje treści'],['Your team','Twój zespół'],['Your digital presence','Twoja obecność w sieci']],
 };
+$shortcuts=$canonicalPath==='/docs'?[
+    ['/docs/installation','Install Sense CMS','Zainstaluj Sense CMS'],['#first-page','Create your first page','Utwórz pierwszą stronę'],['#add-extension','Add an extension','Dodaj rozszerzenie']
+]:[];
 $heroIcons = ['M5 3h10l4 4v14H5zM14 3v5h5M8 12h8M8 16h6','M9 4h6v6H9zM3 16h6v5H3zM15 16h6v5h-6zM12 10v3M6 16v-3h12v3','M3 4h18v16H3zM3 9h18M7 6.5h.01M10 6.5h.01M7 13h4M7 16h10'];
 ?>
 <div class="hero-visual" aria-label="<?= $e($tr('A connected Sense CMS experience', 'Połączone możliwości Sense CMS')) ?>">
     <div class="hero-visual-brand"><img src="/theme-assets/logo-light.svg" alt="" width="32" height="36"><span>Sense CMS<small><?= $e($tr('YOUR DIGITAL WORKSPACE', 'TWOJA CYFROWA PRZESTRZEŃ')) ?></small></span></div>
     <div class="hero-visual-path">
-    <?php foreach ($heroTopics as $index => [$en,$pl]): ?>
-        <div class="hero-visual-step"><span class="hero-visual-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="<?= $heroIcons[$index] ?>"/></svg></span><strong><?= $e($tr($en,$pl)) ?></strong><span class="hero-visual-index" aria-hidden="true">0<?= $index + 1 ?></span></div>
+    <?php foreach ($heroTopics as $index => [$en,$pl]):
+        if ($shortcuts) [$url,$en,$pl]=$shortcuts[$index]; ?>
+        <?php if ($shortcuts): ?><a class="hero-visual-step" href="<?= $e($localUrl($url)) ?>"><?php else: ?><div class="hero-visual-step"><?php endif; ?><span class="hero-visual-icon"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="<?= $heroIcons[$index] ?>"/></svg></span><strong><?= $e($tr($en,$pl)) ?></strong><span class="hero-visual-index" aria-hidden="true"><?= $shortcuts?'→':'0'.($index+1) ?></span><?php if ($shortcuts): ?></a><?php else: ?></div><?php endif; ?>
     <?php endforeach; ?>
     </div>
     <div class="hero-visual-caption"><span aria-hidden="true">↗</span> <?= $e($tr('One foundation. Your possibilities.', 'Jedna podstawa. Twoje możliwości.')) ?></div>

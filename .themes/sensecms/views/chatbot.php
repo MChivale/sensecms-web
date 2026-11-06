@@ -1,12 +1,13 @@
 <?php
 declare(strict_types=1);
-$chatbotFull = in_array($canonicalPath, ['/', '/platform/ai'], true);
+$chatbotHome = ($page['kind'] ?? '') === 'home';
+$chatbotFull = $canonicalPath === '/platform/ai';
 $chatbotConfig = (array) ($themeSettings ?? []);
 $chatbotSetting = static function(string $key, string $en, string $pl) use ($chatbotConfig, $locale, $tr): string {
     return trim((string) ($chatbotConfig[$key . ($locale === 'pl' ? '_pl' : '')] ?? '')) ?: $tr($en, $pl);
 };
 ?>
-<section id="private-ai-chatbot" class="chatbot-feature<?= $chatbotFull ? '' : ' chatbot-compact' ?>" aria-labelledby="chatbot-title">
+<section id="private-ai-chatbot" class="chatbot-feature<?= $chatbotFull || $chatbotHome ? '' : ' chatbot-compact' ?>" aria-labelledby="chatbot-title">
     <div class="chatbot-copy">
         <span class="eyebrow"><?= $e($tr('BUILT INTO SENSE CMS', 'ZINTEGROWANY Z SENSE CMS')) ?></span>
         <h2 id="chatbot-title"><?= $e($chatbotSetting('chatbot_title', 'Your Private, Personalized AI Chatbot.', 'Twój prywatny, spersonalizowany AI Chatbot.')) ?></h2>
@@ -15,7 +16,14 @@ $chatbotSetting = static function(string $key, string $en, string $pl) use ($cha
         <div class="actions"><a class="button inverse" href="<?= $e($localUrl($canonicalPath === '/platform/ai' ? '/contact' : '/platform/ai') . ($canonicalPath === '/platform/ai' ? '' : '#private-ai-chatbot')) ?>"><?= $e($canonicalPath === '/platform/ai' ? $tr('Plan your own AI chatbot', 'Zaplanuj własnego AI Chatbota') : $tr('Meet your AI chatbot', 'Poznaj swojego AI Chatbota')) ?> <span aria-hidden="true">→</span></a></div>
         <p class="chatbot-provider"><?= $e($tr('Your knowledge base is managed in your CMS. Replies use the AI provider you configure.', 'Bazą Wiedzy zarządzasz w swoim CMS. Odpowiedzi powstają z użyciem skonfigurowanego dostawcy AI.')) ?></p>
     </div>
-    <?php if ($chatbotFull): ?>
+    <?php if ($chatbotHome): ?>
+    <figure class="chatbot-visual example-chat">
+        <figcaption><?= $e($tr('Example conversation · school website','Przykładowa rozmowa · strona szkoły')) ?></figcaption>
+        <p><b><?= $e($tr('Parent','Rodzic')) ?></b><?= $e($tr('When can we visit the school?','Kiedy możemy odwiedzić szkołę?')) ?></p>
+        <p><b><?= $e($tr('School assistant','Asystent szkoły')) ?></b><?= $e($tr('Our open day starts on 18 May at 10 am at Central School, 4 Linden Street. You can meet the teachers and visit the classrooms.','Dzień otwarty zaczyna się 18 maja o godz. 10.00 w Szkole Centrum przy ul. Lipowej 4. Możecie poznać nauczycieli i zwiedzić sale lekcyjne.')) ?>
+        <a href="<?= $e($localUrl('/platform/schools')) ?>#industry-example"><?= $e($tr('Source: school open day announcement','Źródło: ogłoszenie o dniu otwartym')) ?></a></p>
+    </figure>
+    <?php elseif ($chatbotFull): ?>
     <figure class="chatbot-visual">
         <figcaption><?= $e($tr('YOUR MATERIALS BECOME USEFUL ANSWERS', 'TWOJE MATERIAŁY STAJĄ SIĘ POMOCNYMI ODPOWIEDZIAMI')) ?></figcaption>
         <ul class="chatbot-sources">

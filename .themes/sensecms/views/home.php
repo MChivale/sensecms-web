@@ -5,17 +5,33 @@
       <span class="eyebrow"><span class="status-dot"></span> <?= $e($tr('SENSE CMS · CONTENT MANAGEMENT','SENSE CMS · ZARZĄDZANIE TREŚCIĄ')) ?></span>
       <h1><?= $e($themeSettings['home_title']) ?><br><span class="blue"><?= $e($themeSettings['home_accent']) ?></span></h1>
       <p class="intro"><?= $e($themeSettings['home_intro']) ?> <?= $e($themeSettings['home_intro_end']) ?></p>
-      <a class="chatbot-hero-link" href="<?= $e($localUrl('/platform/ai')) ?>#private-ai-chatbot"><span aria-hidden="true">✦</span> <?= $e($tr('Your Private, Personalized AI Chatbot', 'Twój prywatny, spersonalizowany AI Chatbot')) ?> <span aria-hidden="true">→</span></a>
       <div class="actions"><a class="button" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer"><?= $e($tr('Try the demo','Wypróbuj demo')) ?> <span aria-hidden="true">↗</span></a><a class="secondary-button" href="<?= $e($localUrl('/platform')) ?>"><?= $e($tr('Explore the features','Poznaj możliwości')) ?> <span aria-hidden="true">→</span></a></div>
+      <a class="chatbot-hero-link" href="<?= $e($localUrl('/platform/ai')) ?>#private-ai-chatbot"><span aria-hidden="true">✦</span> <?= $e($tr('Your Private, Personalized AI Chatbot', 'Twój prywatny, spersonalizowany AI Chatbot')) ?> <span aria-hidden="true">→</span></a>
     </div>
     <aside class="hero-editorial"><span class="section-index"><?= $e($tr('01 / YOUR DIGITAL WORKSPACE','01 / TWOJA CYFROWA PRZESTRZEŃ')) ?></span><p><?= $e($themeSettings['home_detail']) ?></p><div class="hero-notes"><span><?= $e($tr('Your hosting choice','Twój wybór hostingu')) ?></span><span><?= $e($tr('Your content','Twoje treści')) ?></span><span><?= $e($tr('Your rules','Twoje zasady')) ?></span></div></aside>
   </section>
   <div class="container workspace-stage">
     <figure class="workspace-figure">
-      <div class="workspace-frame"><div class="frame-bar"><span class="frame-dots" aria-hidden="true">● ● ●</span><span>Sense CMS / Workspace</span><span class="frame-status"><?= $e($tr('Content & communication','Treści i komunikacja')) ?></span></div><img src="/theme-assets/workspace.png" width="1440" height="940" alt="<?= $e($tr('Sense CMS administration workspace with content overview, editorial queue and team communication. Example data from the development installation.','Panel administracyjny Sense CMS z przeglądem treści, kolejką redakcyjną i komunikacją zespołu. Przykładowe dane z instalacji rozwojowej.')) ?>" fetchpriority="high"></div>
-      <figcaption><span><?= $e($tr('THE REAL WORKSPACE. A CLEARER PICTURE.','PANEL PRACY. WSZYSTKO W JEDNYM MIEJSCU.')) ?></span><span><?= $e($tr('Development interface · example data','Interfejs rozwojowy · przykładowe dane')) ?></span></figcaption>
+      <?php $editorImage = '/theme-assets/page-builder-open-day-' . $tr('en','pl') . '.webp'; ?>
+      <div class="publication-preview">
+        <div class="preview-editor">
+          <span class="preview-step"><?= $e($tr('01 / Editorial workspace','01 / Panel redaktora')) ?></span>
+          <strong>Page Builder</strong>
+          <a class="editor-image-link" href="<?= $e($editorImage) ?>" data-gallery-title="<?= $e($tr('Editing a school announcement','Edycja ogłoszenia szkolnego')) ?>">
+            <img src="<?= $e($editorImage) ?>" width="632" height="354" fetchpriority="high" alt="<?= $e($tr('Page Builder fields for the School news section and the School open day headline','Pola Page Buildera z nadtytułem „Aktualności szkoły” i nagłówkiem „Dzień otwarty w naszej szkole”')) ?>">
+            <span><?= $e($tr('Enlarge the editor view','Powiększ widok edytora')) ?> <span aria-hidden="true">↗</span></span>
+          </a>
+        </div>
+        <div class="preview-result">
+          <span class="preview-step"><?= $e($tr('02 / School website','02 / Strona szkoły')) ?></span>
+          <div class="example-date"><b>18</b><span><?= $e($tr('MAY','MAJ')) ?></span></div>
+          <strong><?= $e($tr('School open day','Dzień otwarty w naszej szkole')) ?></strong>
+          <p><?= $e($tr('10 am · Central School','Godz. 10.00 · Szkoła Centrum')) ?></p>
+          <a href="<?= $e($localUrl('/platform/schools')) ?>#industry-example"><?= $e($tr('Read the announcement','Przeczytaj ogłoszenie')) ?> <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <figcaption><?= $e($tr('From the Page Builder draft to the announcement families see. Example content.','Od szkicu w Page Builderze do ogłoszenia dla rodziców. Przykładowa treść.')) ?></figcaption>
     </figure>
-    <a class="floating-note" href="<?= $e($localUrl('/platform')) ?>"><span class="note-symbol" aria-hidden="true">✓</span><span><strong><?= $e($tr('One place. A wider view.','Jedno miejsce. Szerszy obraz.')) ?></strong><small><?= $e($tr('Content, teams and facilities','Treści, zespoły i placówki')) ?></small></span><span aria-hidden="true">↗</span></a>
   </div>
 </div>
 <section class="product-principles container" aria-label="<?= $e($tr('Platform principles','Założenia platformy')) ?>"><div><span>01</span><strong><?= $e($tr('Content without clutter','Treści bez chaosu')) ?></strong><small><?= $e($tr('Pages, media & publishing','Strony, media i publikacje')) ?></small></div><div><span>02</span><strong><?= $e($tr('Connected teams','Współpracujące zespoły')) ?></strong><small><?= $e($tr('Roles & facility-scoped access','Role i dostęp według placówek')) ?></small></div><div><span>03</span><strong><?= $e($tr('Freedom to build','Swoboda tworzenia')) ?></strong><small><?= $e($tr('Independent, replaceable themes','Niezależne, wymienne motywy')) ?></small></div><div><span>04</span><strong><?= $e($tr('Ownership by design','Kontrola nad własnym systemem')) ?></strong><small><?= $e($tr('Your infrastructure or our servers','Twoja infrastruktura lub nasze serwery')) ?></small></div></section>

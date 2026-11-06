@@ -101,10 +101,28 @@ foreach ($settings as $key => $_value) {
 $polishBody = (static function () use ($source, $pages, $settings): string {
     $locale='pl'; $path='/'; $baseUrl='https://www.sensecms.com'; $status=200;
     $page=$pages['/']; $themeSettings=$settings; $themeSettings['home_title_pl']='QA <unsafe>';
+    foreach (require $source.'/industry-pages.php' as $route=>$industry) $localizedPaths[$route]=$industry['slug'];
     $e=static fn(mixed $value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     ob_start(); try { require $source . '/layout.php'; return (string)ob_get_contents(); } finally { ob_end_clean(); }
 })();
 $assert(str_contains($polishBody, 'QA &lt;unsafe&gt;') && !str_contains($polishBody, 'QA <unsafe>') && str_contains($polishBody, 'Wypróbuj demo'), 'Polish homepage settings and labels render safely');
+$assert(str_contains($polishBody,'<title>'.$settings['home_seo_title_pl'].' · Sense CMS</title>') && str_contains($polishBody,'name="description" content="'.$settings['home_seo_description_pl'].'"'), 'Polish homepage has localized fallback search metadata');
+foreach (['en'=>$theme->response('/')[2], 'pl'=>$polishBody] as $previewLocale=>$previewHome) {
+    $industries=require $source.'/industry-pages.php';
+    $imagePath='/theme-assets/page-builder-open-day-'.$previewLocale.'.webp';
+    [$assetStatus,$assetHeaders,$assetBody]=$theme->response($imagePath);
+    $size=getimagesizefromstring($assetBody);
+    $assert($assetStatus===200 && $assetHeaders['Content-Type']==='image/webp' && $size[0]===632 && $size[1]===354, 'Localized editor image matches its declared size '.$previewLocale);
+    $assert(str_contains($previewHome,'src="'.$imagePath.'"') && str_contains($previewHome,'href="'.$imagePath.'"'), 'Editor preview has a no-script enlargement '.$previewLocale);
+    $document=new DOMDocument(); @$document->loadHTML($previewHome); $xpath=new DOMXPath($document);
+    $assert($xpath->query('//main//h1')->length===1 && $xpath->query('//nav[@class="industry-links"]/a')->length===count($industries), 'Homepage has one H1 and crawlable industry links '.$previewLocale);
+    foreach ($industries as $route=>$industry) {
+        $url=$previewLocale==='en'?$route:'/pl/'.$industry['slug'];
+        $assert($xpath->query('//nav[@class="industry-links"]/a[@href="'.$url.'"]')->length===1, 'Direct industry link '.$url);
+    }
+    $schoolUrl=$previewLocale==='en'?'/platform/schools':'/pl/platform-schools';
+    $assert($xpath->query('//figure[contains(@class,"example-chat")]//a[@href="'.$schoolUrl.'#industry-example"]')->length===1 && !str_contains($previewHome,'class="chatbot-benefits"'), 'Short conversation links to its school announcement '.$previewLocale);
+}
 $navigationBody = static function (string $canonical, string $locale) use ($source): string {
     $localizedPaths=['/platform'=>'platform','/platform/ai'=>'platform-ai','/docs'=>'docs','/docs/licensing'=>'docs-licensing','/docs/server'=>'docs-server'];
     $path=$locale==='pl'?'/pl/'.($localizedPaths[$canonical]??'missing'):$canonical;
@@ -308,7 +326,7 @@ $assert(str_contains($heroCss, '.product-design :is(.product-hero,.platform-hero
 $assert(!str_contains($heroCss, '.subpage-contact{') && !str_contains($heroCss, '.subpage-guide .subpage-intro'), 'contact and documentation no longer override shared hero styling');
 $assert(str_contains($theme->response('/platform')[2], 'class="subpage-intro"') && str_contains($theme->response('/platform')[2], 'class="hero-visual"') && str_contains($docsHtml, 'class="hero-visual"'), 'platform and documentation use the shared contextual hero illustration');
 $pageEditor=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console-content-page-form.php');$pageController=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Http/DashboardController.php');
-$assert(str_contains($pageEditor,'data-seo-image-upload')&&str_contains($pageEditor,'Open Graph / social image')&&str_contains($pageController,"'og_image_width','og_image_height','og_image_type'"),'page editor uploads localized Open Graph images through the existing media pipeline');
+$assert(str_contains($pageEditor,'data-library-upload')&&str_contains($pageEditor,'data-library-image')&&str_contains($pageEditor,'Open Graph / social image')&&str_contains($pageController,"'og_image_width','og_image_height','og_image_type'"),'page editor uploads localized Open Graph images through the existing media pipeline');
 $mail=App\Core\FormMail::render(['data'=>['fields'=>[['key'=>'message','label'=>'Message']]]],['message'=>'<script>alert(1)</script>'],'TEST-REFERENCE',true);
 $assert(str_contains($mail['html'],'&lt;script&gt;')&&!str_contains($mail['html'],'<script>'),'email template escapes visitor content');
 $assert(str_contains($mail['text'],'<script>alert(1)</script>') && str_contains($mail['html'],'TEST-REFERENCE'),'email includes readable text alternative and reference');

@@ -10,18 +10,18 @@ $localUrl = static function (string $url) use ($locale, $localizedPaths): string
     return '/' . rawurlencode((string)$locale) . '/' . rawurlencode((string)$localizedPaths[$path]) . substr($url, strlen($path));
 };
 if (($locale ?? 'en') === 'pl') {
-    foreach (['home_title','home_accent','home_intro','home_intro_end','home_detail','features_title','features_intro','ecosystem_title','ecosystem_text','ownership_title','ownership_text','closing_title','closing_text','footer_description'] as $key) {
+    foreach (['home_title','home_accent','home_intro','home_intro_end','home_detail','features_title','features_intro','ecosystem_title','ecosystem_text','ownership_title','ownership_text','closing_title','closing_text','footer_description','home_seo_title','home_seo_description'] as $key) {
         if (!empty($themeSettings[$key . '_pl'])) $themeSettings[$key] = $themeSettings[$key . '_pl'];
     }
     if (($themeSettings['footer_copyright_text'] ?? '') === '© Copyright by Sense CMS · QUANT Software House Limited. All rights reserved.') $themeSettings['footer_copyright_text'] = '© Sense CMS · QUANT Software House Limited. Wszelkie prawa zastrzeżone.';
 }
 $fallbackNav = [
-    ['label'=>'Platform', 'url'=>'/platform'],
+    ['label'=>$tr('Platform','Platforma'), 'url'=>'/platform'],
     ['label'=>'AI', 'url'=>'/platform/ai'],
-    ['label'=>'Extensions', 'url'=>'/extensions'],
-    ['label'=>'Licensing', 'url'=>'/docs/licensing'],
-    ['label'=>'Documentation', 'url'=>'/docs'],
-    ['label'=>'Contact', 'url'=>'/contact'],
+    ['label'=>$tr('Extensions','Rozszerzenia'), 'url'=>'/extensions'],
+    ['label'=>$tr('Licensing','Licencjonowanie'), 'url'=>'/docs/licensing'],
+    ['label'=>$tr('Documentation','Dokumentacja'), 'url'=>'/docs'],
+    ['label'=>$tr('Contact','Kontakt'), 'url'=>'/contact'],
 ];
 if (!isset($blocks) && isset($page['sections'])) {
     $blocks = array_map(static fn(array $section): array => ['type'=>'text', 'payload'=>[
@@ -141,14 +141,14 @@ if (isset($seo) && in_array($canonicalPath, ['/', '/platform', '/extensions/cata
 <?php if ($status === 200): ?><link rel="canonical" href="<?= $e($baseUrl . $path) ?>"><?php else: ?><meta name="robots" content="noindex"><?php endif; ?>
 <meta name="theme-color" content="#f7f9fc"><meta property="og:title" content="<?= $e($page['title']) ?> · Sense CMS"><meta property="og:description" content="<?= $e($page['description']) ?>"><meta property="og:type" content="website"><meta property="og:url" content="<?= $e($baseUrl . ($status === 200 ? $path : '/')) ?>"><?php if ($status === 200): ?><meta property="og:image" content="<?= $e($baseUrl . '/theme-assets/og.image.jpg') ?>"><meta property="og:image:secure_url" content="<?= $e($baseUrl . '/theme-assets/og.image.jpg') ?>"><meta property="og:image:alt" content="Sense CMS connected content management workspace"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:image:type" content="image/jpeg"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="<?= $e($baseUrl . '/theme-assets/og.image.jpg') ?>"><?php endif; ?>
 <?php endif; ?>
-<link rel="icon" href="/theme-assets/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="/theme-assets/site.css"><link rel="stylesheet" href="/theme-assets/product.css"><script src="/theme-assets/site.js" defer></script>
+<link rel="icon" href="/theme-assets/logo.svg" type="image/svg+xml"><link rel="stylesheet" href="/theme-assets/site.css?v=1.0.29"><link rel="stylesheet" href="/theme-assets/product.css?v=1.0.30"><script src="/theme-assets/site.js?v=1.0.30" defer></script>
 </head>
 <body class="product-design"><a class="skip" href="#main"><?= $e($tr('Skip to content','Przejdź do treści')) ?></a>
 <header class="header"><div class="container header-inner"><a class="brand" href="<?= $e($homeUrl) ?>" aria-label="<?= $e($tr('Sense CMS home','Strona główna Sense CMS')) ?>"><img src="/theme-assets/logo.svg" width="34" height="38" alt=""><span><?php $renderBrandText('SenseCMS.'); ?></span></a>
 <nav id="navigation" class="primary-nav" aria-label="<?= $e($tr('Main navigation','Nawigacja główna')) ?>"><?php $renderLinks($primaryLinks); ?><a class="mobile-demo" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer"><?= $e($tr('Try the demo','Wypróbuj demo')) ?> <span aria-hidden="true">↗</span></a></nav>
 <div class="header-actions"><div class="accessibility-menu"><button class="accessibility-toggle" type="button" aria-label="<?= $e($tr('Accessibility','Dostępność')) ?>" aria-expanded="false" aria-controls="accessibility-panel" aria-haspopup="dialog" data-accessibility-toggle><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5c2.3 1 4.6 1.5 7 1.5s4.7-.5 7-1.5M12 10v10M8.5 21 12 15l3.5 6"/></svg></button><section id="accessibility-panel" class="accessibility-panel" role="dialog" aria-labelledby="accessibility-title" hidden data-accessibility-panel><div class="accessibility-panel-head"><span><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="4.5" r="2"/><path d="M5 8.5c2.3 1 4.6 1.5 7 1.5s4.7-.5 7-1.5M12 10v10M8.5 21 12 15l3.5 6"/></svg></span><div><h2 id="accessibility-title"><?= $e($tr('Accessibility','Dostępność')) ?></h2><p><?= $e($tr('Adjust text from 100% to 200%.','Zmień wielkość tekstu od 100% do 200%.')) ?></p></div><button type="button" aria-label="<?= $e($tr('Close accessibility settings','Zamknij ustawienia dostępności')) ?>" data-accessibility-close>×</button></div><div class="accessibility-controls"><button type="button" aria-label="<?= $e($tr('Decrease text size','Zmniejsz tekst')) ?>" data-text-decrease>A−</button><output for="accessibility-scale" aria-live="polite" data-text-scale>100%</output><button type="button" aria-label="<?= $e($tr('Increase text size','Powiększ tekst')) ?>" data-text-increase>A+</button><button type="button" data-text-reset><?= $e($tr('Reset','Przywróć')) ?></button></div><label for="accessibility-scale"><?= $e($tr('Text size','Wielkość tekstu')) ?></label><input id="accessibility-scale" type="range" min="100" max="200" step="10" value="100" data-text-range></section></div><details class="language-menu"><summary aria-label="<?= $e($tr('Choose language','Wybierz język')) ?>"><?php $renderLanguageFlag($activeLocale); ?><span><?= $e(strtoupper($activeLocale)) ?></span><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 10 4 4 4-4"/></svg></summary><div><?php foreach ($languageLinks as $language): ?><a href="<?= $e($language['url']) ?>" hreflang="<?= $e($language['code']) ?>" lang="<?= $e($language['code']) ?>"<?= $language['code'] === $activeLocale ? ' aria-current="page"' : '' ?>><span class="language-label"><?php $renderLanguageFlag($language['code']); ?><?= $e($language['native']) ?></span><small><?= $e($language['name']) ?></small></a><?php endforeach; ?></div></details>
 <a class="header-demo" href="https://demo.sensecms.com/" target="_blank" rel="noopener noreferrer">Demo<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M19 13v5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></svg></a>
-<button class="menu-button" aria-expanded="false" aria-controls="navigation" aria-label="<?= $e($tr('Open navigation','Otwórz nawigację')) ?>" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div></div></header>
+<button class="menu-button" aria-expanded="false" aria-controls="navigation" aria-label="<?= $e($tr('Open navigation','Otwórz nawigację')) ?>" data-open-label="<?= $e($tr('Open navigation','Otwórz nawigację')) ?>" data-close-label="<?= $e($tr('Close navigation','Zamknij nawigację')) ?>" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button></div></div></header>
 <main id="main" tabindex="-1">
 <?php if ($page['kind'] === 'home'): ?>
 <?php require __DIR__ . '/views/home.php'; ?>
