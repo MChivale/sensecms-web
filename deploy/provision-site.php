@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-// Explicit first-install operation. Run offline before publishing public/index.php.
+// Historical standalone MariaDB provisioning, retained for the archived edition.
+if (PHP_SAPI === 'cli' && is_dir('/usr/local/ispconfig')) { fwrite(STDERR, "Use the ISPConfig recovery procedure on this host.\n"); exit(1); }
 if (PHP_SAPI !== 'cli' || !function_exists('posix_geteuid') || posix_geteuid() !== 0 || ($argv[1] ?? '') !== '--provision-sensecms') exit(1);
 umask(0077);
 $web = '/home/sensecms.com/web';

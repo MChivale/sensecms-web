@@ -1,40 +1,26 @@
 #!/bin/sh
+# Preflight for the existing ISPConfig installation. Fresh PostgreSQL installation
+# is a separate workflow; site provisioning belongs to the ISPConfig master.
 set -eu
-umask 077
-stage=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-case "$stage" in /root/sensecms-deploy.*) ;; *) echo 'Invalid deployment staging directory'; exit 1;; esac
-web=/home/sensecms.com/web
+test "${1:-}" = "--check" || { echo "Usage: sh deploy/install-production.sh --check" >&2; exit 2; }
 test "$(id -u)" = 0
-test "$(realpath "$web")" = "$web"
-test ! -e "$web/public/index.php"
-test ! -e "$web/storage/installed.json"
-test ! -e /etc/php/8.5/fpm/pool.d/sensecms.conf
-test ! -e /root/sensecms-private/owner.json
-backup=/root/sensecms-backups/$(date -u +%Y%m%dT%H%M%SZ)-pre-application
-mkdir -m 700 "$backup"
-tar -czf "$backup/web.tar.gz" -C /home/sensecms.com web
-cp /etc/nginx/sites-available/sensecms.com "$backup/nginx.conf"
-printf '%s\n' "$backup" > "$stage/backup-path.txt"
-if ! getent passwd sensecms >/dev/null; then useradd --system --user-group --home-dir /home/sensecms.com --shell /usr/sbin/nologin sensecms; fi
-for dir in app config database scripts; do
-    test ! -e "$web/$dir"
-    cp -R "$stage/.cms/source/$dir" "$web/$dir"
+site=/var/www/clients/client9/web128
+app=$site/private/sensecms
+test "$(realpath /home/sensecms.com)" = "$site"
+test "$(stat -c '%U:%G' "$site/web")" = web128:client9
+test -f "$app/storage/installed.json"
+test -S /var/lib/php8.5-fpm/web128.sock
+apache2ctl configtest
+for service in apache2 php8.5-fpm postgresql@17-main; do systemctl is-active --quiet "$service"; done
+for sapi in cli fpm; do
+    for driver in pdo_pgsql pdo_mysql; do phpquery -v 8.5 -s "$sapi" -m "$driver" >/dev/null; done
 done
-cp "$stage/.cms/source/bootstrap.php" "$web/bootstrap.php"
-php "$stage/deploy/provision-site.php" --provision-sensecms "$stage/.cfg/License.txt" "$stage/.themes/sensecms"
-# Runtime data belongs exclusively to this application's FPM pool.
-chown -R sensecms:sensecms "$web/storage"
-find "$web/storage" -type d -exec chmod 700 {} +
-find "$web/storage" -type f -exec chmod 600 {} +
-for dir in app config database scripts; do
-    chown -R root:root "$web/$dir"
-    find "$web/$dir" -type d -exec chmod 755 {} +
-    find "$web/$dir" -type f -exec chmod 644 {} +
-done
-chmod 644 "$web/bootstrap.php"
-install -m 644 "$stage/.cms/source/.htaccess" "$web/.htaccess"
-install -m 644 "$stage/deploy/php/sensecms.conf" /etc/php/8.5/fpm/pool.d/sensecms.conf
-php-fpm8.5 -t
-systemctl reload php8.5-fpm
-sh "$stage/deploy/publish-site.sh"
-printf 'Published initialized Core. Backup: %s\n' "$backup"
+runuser -u web128 -- php8.5 -r '
+    require $argv[1]."/bootstrap.php";
+    $runtime=new App\Core\Runtime($argv[1]);
+    $config=$runtime->read("installed")["database"];
+    if (($config["driver"]??null)!=="pgsql" || $config["name"]!=="sensecms_site") exit(1);
+    $db=App\Core\Runtime::connect($config);
+    if (!$db->query("SELECT EXISTS(SELECT 1 FROM pg_extension WHERE extname=\x27vector\x27)")->fetchColumn()) exit(1);
+' "$app"
+echo "www: ISPConfig / Apache2 / PHP 8.5 / PostgreSQL with pgvector ready."

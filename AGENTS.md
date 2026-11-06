@@ -51,11 +51,12 @@ Run targeted tests, PHP lint and `git diff --check`. Installer checks:
 Inspect database fixture guards; never run destructive fixtures against production.
 Use isolated QA for new installations and package lifecycle rehearsals.
 
-Production, only when requested: www.sensecms.com, `/home/sensecms.com/web`, public
-DocumentRoot `/home/sensecms.com/web/public`, Nginx/PHP-FPM/MariaDB. Inspect target,
+Production, only when requested: www.sensecms.com, ISPConfig 3 / Apache / PHP 8.5 FPM /
+PostgreSQL 17 with pgvector. Public DocumentRoot `/home/sensecms.com/web`;
+private runtime `/home/sensecms.com/private/sensecms`. Inspect target,
 back up and plan recovery before changes. Verify deployed hashes, HTTP/UI behaviour,
 service health and fresh logs afterwards; record evidence in `.wrk`.
-Nginx ignores `.htaccess`. Never expose private application roots.
+ISPConfig manages vhosts, certificates, site owners and FPM pools. Never expose private application roots.
 
 `.install/web/index.php` + `install.zip` are generated DEVELOPMENT artifacts for a
 NEW EMPTY installation, not a production update. Extract first, then the real

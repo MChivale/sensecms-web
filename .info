@@ -10,8 +10,11 @@ Historical provenance/work records are retained, not runtime dependencies.
 
 Product: Sense CMS, a general-purpose PHP CMS.
 www.sensecms.com is the official product website and package distribution site.
-demo.sensecms.com is now user-installed on the same server, with its own database
-and private runtime at /home/demo.sensecms.com/web; DocumentRoot is web/public.
+After the 2026-11-01 recovery, both sites run on the ISPConfig 3 farm with Apache,
+PHP 8.5 FPM and separate PostgreSQL 17 databases (sensecms_site and sensecms_demo).
+Both databases have pgvector. The ISPConfig site owners are web128:client9 for
+www and web129:client9 for demo. Each /home/<domain>/web is the public document
+root; each /home/<domain>/private/sensecms contains its independent CMS runtime.
 Treat demo and www as independent installations. Never automatically mirror their
 accounts, configuration, data or deployments; operate only on the requested target.
 Demo has a separate read-only demo@sensecms.com account; the original account is Owner.

@@ -362,6 +362,12 @@ Process steps and Services. Blank required media is permitted in starter presets
 but normal save validation still requires users to supply it. Saved content and
 third-party component identities are never rewritten to match new defaults.
 
+In the private Live Canvas, a theme can identify the wrapper of its main page
+heading with `data-sensecms-header-source="page"` (localized page title and
+excerpt) or `"theme"` (shared theme settings). Use this only for headers outside
+Builder sections. The attribute identifies the editor; it does not grant access
+or change how the published page renders.
+
 ## Theme lifecycle
 
 Themes implement `pages.php` (public route metadata) and `layout.php` (trusted PHP

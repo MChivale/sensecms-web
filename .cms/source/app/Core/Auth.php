@@ -17,14 +17,25 @@ final class Auth
         $email = strtolower(trim($email)); $ip = $ip !== '' ? $ip : ($_SERVER['REMOTE_ADDR'] ?? '');
         if (strlen($email) > 190 || strlen($password) > 200) return false;
         $allowed = true;
+        $postgres = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql';
+        $attemptSql = $postgres
+            ? 'INSERT INTO login_attempts (bucket,attempts,expires_at) VALUES (?,1,?)
+               ON CONFLICT (bucket) DO UPDATE SET
+               attempts=CASE WHEN login_attempts.expires_at<=? THEN 1 ELSE login_attempts.attempts+1 END,
+               expires_at=CASE WHEN login_attempts.expires_at<=? THEN EXCLUDED.expires_at ELSE login_attempts.expires_at END'
+            : 'INSERT INTO login_attempts (bucket,attempts,expires_at) VALUES (?,1,?) ON DUPLICATE KEY UPDATE attempts=IF(expires_at<=?,1,attempts+1),expires_at=IF(expires_at<=?,VALUES(expires_at),expires_at)';
+        $attempt = $this->db->prepare($attemptSql);
         foreach (['email:' . $email => 10, 'ip:' . $ip => 60] as $subject => $limit) {
             $bucket = hash('sha256', $subject); $now = time();
-            $stmt = $this->db->prepare('INSERT INTO login_attempts (bucket,attempts,expires_at) VALUES (?,1,?) ON DUPLICATE KEY UPDATE attempts=IF(expires_at<=?,1,attempts+1),expires_at=IF(expires_at<=?,VALUES(expires_at),expires_at)');
-            $stmt->execute([$bucket, $now + 900, $now, $now]);
+            $attempt->execute([$bucket, $now + 900, $now, $now]);
             $stmt = $this->db->prepare('SELECT attempts FROM login_attempts WHERE bucket=?'); $stmt->execute([$bucket]);
             if ((int) $stmt->fetchColumn() > $limit) $allowed = false;
         }
-        $this->db->prepare('DELETE FROM login_attempts WHERE expires_at<? LIMIT 100')->execute([time()]);
+        $cleanup = $postgres
+            ? 'DELETE FROM login_attempts WHERE expires_at<? AND bucket IN (SELECT bucket FROM login_attempts WHERE expires_at<? ORDER BY expires_at LIMIT 100)'
+            : 'DELETE FROM login_attempts WHERE expires_at<? LIMIT 100';
+        $now = time();
+        $this->db->prepare($cleanup)->execute($postgres ? [$now,$now] : [$now]);
         if (!$allowed) return false;
         $stmt = $this->db->prepare('SELECT * FROM users WHERE email=? AND active=1'); $stmt->execute([$email]); $user = $stmt->fetch();
         if (!password_verify($password, $user['password'] ?? self::DUMMY) || !$user) return false;
