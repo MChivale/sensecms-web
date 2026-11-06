@@ -37,7 +37,7 @@
         }
         const text = document.createElement('p'), parts = String(message.content || '').split(/\n(Source:\s+[^\n]+)/g);
         for (const part of parts) {
-            const source = part.match(/^Source:\s+(\/[^\s]+)$/);
+            const source = part.match(/^Source:\s+(\/(?!\/)[^\s\\]*)$/);
             if (source) {
                 const link = document.createElement('a'); link.href = source[1]; link.textContent = labels.source || 'Source'; link.className = 'sense-chat-source'; text.append(link);
             } else if (part) text.append(document.createTextNode(part));
@@ -80,10 +80,22 @@
         } catch { if (!sending) setStatus(labels.refresh, 'error'); }
         finally { polling = false; schedule(); }
     };
-    const toggle = show => {
+    const panelStateKey = 'sensecms-public-chat-open';
+    const toggle = (show, userInitiated = true) => {
         panel.hidden = !show; open.setAttribute('aria-expanded', String(show)); clearTimeout(timer); timer = 0;
-        if (show) { input.focus(); poll(); } else open.focus();
+        if (userInitiated) {
+            try { sessionStorage.setItem(panelStateKey, String(show)); } catch {}
+            (show ? input : open).focus();
+        }
+        if (show) poll();
     };
+    const restorePanel = () => {
+        let show;
+        try { show = sessionStorage.getItem(panelStateKey) === 'true'; } catch { return; }
+        if (show !== !panel.hidden) toggle(show, false);
+    };
+    restorePanel();
+    window.addEventListener('pageshow', event => { if (event.persisted) restorePanel(); });
     open.addEventListener('click', () => toggle(panel.hidden));
     close.addEventListener('click', () => toggle(false));
     widget.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) { event.preventDefault(); toggle(false); } });
@@ -94,7 +106,7 @@
     form.addEventListener('submit', async event => {
         event.preventDefault(); if (sending || ended || (!input.value.trim() && !email.value.trim()) || !form.reportValidity()) return;
         sending = true; controls(); setStatus(labels.sending);
-        const body = new URLSearchParams({message: input.value.trim(), name: form.elements.name.value.trim(), email: email.value.trim(), locale: widget.dataset.locale, csrf: widget.dataset.csrf});
+        const body = new URLSearchParams({message: input.value.trim(), name: form.elements.name.value.trim(), email: emailRequested ? email.value.trim() : '', locale: widget.dataset.locale, csrf: widget.dataset.csrf});
         try {
             await request(widget.dataset.endpoint || '/api/chat/message', body); setStatus(); input.value = ''; input.style.height = ''; restarting = false;
             const result = await request('/api/chat/state'); render(result.data); messages.scrollTop = messages.scrollHeight;

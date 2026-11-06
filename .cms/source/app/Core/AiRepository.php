@@ -10,6 +10,24 @@ final class AiRepository
 {
     public function __construct(private readonly PDO $db) {}
 
+    public function scenarios(): ChatScenarios { return new ChatScenarios($this->db); }
+
+    public function ifOpenForAssistant(string $conversation, callable $respond): ?array
+    {
+        $this->db->beginTransaction();
+        try {
+            $lock=$this->db->prepare('SELECT channel,status FROM ai_conversations WHERE id=? FOR UPDATE');
+            $lock->execute([$conversation]);
+            $state=$lock->fetch(PDO::FETCH_ASSOC);
+            $result=$state && $state['channel']==='ai' && $state['status']==='open' ? $respond() : null;
+            $this->db->commit();
+            return $result;
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
+
     public function providers(): array
     {
         $rows=$this->db->query('SELECT id,slug,name,driver,base_url,default_model,options,enabled,priority,verified_at,last_error,updated_at,CASE WHEN api_key_encrypted IS NULL OR api_key_encrypted="" THEN 0 ELSE 1 END configured FROM ai_providers ORDER BY priority,name,id')->fetchAll();
@@ -91,25 +109,26 @@ final class AiRepository
         }
         $patterns=array_keys($patterns);
         $scope=" FROM ai_knowledge_chunks c INNER JOIN ai_knowledge_documents d ON d.id=c.document_id WHERE d.status='published' AND d.index_status='ready' AND (d.locale=? OR d.locale IS NULL)";
+        $match = $this->db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'pgsql' ? '~' : 'REGEXP';
         $counts=[];$params=[];
-        foreach($patterns as$i=>$pattern){$counts[]="SUM(CASE WHEN LOWER(c.content) REGEXP ? OR LOWER(d.title) REGEXP ? THEN 1 ELSE 0 END) term{$i}";array_push($params,$pattern,$pattern);}
+        foreach($patterns as$i=>$pattern){$counts[]="SUM(CASE WHEN LOWER(c.content) {$match} ? OR LOWER(d.title) {$match} ? THEN 1 ELSE 0 END) term{$i}";array_push($params,$pattern,$pattern);}
         $statement=$this->db->prepare('SELECT COUNT(*) total,'.implode(',',$counts).$scope);
         $statement->execute([...$params,$locale]);$frequency=$statement->fetch()?:[];
         if(empty($frequency['total']))return[];
         $score=[];$where=[];$params=[];$filters=[];
         foreach($patterns as$i=>$pattern){
             $weight=1+log(1+(int)$frequency['total']/(1+(int)$frequency['term'.$i]));
-            $score[]='(CASE WHEN LOWER(c.content) REGEXP ? THEN ? ELSE 0 END + CASE WHEN LOWER(d.title) REGEXP ? THEN ? ELSE 0 END)';
+            $score[]="(CASE WHEN LOWER(c.content) {$match} ? THEN CAST(? AS DECIMAL(18,8)) ELSE 0 END + CASE WHEN LOWER(d.title) {$match} ? THEN CAST(? AS DECIMAL(18,8)) ELSE 0 END)";
             array_push($params,$pattern,$weight,$pattern,3*$weight);
-            $where[]='(LOWER(c.content) REGEXP ? OR LOWER(d.title) REGEXP ?)';array_push($filters,$pattern,$pattern);
+            $where[]="(LOWER(c.content) {$match} ? OR LOWER(d.title) {$match} ?)";array_push($filters,$pattern,$pattern);
         }
-        $statement=$this->db->prepare('SELECT c.content,d.title,d.source_url,('.implode('+',$score).') relevance'.$scope.' AND ('.implode(' OR ',$where).') ORDER BY relevance DESC,d.updated_at DESC,c.sort_order,c.id LIMIT 8');
+        $statement=$this->db->prepare('SELECT d.id document_id,c.content,d.title,d.source_url,('.implode('+',$score).') relevance'.$scope.' AND ('.implode(' OR ',$where).') ORDER BY relevance DESC,d.updated_at DESC,c.sort_order,c.id LIMIT 8');
         $statement->execute([...$params,$locale,...$filters]);
-        return array_map(static fn(array$row):array=>['title'=>trim((string)$row['title']),'url'=>trim((string)($row['source_url']??'')),'content'=>(string)$row['content']],$statement->fetchAll());
+        return array_map(static fn(array$row):array=>['document_id'=>(int)$row['document_id'],'title'=>trim((string)$row['title']),'url'=>trim((string)($row['source_url']??'')),'content'=>(string)$row['content']],$statement->fetchAll());
     }
 
     public function context(string $message,string$locale):array{return array_map(static function(array$row):string{$source=$row['title'];if($row['url']!=='')$source.=' · '.$row['url'];return'[Source: '.$source."]\n".$row['content'];},$this->contextMatches($message,$locale));}
-    public function recentConversationMessages(string$id,int$limit=6):array{$limit=max(1,min(12,$limit));$statement=$this->db->prepare("SELECT role,content FROM ai_messages WHERE conversation_id=? AND role IN ('visitor','assistant','agent') ORDER BY id DESC LIMIT {$limit}");$statement->execute([$id]);return array_reverse($statement->fetchAll());}
+    public function recentConversationMessages(string$id,int$limit=6):array{$limit=max(1,min(12,$limit));$statement=$this->db->prepare("SELECT role,content,provider_slug FROM ai_messages WHERE conversation_id=? AND role IN ('visitor','assistant','agent') ORDER BY id DESC LIMIT {$limit}");$statement->execute([$id]);return array_reverse($statement->fetchAll());}
     public function usageCount(string$purpose,string$period='day'):int{$since=$period==='month'?"DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')":'CURDATE()';$statement=$this->db->prepare("SELECT COUNT(*) FROM ai_usage_events WHERE purpose=? AND (status IN ('requested','completed') OR (status='failed' AND input_tokens IS NOT NULL)) AND created_at>={$since}");$statement->execute([$purpose]);return(int)$statement->fetchColumn();}
 
     public function conversation(string $id, string $locale, ?string $ip = null): void
@@ -119,7 +138,35 @@ final class AiRepository
         $statement->execute([$id, $locale, $ip, IpCountry::lookup($ip)]);
     }
     public function setVisitorName(string $conversation, string $name): void { $this->db->prepare('UPDATE ai_conversations SET visitor_name = ? WHERE id = ? AND (visitor_name IS NULL OR visitor_name = "")')->execute([$name, $conversation]); }
-    public function setVisitorEmail(string $conversation, string $email): void { $this->db->prepare('UPDATE ai_conversations SET visitor_email = ? WHERE id = ? AND (visitor_email IS NULL OR visitor_email = "")')->execute([$email, $conversation]); }
+    public function setVisitorEmail(string $conversation,string $email,string $locale,string $visitorMessage,string $confirmation): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $lock=$this->db->prepare('SELECT status,email_requested_at,visitor_email FROM ai_conversations WHERE id=? FOR UPDATE');
+            $lock->execute([$conversation]);
+            $row=$lock->fetch(PDO::FETCH_ASSOC);
+            if (!$row || $row['status']==='closed') throw new \RuntimeException('This conversation has ended. Start a new chat to continue.');
+            if (!$row['email_requested_at']) throw new \RuntimeException('A callback e-mail address has not been requested.');
+            $first=empty($row['visitor_email']);
+            if ($first) {
+                $this->db->prepare('UPDATE ai_conversations SET visitor_email=?,updated_at=NOW() WHERE id=?')->execute([$email,$conversation]);
+                $cms=new CmsRepository($this->db,new EventBus());
+                $zone=LiveChatSettings::from((array)$cms->setting('live_chat_settings',[]))['availability']['timezone'];
+                $day=(new \DateTimeImmutable('now',new \DateTimeZone($zone)))->format('Y-m-d');
+                $this->db->prepare("INSERT INTO chat_callback_receipts (conversation_id,status,next_attempt_at,work_date,timezone,locale) VALUES (?,'pending',UTC_TIMESTAMP(),?,?,?)")->execute([$conversation,$day,$zone,mb_substr($locale,0,20)]);
+                $this->db->prepare("UPDATE ai_conversations SET channel='human',status='queued',queued_at=NOW(),ai_takeover_at=NULL WHERE id=? AND channel='ai' AND status='open'")->execute([$conversation]);
+                if ($visitorMessage!=='') $this->message($conversation,'visitor',$visitorMessage);
+                $this->message($conversation,'assistant',$confirmation,'core');
+            } elseif (strcasecmp($row['visitor_email'],$email)!==0) {
+                throw new \RuntimeException('A callback e-mail address has already been saved for this conversation.');
+            }
+            $this->db->commit();
+            return $first;
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
     public function requestVisitorEmail(string $conversation): bool { $statement=$this->db->prepare('UPDATE ai_conversations SET email_requested_at=COALESCE(email_requested_at,NOW()),updated_at=NOW() WHERE id=? AND (visitor_email IS NULL OR visitor_email="")');$statement->execute([$conversation]);return $statement->rowCount()===1; }
     public function message(string $conversation, string $role, string $content, ?string $provider = null): void { $statement = $this->db->prepare('INSERT INTO ai_messages (conversation_id,role,content,provider_slug,created_at) VALUES (?,?,?,?,NOW())'); $statement->execute([$conversation, $role, $content, $provider]); $this->db->prepare('UPDATE ai_conversations SET updated_at = NOW() WHERE id = ?')->execute([$conversation]); }
 
@@ -380,6 +427,7 @@ final class AiRepository
             $this->db->prepare('DELETE FROM live_chat_reads WHERE conversation_id = ?')->execute([$conversation]);
             $this->db->prepare('DELETE FROM live_chat_transfers WHERE conversation_id = ?')->execute([$conversation]);
             $this->db->prepare('DELETE FROM ai_messages WHERE conversation_id = ?')->execute([$conversation]);
+            $this->db->prepare('DELETE FROM chat_callback_receipts WHERE conversation_id = ?')->execute([$conversation]);
             $statement = $this->db->prepare("UPDATE ai_conversations SET visitor_name = NULL, visitor_email = NULL, visitor_ip = NULL, visitor_country = NULL, channel = 'human', status = 'closed', assigned_user_id = NULL, assigned_team_id = NULL, updated_at = NOW() WHERE id = ?");
             $statement->execute([$conversation]);
             $this->db->commit();

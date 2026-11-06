@@ -11,7 +11,7 @@ use Throwable;
 final class EmailSystem
 {
     private const SETTINGS = 'email_system_settings';
-    private const TEMPLATES = 'email_system_templates';
+    private const TEMPLATES = ChatCallbackTemplates::SETTING;
     private const FONTS = ['Arial','Georgia','Tahoma','Trebuchet MS','Verdana'];
     private const DEFAULT_LOGO = '/sensecms/images/sensecms-logo-email.png';
 
@@ -36,6 +36,66 @@ final class EmailSystem
     {
         $server = $this->settings()['server'];
         return ['name'=>(string)$server['from_name'], 'email'=>(string)$server['from_address']];
+    }
+
+    /** Send only newly requested chat receipts. A claimed send is never replayed on an uncertain delivery. */
+    public function deliverChatReceipts(bool $internal=false): array
+    {
+        $counts=['sent'=>0,'retry'=>0,'unknown'=>0,'failed'=>0];
+        if ($this->settings()['server']['mode']==='disabled') return $counts;
+        $table=$internal?'chat_callback_recipients':'chat_callback_receipts';
+        $counts['unknown']=$this->db->exec("UPDATE $table SET status='unknown' WHERE status='sending' AND next_attempt_at<=UTC_TIMESTAMP()");
+        $fields=$internal?'r.user_id':'r.locale';
+        $userWhere=$internal?' AND user_id=?':'';
+        $rows=$this->db->query("SELECT r.conversation_id,c.visitor_email,$fields
+            FROM $table r JOIN ai_conversations c ON c.id=r.conversation_id
+            WHERE r.status='pending' AND r.next_attempt_at<=UTC_TIMESTAMP() AND c.visitor_email IS NOT NULL
+            ORDER BY r.next_attempt_at,r.conversation_id LIMIT 10")->fetchAll(PDO::FETCH_ASSOC);
+        $claim=$this->db->prepare("UPDATE $table SET status='sending',next_attempt_at=DATE_ADD(UTC_TIMESTAMP(),INTERVAL 20 MINUTE) WHERE conversation_id=? $userWhere AND status='pending' AND next_attempt_at<=UTC_TIMESTAMP()");
+        $finish=$this->db->prepare("UPDATE $table SET status=?,next_attempt_at=DATE_ADD(UTC_TIMESTAMP(),INTERVAL 15 MINUTE) WHERE conversation_id=? $userWhere AND status IN ('sending','unknown')");
+        foreach ($rows as $row) {
+            $key=[$row['conversation_id']];
+            if ($internal) $key[]=$row['user_id'];
+            $claim->execute($key);
+            if ($claim->rowCount()!==1) continue;
+            try {
+                if ($internal) {
+                    $conversation=(new AiRepository($this->db))->conversationStatus($row['conversation_id']);
+                    $recipient=$conversation ? ((new ChatCallbackTeam($this->db,$this->cms))->recipients($conversation)[$row['user_id']]??null) : null;
+                    if ($recipient && filter_var($recipient['email'],FILTER_VALIDATE_EMAIL)) {
+                        $this->sendTeamCallback($recipient['email'],$row['conversation_id']);
+                        $status='sent';
+                    } else $status='failed';
+                } else {
+                    $this->sendChatReceipt($row['visitor_email'],$row['locale']);
+                    $status='sent';
+                }
+            } catch (MailDeliveryUncertain) {
+                $status='unknown';
+            } catch (RuntimeException $error) {
+                $status=$error->getCode()>=500 && $error->getCode()<600 ? 'failed' : 'pending';
+            }
+            $finish->execute([$status,...$key]);
+            $counts[$status==='pending'?'retry':$status]++;
+        }
+        return $counts;
+    }
+
+    private function sendChatReceipt(string $to,string $locale): void
+    {
+        $t=ChatCallbackTemplates::render($this->cms,$locale);
+        $this->send($to,$t['subject'],$t['heading'],$t['body'],$t['button_label'],rtrim($this->baseUrl,'/').'/',$t['footer'],$t['brand']);
+    }
+
+    private function sendTeamCallback(string $to,string $id): void
+    {
+        $locale=$this->cms->defaultLocale();
+        $t=ChatCallbackTemplates::render($this->cms,$locale);
+        $pl=$locale==='pl';
+        $heading=$pl?'Nowa prośba o kontakt z czatu':'New chat callback request';
+        $this->send($to,$t['team_subject'],$heading,$t['team_body'],
+            $pl?'Otwórz rozmowę':'Open conversation',rtrim($this->baseUrl,'/').'/conversations?conversation='.rawurlencode($id),
+            $pl?'Wewnętrzne powiadomienie dla zespołu.':'Internal team notification.',$t['brand']);
     }
 
     public function saveServer(array $input, int $actorId): void
@@ -89,6 +149,23 @@ final class EmailSystem
     {
         $templates = $this->templates();
         foreach (array_keys($templates) as $slug) {
+            if ($slug==='callback_routing') {
+                if (!isset($input[$slug])) continue;
+                $team=(int)($input[$slug]['team_id']??0);
+                if ($team!==0 && !in_array($team,array_map('intval',array_column((new AiRepository($this->db))->teams(false),'id')),true)) throw new RuntimeException('Choose an active chat team.');
+                $templates[$slug]=['team_id'=>$team];
+                continue;
+            }
+            if (str_starts_with($slug,'chat_callback_')) {
+                if (!isset($input[$slug])) continue;
+                foreach (ChatCallbackTemplates::LIMITS as $field=>$limit) {
+                    $text=trim((string)($input[$slug][$field]??''));
+                    if (($text==='' && $field!=='footer') || mb_strlen($text)>$limit || (in_array($field,['subject','team_subject'],true) && strpbrk($text,"\r\n")!==false)
+                        || preg_match('/\{\{|\}\}/',str_replace('{{site_name}}','',$text))) throw new RuntimeException('Check the chatbot template fields. Use {{site_name}} for the organisation name.');
+                    $templates[$slug][$field]=$text;
+                }
+                continue;
+            }
             $value = is_array($input[$slug] ?? null) ? $input[$slug] : [];
             $subject = trim((string)($value['subject'] ?? ''));
             $heading = trim((string)($value['heading'] ?? ''));
@@ -177,7 +254,7 @@ final class EmailSystem
         $mail = (array)($this->config['mail'] ?? []);
         $defaultMode = trim((string)($mail['host'] ?? '')) !== '' ? 'smtp' : (filter_var(($mail['from_address'] ?? ''), FILTER_VALIDATE_EMAIL) ? 'native' : 'disabled');
         $defaults = [
-            'server'=>['mode'=>$defaultMode,'host'=>(string)($mail['host']??''),'port'=>(int)($mail['port']??587),'security'=>(string)($mail['security']??(((int)($mail['port']??587)===465)?'ssl':'tls')),'username'=>(string)($mail['username']??''),'password_cipher'=>'','from_address'=>(string)($mail['from_address']??''),'from_name'=>(string)($mail['from_name']??'Sense CMS')],
+            'server'=>['mode'=>$defaultMode,'host'=>(string)($mail['host']??''),'port'=>(int)($mail['port']??587),'security'=>(string)($mail['security']??(((int)($mail['port']??587)===465)?'ssl':'tls')),'username'=>(string)($mail['username']??''),'password_cipher'=>'','from_address'=>(string)($mail['from_address']??''),'from_name'=>(trim((string)($mail['from_name']??'')) ?: (trim((string)$this->cms->setting('site_name','')) ?: 'Sense CMS'))],
             'appearance'=>['font'=>'Arial','page_bg'=>'#f1f5f9','content_bg'=>'#ffffff','text_color'=>'#334155','heading_color'=>'#0b2a63','accent_color'=>'#1763d6','muted_color'=>'#64748b','logo_url'=>self::DEFAULT_LOGO],
         ];
         $stored = $this->cms->setting(self::SETTINGS, []);
@@ -193,6 +270,7 @@ final class EmailSystem
             'welcome'=>['subject'=>'Welcome to {{site_name}}','heading'=>'Your account is ready','body'=>"Hello {{name}},\n\nYour account has been created with the {{role}} role. Use the secure button below to choose your password and enter the workspace.\n\nFor your protection, this one-time link expires in {{expires_in}}.",'button_label'=>'Set my password','footer'=>'If you were not expecting this invitation, you can safely ignore this message.'],
             'password_reset'=>['subject'=>'Reset your {{site_name}} password','heading'=>'Choose a new password','body'=>"Hello {{name}},\n\nWe received a request to reset the password for {{email}}. Use the secure button below to choose a new password.\n\nThis one-time link expires in {{expires_in}}. If you did not request a reset, no action is required.",'button_label'=>'Reset password','footer'=>'For security, this link can be used only once.'],
         ];
+        $defaults+=ChatCallbackTemplates::defaults()+['callback_routing'=>['team_id'=>0]];
         $stored = $this->cms->setting(self::TEMPLATES, []);
         if (!is_array($stored)) return $defaults;
         foreach ($defaults as $slug=>$template) $defaults[$slug] = array_replace($template,(array)($stored[$slug]??[]));
@@ -228,7 +306,7 @@ final class EmailSystem
         $this->send((string)$user['email'], strtr($template['subject'],$tokens), strtr($template['heading'],$tokens), strtr($template['body'],$tokens), strtr($template['button_label'],$tokens), $actionUrl, strtr($template['footer'],$tokens));
     }
 
-    private function send(string $to, string $subject, string $heading, string $body, string $button, string $actionUrl, string $footer): void
+    private function send(string $to, string $subject, string $heading, string $body, string $button, string $actionUrl, string $footer, ?string $brand = null): void
     {
         $settings = $this->settings();
         $server = $settings['server'];
@@ -239,7 +317,10 @@ final class EmailSystem
         $font = htmlspecialchars((string)$a['font'],ENT_QUOTES,'UTF-8');
         $paragraphs = array_values(array_filter(preg_split('/\R{2,}/u',trim($body))?:[],'strlen'));
         $content = implode('',array_map(static fn(string $part):string=>'<p style="margin:0 0 18px;line-height:1.7">'.nl2br(htmlspecialchars($part,ENT_QUOTES,'UTF-8'),false).'</p>',$paragraphs));
-        $html = '<!doctype html><html><body style="margin:0;padding:0;background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';color:'.htmlspecialchars($a['text_color'],ENT_QUOTES,'UTF-8').';font-family:'.$font.',Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';padding:32px 12px"><tr><td align="center"><table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:'.htmlspecialchars($a['content_bg'],ENT_QUOTES,'UTF-8').';border-radius:18px;overflow:hidden;box-shadow:0 12px 36px rgba(15,23,42,.08)"><tr><td align="center" style="padding:38px 40px 24px"><img src="'.htmlspecialchars($logo,ENT_QUOTES,'UTF-8').'" width="220" alt="SenseCMS" style="display:block;width:220px;max-width:70%;height:auto"></td></tr><tr><td style="padding:8px 40px 40px"><h1 style="margin:0 0 22px;color:'.htmlspecialchars($a['heading_color'],ENT_QUOTES,'UTF-8').';font-size:28px;line-height:1.25;text-align:center">'.htmlspecialchars($heading,ENT_QUOTES,'UTF-8').'</h1>'.$content.'<p style="margin:28px 0;text-align:center"><a href="'.htmlspecialchars($actionUrl,ENT_QUOTES,'UTF-8').'" style="display:inline-block;padding:14px 24px;border-radius:10px;background:'.htmlspecialchars($a['accent_color'],ENT_QUOTES,'UTF-8').';color:#fff;font-weight:700;text-decoration:none">'.htmlspecialchars($button,ENT_QUOTES,'UTF-8').'</a></p><p style="margin:24px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:13px;line-height:1.6">'.htmlspecialchars($footer,ENT_QUOTES,'UTF-8').'</p></td></tr></table><p style="margin:18px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:12px">Secure message from Sense CMS</p></td></tr></table></body></html>';
+        $masthead = $brand!==null && $a['logo_url']===self::DEFAULT_LOGO && strcasecmp($brand,'Sense CMS')!==0
+            ? '<strong style="font-size:22px">'.htmlspecialchars($brand,ENT_QUOTES,'UTF-8').'</strong>'
+            : '<img src="'.htmlspecialchars($logo,ENT_QUOTES,'UTF-8').'" width="220" alt="'.htmlspecialchars($brand ?? 'SenseCMS',ENT_QUOTES,'UTF-8').'" style="display:block;width:220px;max-width:70%;height:auto">';
+        $html = '<!doctype html><html><body style="margin:0;padding:0;background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';color:'.htmlspecialchars($a['text_color'],ENT_QUOTES,'UTF-8').';font-family:'.$font.',Arial,sans-serif"><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:'.htmlspecialchars($a['page_bg'],ENT_QUOTES,'UTF-8').';padding:32px 12px"><tr><td align="center"><table role="presentation" width="600" cellspacing="0" cellpadding="0" style="width:100%;max-width:600px;background:'.htmlspecialchars($a['content_bg'],ENT_QUOTES,'UTF-8').';border-radius:18px;overflow:hidden;box-shadow:0 12px 36px rgba(15,23,42,.08)"><tr><td align="center" style="padding:38px 40px 24px">'.$masthead.'</td></tr><tr><td style="padding:8px 40px 40px"><h1 style="margin:0 0 22px;color:'.htmlspecialchars($a['heading_color'],ENT_QUOTES,'UTF-8').';font-size:28px;line-height:1.25;text-align:center">'.htmlspecialchars($heading,ENT_QUOTES,'UTF-8').'</h1>'.$content.'<p style="margin:28px 0;text-align:center"><a href="'.htmlspecialchars($actionUrl,ENT_QUOTES,'UTF-8').'" style="display:inline-block;padding:14px 24px;border-radius:10px;background:'.htmlspecialchars($a['accent_color'],ENT_QUOTES,'UTF-8').';color:#fff;font-weight:700;text-decoration:none">'.htmlspecialchars($button,ENT_QUOTES,'UTF-8').'</a></p><p style="margin:24px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:13px;line-height:1.6">'.htmlspecialchars($footer,ENT_QUOTES,'UTF-8').'</p></td></tr></table><p style="margin:18px 0 0;color:'.htmlspecialchars($a['muted_color'],ENT_QUOTES,'UTF-8').';font-size:12px">'.htmlspecialchars($brand ?? 'Secure message from Sense CMS',ENT_QUOTES,'UTF-8').'</p></td></tr></table></body></html>';
         $text = $heading."\n\n".$body."\n\n".$button.': '.$actionUrl."\n\n".$footer;
         (new MailService($config))->sendHtml($to,$subject,$html,$text);
     }

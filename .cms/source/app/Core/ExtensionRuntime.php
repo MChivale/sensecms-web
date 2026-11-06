@@ -30,6 +30,21 @@ final class ExtensionRuntime
         return false;
     }
 
+    /** Older or inactive Calendar installations leave the tasks queued for a compatible handler. */
+    public function recordChatCalendarTasks(): int
+    {
+        if (!$this->db->query('SELECT 1 FROM chat_callback_receipts WHERE routed_at IS NOT NULL AND calendar_event_id IS NULL AND (route_after IS NULL OR route_after<=UTC_TIMESTAMP()) LIMIT 1')->fetchColumn()) return 0;
+        foreach ($this->activePackages() as $package) {
+            if ($package['type']!=='addon' || $package['slug']!=='calendar') continue;
+            $dir=$this->packageDirectory('addon','calendar',(string)$package['install_path']);
+            $file='scripts/chat-callback-tasks.php';
+            if ($dir===null || !is_file($dir.'/'.$file)) return 0;
+            $handler=require $this->payloadFile($dir,$file);
+            return $handler($this->db);
+        }
+        return 0;
+    }
+
     private function activePackages(): array
     {
         $statement = $this->db->query("SELECT type,slug,install_path FROM extension_packages WHERE active=1 AND type IN ('addon','plugin') AND install_path IS NOT NULL ORDER BY type,slug");

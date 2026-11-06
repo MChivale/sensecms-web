@@ -289,7 +289,7 @@ final class CalendarRepository
 
     private function conflicts(string $start, string $end, array $participants, array $resources, array $excludeIds, ?array $facilityScope): array
     {
-        $where = ['e.status<>"cancelled"', 'e.start_at<?', 'e.end_at>?']; $parameters = [$end, $start];
+        $where = ['e.status NOT IN ("cancelled","callback_task")', 'e.start_at<?', 'e.end_at>?']; $parameters = [$end, $start];
         $excludeIds=array_values(array_unique(array_filter(array_map('intval',$excludeIds))));
         if ($excludeIds) { $where[] = 'e.id NOT IN ('.implode(',',array_fill(0,count($excludeIds),'?')).')'; array_push($parameters,...$excludeIds); }
         $conditions = [];

@@ -95,6 +95,29 @@ final class PublicController extends Controller
         if (!$document || $userId < 1) { http_response_code(404); exit('Preview not found'); }
         $facility = $this->facilities->activeById((int) $document['facility_id'], $locale, $fallback);
         if (!$facility) { http_response_code(404); exit('Preview not found'); }
+        $scheduleTime = null;
+        if (isset($_GET['preview_at'])) {
+            header('Cache-Control: private, no-store');
+            header('X-Robots-Tag: noindex, nofollow');
+            $clock = $_GET['clock'] ?? 'facility';
+            $zone = new \DateTimeZone($clock === 'facility' ? ($facility['timezone'] ?: 'UTC') : 'UTC');
+            $value = is_string($_GET['preview_at']) ? $_GET['preview_at'] : '';
+            $instant = preg_match('/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/D', $value)
+                ? \DateTimeImmutable::createFromFormat('!Y-m-d\TH:i', $value, $zone) : false;
+            if ($instant && $instant->format('Y-m-d\TH:i') === $value && in_array($clock, ['facility','utc','schedule'], true)) {
+                $scheduleTime = $clock === 'schedule' ? $instant->format('Y-m-d H:i:s') : $this->cms->scheduleTimeAt($instant->getTimestamp());
+            }
+            if ($scheduleTime === null) {
+                http_response_code(422);
+                exit('Choose a valid local time. Use UTC if the clock changes on this date.');
+            }
+            $published = $document['status'] === 'published' || ($document['status'] === 'scheduled'
+                && !empty($document['published_at']) && $document['published_at'] <= $scheduleTime);
+            if (!$published || $document['visibility'] !== 'public') {
+                header('Content-Type: text/html; charset=utf-8');
+                exit('<!doctype html><html lang="en"><meta charset="utf-8"><title>Schedule preview</title><body data-sensecms-builder-preview><h1>This page is not public at the selected time.</h1><p>Check the page status, visibility and publication date.</p></body></html>');
+            }
+        }
         $draft = $this->cms->builderDraft($pageId, $userId);
         $blocks = is_array($draft['blocks'] ?? null) ? $draft['blocks'] : (array) ($document['blocks'] ?? []);
         $translation = (array) ($document['translations'][$locale] ?? $document['translations'][$fallback] ?? reset($document['translations']));
@@ -104,7 +127,8 @@ final class PublicController extends Controller
             'excerpt'=>(string)($translation['excerpt']??''),
             'seo_title'=>(string)($translation['seo_title']??''),
             'seo_description'=>(string)($translation['seo_description']??''),
-            'blocks'=>PageBuilder::previewBlocks($blocks,$locale,$fallback),
+            'blocks'=>PageBuilder::previewBlocks($blocks,$locale,$fallback,$scheduleTime),
+            'canvas_theme_edits'=>$draft['themeEdits']??[],
         ]);
         header('Cache-Control: private, no-store');
         header('X-Robots-Tag: noindex, nofollow');
@@ -145,6 +169,9 @@ final class PublicController extends Controller
         if (!$page) { http_response_code(404); exit($contentType==='post'?'Post not found':'Page not found'); }
         if($contentType==='post')$page['blocks']=[['type'=>'text','payload'=>['eyebrow'=>'News','title'=>$page['title'],'text'=>$page['content']??''],'shared'=>[]]];
         $activeTheme=(string)$this->cms->setting('active_theme','sensecms');$preview=$this->themePreview();$themeSlug=$preview['slug']??$activeTheme;$theme=$this->themes->find($themeSlug);$configs=(array)$this->cms->setting('theme_configurations',[]);$appearance=$this->themeConfiguration($themeSlug,$theme,$configs);$isThemePreview=$preview!==null;if($isThemePreview){$drafts=(array)$this->cms->setting('theme_drafts',[]);$draft=is_array($drafts[$themeSlug]??null)?$drafts[$themeSlug]:[];$appearance=ThemeContract::sanitize($theme,(array)($draft['settings']??[]),$appearance);}
+        if ($isBuilderPreview && $themeSlug==='sensecms') foreach ($page['canvas_theme_edits'] as $item) {
+            if ($item['id']==='banner' && $item['locale']===($locale==='pl'?'pl':'en')) foreach ($item['values'] as $k=>$v) $appearance['chatbot_'.$k.($locale==='pl'?'_pl':'')]=$v;
+        }
         $states=(array)$this->cms->setting('extension_states',[]);$activeAddons=array_keys(array_filter($states));$catalog = PageBuilder::catalog($theme, $this->plugins->all(), $this->cms->activePluginSlugs(),$this->addons->all(),$activeAddons);
         $supportedBlocks = array_fill_keys(array_keys($catalog), true);
         if ($supportedBlocks) $page['blocks'] = array_values(array_filter((array) ($page['blocks'] ?? []), static fn (array $block): bool => isset($supportedBlocks[(string) ($block['type'] ?? '')])));
@@ -187,9 +214,34 @@ final class PublicController extends Controller
             try { require $file; return (string) ob_get_contents(); }
             finally { ob_end_clean(); }
         })($file, $data);
+        if (($data['theme']['slug'] ?? '') === 'sensecms' && ($data['contentType'] ?? '') === 'page') {
+            $key=\App\Core\CanvasThemeContent::key((int)$data['page']['id'],$data['locale']);
+            $edit=!empty($data['isBuilderPreview']) && !isset($_GET['preview_at']);
+            $inventory=[];
+            $overlay=[];
+            if (!empty($data['isBuilderPreview'])) foreach ($data['page']['canvas_theme_edits']??[] as $item)
+                if ($item['locale']===$data['locale'] && $item['id']!=='banner') $overlay[$item['id']]=$item['values'];
+            $html=\App\Core\CanvasThemeContent::render($html,(array)$this->cms->setting($key,[]),$edit,$inventory,$overlay);
+            if ($edit) {
+                $maps=(array)($_SESSION['canvas_theme_fields']??[]);
+                unset($maps[$key]); $maps[$key]=$inventory;
+                $_SESSION['canvas_theme_fields']=array_slice($maps,-5,null,true);
+            }
+        }
         if (!empty($data['isBuilderPreview'])) {
-            $assets = '<link rel="stylesheet" href="/theme/sensecms-builder-preview.css?v=20260920-live-1"><script src="/theme/sensecms-builder-preview.js?v=20260920-live-1" defer></script>';
-            $html = str_replace('</head>', $assets . '</head>', $html);
+            $scheduled = isset($_GET['preview_at']);
+            if (!$scheduled) {
+                $sources=[];
+                foreach ($data['page']['blocks']??[] as $block) {
+                    foreach ($block['collection']['items']??[] as $item) {
+                        if (!empty($item['id']) && in_array($item['kind']??'', ['page','post'], true))
+                            $sources[$block['uid']][$item['url']]='/content/'.$item['kind'].'s/'.(int)$item['id'].'/edit';
+                    }
+                }
+                if ($sources) $html=str_replace('</body>','<script type="application/json" data-canvas-sources>'.json_encode($sources,JSON_HEX_TAG|JSON_HEX_AMP|JSON_THROW_ON_ERROR).'</script></body>',$html);
+                $assets = '<link rel="stylesheet" href="/theme/sensecms-builder-preview.css?v=20261101-elements-1"><script src="/theme/sensecms-builder-preview.js?v=20261101-inline-1" defer></script>';
+                $html = str_replace('</head>', $assets . '</head>', $html);
+            }
             $html = preg_replace('/<body\b/', '<body data-sensecms-builder-preview', $html, 1) ?? $html;
         }
         if (!empty($data['extensionStates']['live-chat']) && empty($data['isThemePreview'])) {

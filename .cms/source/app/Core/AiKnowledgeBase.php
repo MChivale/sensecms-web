@@ -54,7 +54,7 @@ final class AiKnowledgeBase
 
     public function trainingWorkspace():array
     {
-        $datasets=$this->db->query("SELECT d.*,p.name provider_name,COUNT(e.id) example_count,SUM(e.approved=1) approved_count FROM ai_training_datasets d LEFT JOIN ai_providers p ON p.id=d.provider_id LEFT JOIN ai_training_examples e ON e.dataset_id=d.id WHERE d.status<>'archived' GROUP BY d.id ORDER BY d.updated_at DESC,d.id DESC")->fetchAll();
+        $datasets=$this->db->query("SELECT d.*,p.name provider_name,COUNT(e.id) example_count,SUM(CASE WHEN e.approved=1 THEN 1 ELSE 0 END) approved_count FROM ai_training_datasets d LEFT JOIN ai_providers p ON p.id=d.provider_id LEFT JOIN ai_training_examples e ON e.dataset_id=d.id WHERE d.status<>'archived' GROUP BY d.id,p.name ORDER BY d.updated_at DESC,d.id DESC")->fetchAll();
         $examples=$this->db->query("SELECT e.*,d.name dataset_name,COALESCE(u.name,'System') created_by_name FROM ai_training_examples e INNER JOIN ai_training_datasets d ON d.id=e.dataset_id LEFT JOIN users u ON u.id=e.created_by WHERE d.status<>'archived' ORDER BY e.updated_at DESC,e.id DESC LIMIT 100")->fetchAll();
         $evaluations=$this->db->query("SELECT e.*,COALESCE(u.name,'System') created_by_name FROM ai_evaluation_cases e LEFT JOIN users u ON u.id=e.created_by WHERE e.active=1 ORDER BY e.updated_at DESC,e.id DESC LIMIT 100")->fetchAll();
         $jobs=$this->db->query("SELECT j.*,d.name dataset_name,p.name provider_name,COALESCE(u.name,'System') created_by_name FROM ai_training_jobs j INNER JOIN ai_training_datasets d ON d.id=j.dataset_id INNER JOIN ai_providers p ON p.id=j.provider_id LEFT JOIN users u ON u.id=j.created_by ORDER BY j.created_at DESC,j.id DESC LIMIT 50")->fetchAll();

@@ -6,7 +6,7 @@ namespace App\Core;
 
 final class HtmlSanitizer
 {
-    private const ALLOWED = ['a','abbr','article','aside','audio','b','blockquote','br','caption','cite','code','dd','details','div','dl','dt','em','figcaption','figure','h2','h3','h4','h5','h6','hr','i','img','li','mark','ol','p','pre','section','small','source','span','strong','sub','summary','sup','table','tbody','td','tfoot','th','thead','tr','u','ul','video'];
+    private const ALLOWED = ['a','abbr','article','aside','audio','b','blockquote','br','caption','cite','code','dd','details','div','dl','dt','em','figcaption','figure','h2','h3','h4','h5','h6','hr','i','img','li','mark','ol','p','pre','s','del','section','small','source','span','strong','sub','summary','sup','table','tbody','td','tfoot','th','thead','tr','u','ul','video'];
     private const ATTRIBUTES = ['alt','aria-label','class','colspan','controls','height','href','loading','playsinline','poster','preload','rel','role','rowspan','src','target','title','type','width'];
 
     public static function sanitize(string $html): string
@@ -38,6 +38,11 @@ final class HtmlSanitizer
             }
             foreach (iterator_to_array($node->attributes) as $attribute) {
                 $name = strtolower($attribute->name);
+                if ($name === 'style' && in_array($tag, ['p','div','h2','h3','h4','h5','h6','blockquote','li'], true)
+                    && preg_match('/^\s*text-align\s*:\s*(left|right|center|justify)\s*;?\s*$/iD', $attribute->value, $alignment)) {
+                    $node->setAttribute('style', 'text-align: ' . strtolower($alignment[1]));
+                    continue;
+                }
                 if (!in_array($name, self::ATTRIBUTES, true) && !str_starts_with($name, 'aria-')) { $node->removeAttributeNode($attribute); continue; }
                 if (in_array($name, ['href','src','poster'], true) && !self::safeUrl($attribute->value, $tag === 'a'&&$name==='href')) $node->removeAttribute($name);
             }
