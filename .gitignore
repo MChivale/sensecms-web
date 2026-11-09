@@ -5,6 +5,7 @@
 /.install/web/
 /.cms/source/.env
 /.cms/source/storage/
+/.srv/*
 /web/.env
 /web/storage/
 *.log
