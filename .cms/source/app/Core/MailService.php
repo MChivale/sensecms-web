@@ -58,7 +58,13 @@ final class MailService
             $normalized = str_replace(["\r\n", "\r"], "\n", $body);
             $wireBody = str_replace("\n", "\r\n", preg_replace('/^\./m', '..', $normalized));
             $message = implode("\r\n", array_merge(['Date: ' . date(DATE_RFC2822), 'To: ' . $to, 'Subject: ' . $this->encode($subject)], $headers)) . "\r\n\r\n" . $wireBody . "\r\n.";
-            $this->command($stream, $message, [250]);
+            try {
+                $this->command($stream, $message, [250]);
+            } catch (\RuntimeException $error) {
+                if ($error->getCode()>=400 && $error->getCode()<600) throw $error;
+                // The server may already have accepted DATA if its reply was lost.
+                throw new MailDeliveryUncertain('SMTP delivery could not be confirmed.', 0, $error);
+            }
             // DATA acceptance is delivery handoff; a dropped QUIT must not trigger a duplicate.
             try { $this->command($stream, 'QUIT', [221]); } catch (\RuntimeException) {}
         } finally { fclose($stream); }
@@ -68,7 +74,8 @@ final class MailService
     private function expect($stream, array $codes): void
     {
         $response = ''; do { $line = fgets($stream, 1024); if ($line === false) break; $response .= $line; } while (isset($line[3]) && $line[3] === '-');
-        if (!in_array((int) substr($response, 0, 3), $codes, true)) throw new \RuntimeException('SMTP rejected the request.');
+        $code=(int)substr($response,0,3);
+        if (!in_array($code, $codes, true)) throw new \RuntimeException('SMTP rejected the request.', $code);
     }
     private function mailbox(string $name, string $email): string { return $this->encode(str_replace(["\r", "\n"], '', $name)) . ' <' . $email . '>'; }
     private function encode(string $value): string { return '=?UTF-8?B?' . base64_encode(str_replace(["\r", "\n"], '', $value)) . '?='; }

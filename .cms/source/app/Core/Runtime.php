@@ -61,7 +61,16 @@ final class Runtime
 
     public static function connect(#[\SensitiveParameter] array $config): PDO
     {
-        return new PDO(sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $config['host'], $config['port'], $config['name']), $config['user'], $config['password'],
+        $driver = $config['driver'] ?? 'mysql';
+        $dsn = match ($driver) {
+            'pgsql' => 'pgsql:host=%s;port=%d;dbname=%s',
+            'mysql' => 'mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4',
+            default => throw new RuntimeException('Unsupported installation database driver.'),
+        };
+        $connection = $driver === 'pgsql' ? PostgresConnection::class : PDO::class;
+        $db = new $connection(sprintf($dsn, $config['host'], $config['port'], $config['name']), $config['user'], $config['password'],
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION, PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC, PDO::ATTR_EMULATE_PREPARES => false, PDO::ATTR_TIMEOUT => 5]);
+        if ($driver === 'pgsql') $db->exec("SET TIME ZONE 'UTC'");
+        return $db;
     }
 }

@@ -155,7 +155,20 @@ not a Stable production release or an automatic updater.
 resumption and licence-first checks plus private-path denial through isolated
 loopback Nginx/PHP-FPM processes on Linux (root required). It does not modify
 system services or use a production database. This covers preparation only;
-licensed database completion and target HTTPS/Apache acceptance remain separate.
+licensed database completion uses the guarded `tests/installer-http.py` fixture.
+It can target an isolated loopback Nginx/Apache server using
+`SENSE_INSTALL_TEST_URL`; HTTPS requires normal certificate verification, with an
+optional fixture CA in `SENSE_INSTALL_TEST_CA`. Never point these fixtures at an
+existing installation or production database.
+
+On 2026-10-31 the current 433-file candidate passed exact-artifact extraction,
+licensed fresh-database installation, and isolated Nginx/Apache acceptance. The
+reviewed two-file pair is retained in `.local/sensecms-web-installer-20261031`;
+its `install.zip` SHA-256 is
+`c797a7052c71f242c6631103b8c63ce89f211337129fd6a6a4f054d50283bd6e`.
+The older `.install/web` pair was not replaced. See the latest work-log entry for
+test evidence and scope. The candidate remains unsigned DEVELOPMENT; these checks
+do not publish a signed Stable release or enable automatic Core updates.
 
 ## Product website and packages
 
@@ -172,13 +185,30 @@ Free downloads require Core licensing; paid packages their own identity/validity
 
 ## Continuing work
 
-Production installations are independent: www runs as `sensecms`, demo as
-`demo-sensecms`, with separate PHP-FPM pools/sockets and database identities.
-Demo templates are `deploy/php/demo-sensecms.conf` and
-`deploy/nginx/demo.sensecms.com.conf`. Private runtime/session/tmp/log files belong
-only to that installation's user. Public upload roots use owner `demo-sensecms`,
-group `www-data`, mode2750 so Core's0640 uploads remain readable by Nginx without
-exposing private storage. Do not add either runtime user to the other's group.
+ISPConfig 3 owns the Apache2 vhosts, certificates and PHP 8.5 FPM pools. The www
+site runs as `web128:client9` with PostgreSQL 17 database `sensecms_site`. Demo
+runs as `web129:client9` with its own database `sensecms_demo`. Both have pgvector.
+Each `/home/<domain>/web` is public. The application and its credentials belong in
+`/home/<domain>/private/sensecms`. PHP CLI and FPM have both `pdo_pgsql` for the
+live installations and `pdo_mysql` for compatibility with the archived installer.
+
+On the www server, `sh deploy/install-production.sh --check` checks the existing
+production environment. From a private `/root/sensecms-deploy.*` staging directory,
+`sh deploy/publish-site.sh --check` validates the Apache entry points and `--apply`
+publishes them with a backup and HTTP check. Core files and frontend assets are deployed
+separately to their release-specific destinations. Use ISPConfig for changes to vhosts
+and pools. Fresh installation instructions above describe the preserved MariaDB edition.
+
+The www chatbot combines keyword search with cosine similarity over published, ready
+knowledge fragments in the visitor's language or shared across languages. Semantic
+search is enabled per installation through private `storage/semantic-search.json`
+with `model` set to `text-embedding-3-large` and `provider_slug` naming the site's
+enabled official OpenAI provider. It uses the existing encrypted key. Apply
+`deploy/postgresql/semantic-search.sql` as that site's database owner before enabling.
+The Knowledge Base cron fills missing 1536-dimensional vectors in bounded batches.
+Unchanged content reuses cached vectors after a rebuild. Removing the private
+configuration disables both embedding calls and semantic retrieval. The keyword
+path continues to work when the embedding service is unavailable.
 `scripts/deploy-demo-isolation.py` records the completed, pinned one-shot migration;
 it is not a general re-runnable deploy command. Inspect current state before changes.
 

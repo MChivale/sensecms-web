@@ -7,7 +7,8 @@
     const labels = JSON.parse(widget.dataset.labels), input = form.elements.message, email = form.elements.email, submit = form.querySelector('[type=submit]');
     let timer = 0, polling = false, sending = false, ended = false, restarting = false, queued = false, emailRequested = false, seen = new Set();
     const request = async (path, data) => {
-        const abort = new AbortController(), timeout = setTimeout(() => abort.abort(), 15000);
+        // Sending and state polling can both wait for the provider's 55-second generation.
+        const abort = new AbortController(), timeout = setTimeout(() => abort.abort(), 70000);
         try {
             const response = await fetch(path, {method: data ? 'POST' : 'GET', credentials: 'same-origin', cache: 'no-store', headers: {'Accept': 'application/json'}, body: data, signal: abort.signal});
             const result = await response.json();
@@ -36,7 +37,7 @@
         }
         const text = document.createElement('p'), parts = String(message.content || '').split(/\n(Source:\s+[^\n]+)/g);
         for (const part of parts) {
-            const source = part.match(/^Source:\s+(\/[^\s]+)$/);
+            const source = part.match(/^Source:\s+(\/(?!\/)[^\s\\]*)$/);
             if (source) {
                 const link = document.createElement('a'); link.href = source[1]; link.textContent = labels.source || 'Source'; link.className = 'sense-chat-source'; text.append(link);
             } else if (part) text.append(document.createTextNode(part));
@@ -79,10 +80,22 @@
         } catch { if (!sending) setStatus(labels.refresh, 'error'); }
         finally { polling = false; schedule(); }
     };
-    const toggle = show => {
+    const panelStateKey = 'sensecms-public-chat-open';
+    const toggle = (show, userInitiated = true) => {
         panel.hidden = !show; open.setAttribute('aria-expanded', String(show)); clearTimeout(timer); timer = 0;
-        if (show) { input.focus(); poll(); } else open.focus();
+        if (userInitiated) {
+            try { sessionStorage.setItem(panelStateKey, String(show)); } catch {}
+            (show ? input : open).focus();
+        }
+        if (show) poll();
     };
+    const restorePanel = () => {
+        let show;
+        try { show = sessionStorage.getItem(panelStateKey) === 'true'; } catch { return; }
+        if (show !== !panel.hidden) toggle(show, false);
+    };
+    restorePanel();
+    window.addEventListener('pageshow', event => { if (event.persisted) restorePanel(); });
     open.addEventListener('click', () => toggle(panel.hidden));
     close.addEventListener('click', () => toggle(false));
     widget.addEventListener('keydown', event => { if (event.key === 'Escape' && !panel.hidden) { event.preventDefault(); toggle(false); } });
@@ -92,10 +105,10 @@
     fresh.addEventListener('click', () => { restarting = true; ended = false; queued = false; emailRequested = false; emailWrap.hidden = true; email.required = false; input.required = true; email.value = ''; seen.clear(); messages.replaceChildren(); intro.hidden = false; setStatus(); controls(); input.focus(); });
     form.addEventListener('submit', async event => {
         event.preventDefault(); if (sending || ended || (!input.value.trim() && !email.value.trim()) || !form.reportValidity()) return;
-        sending = true; controls(); setStatus();
-        const body = new URLSearchParams({message: input.value.trim(), name: form.elements.name.value.trim(), email: email.value.trim(), locale: widget.dataset.locale, csrf: widget.dataset.csrf});
+        sending = true; controls(); setStatus(labels.sending);
+        const body = new URLSearchParams({message: input.value.trim(), name: form.elements.name.value.trim(), email: emailRequested ? email.value.trim() : '', locale: widget.dataset.locale, csrf: widget.dataset.csrf});
         try {
-            await request(widget.dataset.endpoint || '/api/chat/message', body); input.value = ''; input.style.height = ''; restarting = false;
+            await request(widget.dataset.endpoint || '/api/chat/message', body); setStatus(); input.value = ''; input.style.height = ''; restarting = false;
             const result = await request('/api/chat/state'); render(result.data); messages.scrollTop = messages.scrollHeight;
         } catch (error) { setStatus(error.name === 'AbortError' ? labels.error : error.message || labels.error, 'error'); }
         finally { sending = false; controls(); schedule(); if (!panel.hidden) input.focus(); }

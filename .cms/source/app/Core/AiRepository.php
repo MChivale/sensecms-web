@@ -10,6 +10,24 @@ final class AiRepository
 {
     public function __construct(private readonly PDO $db) {}
 
+    public function scenarios(): ChatScenarios { return new ChatScenarios($this->db); }
+
+    public function ifOpenForAssistant(string $conversation, callable $respond): ?array
+    {
+        $this->db->beginTransaction();
+        try {
+            $lock=$this->db->prepare('SELECT channel,status FROM ai_conversations WHERE id=? FOR UPDATE');
+            $lock->execute([$conversation]);
+            $state=$lock->fetch(PDO::FETCH_ASSOC);
+            $result=$state && $state['channel']==='ai' && $state['status']==='open' ? $respond() : null;
+            $this->db->commit();
+            return $result;
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
+
     public function providers(): array
     {
         $rows=$this->db->query('SELECT id,slug,name,driver,base_url,default_model,options,enabled,priority,verified_at,last_error,updated_at,CASE WHEN api_key_encrypted IS NULL OR api_key_encrypted="" THEN 0 ELSE 1 END configured FROM ai_providers ORDER BY priority,name,id')->fetchAll();
@@ -35,7 +53,7 @@ final class AiRepository
     public function auditProvider(int$userId,int$id,string$event,array$context=[]):void{$this->db->prepare('INSERT INTO activity_log (user_id,event,subject_type,subject_id,context,created_at) VALUES (?,?,?,?,?,NOW())')->execute([$userId?:null,$event,'ai_provider',$id,json_encode($context,JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES)]);}
     public function dashboard(): array
     {
-        $usage=$this->db->query("SELECT COUNT(*) requests,COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,COALESCE(SUM(COALESCE(actual_cost_usd,0)),0) cost FROM ai_usage_events WHERE status='completed' AND created_at>=DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')")->fetch();
+        $usage=$this->db->query("SELECT COALESCE(SUM(status='completed'),0) requests,COALESCE(SUM(COALESCE(input_tokens,0)+COALESCE(output_tokens,0)),0) tokens,COALESCE(SUM(COALESCE(actual_cost_usd,0)),0) cost FROM ai_usage_events WHERE status IN ('completed','failed') AND created_at>=DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')")->fetch();
         return['providers'=>(int)$this->db->query('SELECT COUNT(*) FROM ai_providers WHERE enabled=1')->fetchColumn(),'knowledge'=>(int)$this->db->query("SELECT COUNT(*) FROM ai_knowledge_documents WHERE status='published'")->fetchColumn(),'open_chats'=>(int)$this->db->query("SELECT COUNT(*) FROM ai_conversations WHERE status IN ('open','queued','assigned')")->fetchColumn(),'AI requests this month'=>(int)($usage['requests']??0),'AI tokens this month'=>(int)($usage['tokens']??0),'estimated cost this month'=>'$'.number_format((float)($usage['cost']??0),2)];
     }
 
@@ -46,15 +64,21 @@ final class AiRepository
     }
     public function finishBuilderRun(int$id,bool$ok,int$outputChars=0,?array$usage=null,?string$error=null):void{$this->db->prepare('UPDATE page_builder_ai_runs SET status=?,output_chars=?,input_tokens=?,output_tokens=?,error_code=?,completed_at=NOW() WHERE id=?')->execute([$ok?'completed':'failed',max(0,$outputChars),isset($usage['input'])?max(0,(int)$usage['input']):null,isset($usage['output'])?max(0,(int)$usage['output']):null,$ok?null:mb_substr((string)$error,0,80),$id]);}
 
-    public function beginUsage(array$provider,string$purpose,?int$userId,int$inputChars,int$maxOutputTokens):int
+    public function beginUsage(array$provider,string$purpose,?int$userId,int$inputChars,int$maxOutputTokens,int$dailyChatLimit=0):int
     {
         if(!in_array($purpose,['builder','posts','chat','verification'],true))throw new \RuntimeException('The AI usage purpose is invalid.');if(in_array($purpose,['builder','posts'],true)&&$userId){$rate=$this->db->prepare("SELECT COUNT(*) FROM ai_usage_events WHERE user_id=? AND purpose IN ('builder','posts') AND created_at>DATE_SUB(NOW(),INTERVAL 10 MINUTE)");$rate->execute([$userId]);if((int)$rate->fetchColumn()>=20)throw new \RuntimeException('AI request limit reached. Wait a few minutes and try again.',429);}$limits=$this->usageLimits($provider);$input=(int)ceil(max(0,$inputChars)/4);$output=max(0,$maxOutputTokens);$estimated=$this->cost($input,$output,$limits);
-        $this->db->beginTransaction();try{$providerId=(int)$provider['id'];$lock=$this->db->prepare('SELECT id FROM ai_providers WHERE id=? FOR UPDATE');$lock->execute([$providerId]);if(!$lock->fetchColumn())throw new \RuntimeException('The selected AI provider no longer exists.');$daily=$this->usageWindow($providerId,'CURDATE()');$monthly=$this->usageWindow($providerId,"DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')");$this->assertBudget('Daily AI request',(float)$daily['requests'],1,(float)$limits['daily_requests']);$this->assertBudget('Monthly AI request',(float)$monthly['requests'],1,(float)$limits['monthly_requests']);$this->assertBudget('Daily AI token',(float)$daily['tokens'],$input+$output,(float)$limits['daily_tokens']);$this->assertBudget('Monthly AI token',(float)$monthly['tokens'],$input+$output,(float)$limits['monthly_tokens']);$this->assertBudget('Daily AI cost',(float)$daily['cost'],$estimated,(float)$limits['daily_cost_usd']);$this->assertBudget('Monthly AI cost',(float)$monthly['cost'],$estimated,(float)$limits['monthly_cost_usd']);$statement=$this->db->prepare("INSERT INTO ai_usage_events (provider_id,provider_slug,model,purpose,user_id,status,reserved_input_tokens,reserved_output_tokens,input_cost_per_million,output_cost_per_million,estimated_cost_usd,created_at) VALUES (?,?,?,?,?,'requested',?,?,?,?,?,NOW())");$statement->execute([$providerId,$provider['slug'],$provider['default_model'],$purpose,$userId?:null,$input,$output,$limits['input_cost_per_million'],$limits['output_cost_per_million'],$estimated]);$id=(int)$this->db->lastInsertId();$this->db->commit();return$id;}catch(\Throwable$error){if($this->db->inTransaction())$this->db->rollBack();throw$error;}
+        $this->db->beginTransaction();try{
+            // The chat cap spans providers; serialize reservations before reading its count.
+            if($purpose==='chat'&&$dailyChatLimit>0){
+                $this->db->query('SELECT id FROM ai_providers ORDER BY id FOR UPDATE')->fetchAll(PDO::FETCH_COLUMN);
+                $this->assertBudget('Daily visitor AI request',$this->usageCount('chat'),1,$dailyChatLimit);
+            }
+            $providerId=(int)$provider['id'];$lock=$this->db->prepare('SELECT id FROM ai_providers WHERE id=? FOR UPDATE');$lock->execute([$providerId]);if(!$lock->fetchColumn())throw new \RuntimeException('The selected AI provider no longer exists.');$daily=$this->usageWindow($providerId,'CURDATE()');$monthly=$this->usageWindow($providerId,"DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')");$this->assertBudget('Daily AI request',(float)$daily['requests'],1,(float)$limits['daily_requests']);$this->assertBudget('Monthly AI request',(float)$monthly['requests'],1,(float)$limits['monthly_requests']);$this->assertBudget('Daily AI token',(float)$daily['tokens'],$input+$output,(float)$limits['daily_tokens']);$this->assertBudget('Monthly AI token',(float)$monthly['tokens'],$input+$output,(float)$limits['monthly_tokens']);$this->assertBudget('Daily AI cost',(float)$daily['cost'],$estimated,(float)$limits['daily_cost_usd']);$this->assertBudget('Monthly AI cost',(float)$monthly['cost'],$estimated,(float)$limits['monthly_cost_usd']);$statement=$this->db->prepare("INSERT INTO ai_usage_events (provider_id,provider_slug,model,purpose,user_id,status,reserved_input_tokens,reserved_output_tokens,input_cost_per_million,output_cost_per_million,estimated_cost_usd,created_at) VALUES (?,?,?,?,?,'requested',?,?,?,?,?,NOW())");$statement->execute([$providerId,$provider['slug'],$provider['default_model'],$purpose,$userId?:null,$input,$output,$limits['input_cost_per_million'],$limits['output_cost_per_million'],$estimated]);$id=(int)$this->db->lastInsertId();$this->db->commit();return$id;}catch(\Throwable$error){if($this->db->inTransaction())$this->db->rollBack();throw$error;}
     }
 
     public function finishUsage(int$id,bool$ok,?array$usage=null,?string$error=null):void
     {
-        $input=$ok?max(0,(int)($usage['input']??0)):null;$output=$ok?max(0,(int)($usage['output']??0)):null;$row=$this->db->prepare('SELECT reserved_input_tokens,reserved_output_tokens,input_cost_per_million,output_cost_per_million FROM ai_usage_events WHERE id=? LIMIT 1');$row->execute([$id]);$pricing=$row->fetch()?:['reserved_input_tokens'=>0,'reserved_output_tokens'=>0,'input_cost_per_million'=>0,'output_cost_per_million'=>0];if($ok&&$input+$output===0){$input=(int)$pricing['reserved_input_tokens'];$output=(int)$pricing['reserved_output_tokens'];}$cost=$ok?(($input*(float)$pricing['input_cost_per_million']+$output*(float)$pricing['output_cost_per_million'])/1000000):null;$this->db->prepare("UPDATE ai_usage_events SET status=?,input_tokens=?,output_tokens=?,actual_cost_usd=?,error_code=?,completed_at=NOW() WHERE id=? AND status='requested'")->execute([$ok?'completed':'failed',$input,$output,$cost,$ok?null:mb_substr((string)$error,0,80),$id]);
+        $known=$ok||$usage!==null;$input=$known?max(0,(int)($usage['input']??0)):null;$output=$known?max(0,(int)($usage['output']??0)):null;$row=$this->db->prepare('SELECT reserved_input_tokens,reserved_output_tokens,input_cost_per_million,output_cost_per_million FROM ai_usage_events WHERE id=? LIMIT 1');$row->execute([$id]);$pricing=$row->fetch()?:['reserved_input_tokens'=>0,'reserved_output_tokens'=>0,'input_cost_per_million'=>0,'output_cost_per_million'=>0];if($ok&&$input+$output===0){$input=(int)$pricing['reserved_input_tokens'];$output=(int)$pricing['reserved_output_tokens'];}$cost=$known?(($input*(float)$pricing['input_cost_per_million']+$output*(float)$pricing['output_cost_per_million'])/1000000):null;$this->db->prepare("UPDATE ai_usage_events SET status=?,input_tokens=?,output_tokens=?,actual_cost_usd=?,error_code=?,completed_at=NOW() WHERE id=? AND status='requested'")->execute([$ok?'completed':'failed',$input,$output,$cost,$ok?null:mb_substr((string)$error,0,80),$id]);
     }
 
     public function usageSummary(array$provider):array
@@ -64,7 +88,7 @@ final class AiRepository
 
     private function usageWindow(int$providerId,string$since):array
     {
-        $sql="SELECT COUNT(*) requests,COALESCE(SUM(CASE WHEN status='requested' THEN reserved_input_tokens+reserved_output_tokens WHEN status='completed' THEN COALESCE(input_tokens,0)+COALESCE(output_tokens,0) ELSE 0 END),0) tokens,COALESCE(SUM(CASE WHEN status='requested' THEN estimated_cost_usd WHEN status='completed' THEN COALESCE(actual_cost_usd,0) ELSE 0 END),0) cost FROM ai_usage_events WHERE provider_id=? AND created_at>={$since}";$statement=$this->db->prepare($sql);$statement->execute([$providerId]);$row=$statement->fetch()?:[];return['requests'=>(int)($row['requests']??0),'tokens'=>(int)($row['tokens']??0),'cost'=>(float)($row['cost']??0)];
+        $sql="SELECT COUNT(*) requests,COALESCE(SUM(CASE WHEN status='requested' THEN reserved_input_tokens+reserved_output_tokens WHEN status IN ('completed','failed') THEN COALESCE(input_tokens,0)+COALESCE(output_tokens,0) ELSE 0 END),0) tokens,COALESCE(SUM(CASE WHEN status='requested' THEN estimated_cost_usd WHEN status IN ('completed','failed') THEN COALESCE(actual_cost_usd,0) ELSE 0 END),0) cost FROM ai_usage_events WHERE provider_id=? AND created_at>={$since}";$statement=$this->db->prepare($sql);$statement->execute([$providerId]);$row=$statement->fetch()?:[];return['requests'=>(int)($row['requests']??0),'tokens'=>(int)($row['tokens']??0),'cost'=>(float)($row['cost']??0)];
     }
     private function usageLimits(array$provider):array{$limits=(array)($provider['options']['limits']??[]);return['daily_requests'=>max(0,(int)($limits['daily_requests']??0)),'monthly_requests'=>max(0,(int)($limits['monthly_requests']??0)),'daily_tokens'=>max(0,(int)($limits['daily_tokens']??0)),'monthly_tokens'=>max(0,(int)($limits['monthly_tokens']??0)),'daily_cost_usd'=>max(0,(float)($limits['daily_cost_usd']??0)),'monthly_cost_usd'=>max(0,(float)($limits['monthly_cost_usd']??0)),'input_cost_per_million'=>max(0,(float)($limits['input_cost_per_million']??0)),'output_cost_per_million'=>max(0,(float)($limits['output_cost_per_million']??0)),'warning_percent'=>max(50,min(100,(int)($limits['warning_percent']??80)))];}
     private function cost(int$input,int$output,array$limits):float{return($input*(float)$limits['input_cost_per_million']+$output*(float)$limits['output_cost_per_million'])/1000000;}
@@ -72,16 +96,40 @@ final class AiRepository
 
     public function contextMatches(string $message, string $locale): array
     {
-        $terms = array_values(array_unique(array_slice(array_filter(preg_split('/[^[:alnum:]]+/u', mb_strtolower($message)) ?: [], static fn(string $term): bool => mb_strlen($term) > 2), 0, 10)));
-        if (!$terms) return [];
-        $score=implode('+',array_fill(0,count($terms),'CASE WHEN LOWER(c.content) LIKE ? THEN 1 ELSE 0 END'));$where=implode(' OR ',array_fill(0,count($terms),'LOWER(c.content) LIKE ?'));$likes=array_map(static fn(string$term):string=>'%'.$term.'%',$terms);
-        $statement=$this->db->prepare("SELECT c.content,d.title,d.source_url,({$score}) relevance FROM ai_knowledge_chunks c INNER JOIN ai_knowledge_documents d ON d.id=c.document_id WHERE d.status='published' AND d.index_status='ready' AND (d.locale=? OR d.locale IS NULL) AND ({$where}) ORDER BY relevance DESC,d.updated_at DESC,c.sort_order LIMIT 8");
-        $statement->execute(array_merge($likes,[$locale],$likes));return array_map(static fn(array$row):array=>['title'=>trim((string)$row['title']),'url'=>trim((string)($row['source_url']??'')),'content'=>(string)$row['content']],$statement->fetchAll());
+        $stop=['the','and','for','with','that','this','what','which','how','much','does','are','can','you','your','our','czy','ile','jak','jaki','jaka','jakie','jest','jakieś','się','sie','dla','oraz','mam','mogę','moge','można','mozna','proszę','prosze'];
+        $terms=array_slice(array_values(array_unique(array_filter(preg_split('/[^[:alnum:]]+/u',mb_strtolower($message))?:[],static fn(string$term):bool=>mb_strlen($term)>2&&!in_array($term,$stop,true)))),0,10);
+        if(!$terms)return[];
+        $patterns=[];
+        foreach($terms as$term){
+            // Keep price/cost inflections together; currencies also identify actual price statements.
+            $pattern=preg_match('/^(?:price[sd]?|pricing|cost[sd]?|koszt\p{L}*|cen[ayę]|cennik\p{L}*)$/u',$term)
+                ? '(price[sd]?|pricing|cost[sd]?|koszt[[:alpha:]]*|cen[ayę]|cennik[[:alpha:]]*|usd|pln|eur|gbp)'
+                : preg_quote($term,'~');
+            $patterns['(^|[^[:alnum:]])'.$pattern.'([^[:alnum:]]|$)']=true;
+        }
+        $patterns=array_keys($patterns);
+        $scope=" FROM ai_knowledge_chunks c INNER JOIN ai_knowledge_documents d ON d.id=c.document_id WHERE d.status='published' AND d.index_status='ready' AND (d.locale=? OR d.locale IS NULL)";
+        $match = $this->db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'pgsql' ? '~' : 'REGEXP';
+        $counts=[];$params=[];
+        foreach($patterns as$i=>$pattern){$counts[]="SUM(CASE WHEN LOWER(c.content) {$match} ? OR LOWER(d.title) {$match} ? THEN 1 ELSE 0 END) term{$i}";array_push($params,$pattern,$pattern);}
+        $statement=$this->db->prepare('SELECT COUNT(*) total,'.implode(',',$counts).$scope);
+        $statement->execute([...$params,$locale]);$frequency=$statement->fetch()?:[];
+        if(empty($frequency['total']))return[];
+        $score=[];$where=[];$params=[];$filters=[];
+        foreach($patterns as$i=>$pattern){
+            $weight=1+log(1+(int)$frequency['total']/(1+(int)$frequency['term'.$i]));
+            $score[]="(CASE WHEN LOWER(c.content) {$match} ? THEN CAST(? AS DECIMAL(18,8)) ELSE 0 END + CASE WHEN LOWER(d.title) {$match} ? THEN CAST(? AS DECIMAL(18,8)) ELSE 0 END)";
+            array_push($params,$pattern,$weight,$pattern,3*$weight);
+            $where[]="(LOWER(c.content) {$match} ? OR LOWER(d.title) {$match} ?)";array_push($filters,$pattern,$pattern);
+        }
+        $statement=$this->db->prepare('SELECT d.id document_id,c.content,d.title,d.source_url,('.implode('+',$score).') relevance'.$scope.' AND ('.implode(' OR ',$where).') ORDER BY relevance DESC,d.updated_at DESC,c.sort_order,c.id LIMIT 8');
+        $statement->execute([...$params,$locale,...$filters]);
+        return array_map(static fn(array$row):array=>['document_id'=>(int)$row['document_id'],'title'=>trim((string)$row['title']),'url'=>trim((string)($row['source_url']??'')),'content'=>(string)$row['content']],$statement->fetchAll());
     }
 
     public function context(string $message,string$locale):array{return array_map(static function(array$row):string{$source=$row['title'];if($row['url']!=='')$source.=' · '.$row['url'];return'[Source: '.$source."]\n".$row['content'];},$this->contextMatches($message,$locale));}
-    public function recentConversationMessages(string$id,int$limit=6):array{$limit=max(1,min(12,$limit));$statement=$this->db->prepare("SELECT role,content FROM ai_messages WHERE conversation_id=? AND role IN ('visitor','assistant','agent') ORDER BY id DESC LIMIT {$limit}");$statement->execute([$id]);return array_reverse($statement->fetchAll());}
-    public function usageCount(string$purpose,string$period='day'):int{$since=$period==='month'?"DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')":'CURDATE()';$statement=$this->db->prepare("SELECT COUNT(*) FROM ai_usage_events WHERE purpose=? AND status IN ('requested','completed') AND created_at>={$since}");$statement->execute([$purpose]);return(int)$statement->fetchColumn();}
+    public function recentConversationMessages(string$id,int$limit=6):array{$limit=max(1,min(12,$limit));$statement=$this->db->prepare("SELECT role,content,provider_slug FROM ai_messages WHERE conversation_id=? AND role IN ('visitor','assistant','agent') ORDER BY id DESC LIMIT {$limit}");$statement->execute([$id]);return array_reverse($statement->fetchAll());}
+    public function usageCount(string$purpose,string$period='day'):int{$since=$period==='month'?"DATE_FORMAT(NOW(),'%Y-%m-01 00:00:00')":'CURDATE()';$statement=$this->db->prepare("SELECT COUNT(*) FROM ai_usage_events WHERE purpose=? AND (status IN ('requested','completed') OR (status='failed' AND input_tokens IS NOT NULL)) AND created_at>={$since}");$statement->execute([$purpose]);return(int)$statement->fetchColumn();}
 
     public function conversation(string $id, string $locale, ?string $ip = null): void
     {
@@ -90,7 +138,35 @@ final class AiRepository
         $statement->execute([$id, $locale, $ip, IpCountry::lookup($ip)]);
     }
     public function setVisitorName(string $conversation, string $name): void { $this->db->prepare('UPDATE ai_conversations SET visitor_name = ? WHERE id = ? AND (visitor_name IS NULL OR visitor_name = "")')->execute([$name, $conversation]); }
-    public function setVisitorEmail(string $conversation, string $email): void { $this->db->prepare('UPDATE ai_conversations SET visitor_email = ? WHERE id = ? AND (visitor_email IS NULL OR visitor_email = "")')->execute([$email, $conversation]); }
+    public function setVisitorEmail(string $conversation,string $email,string $locale,string $visitorMessage,string $confirmation): bool
+    {
+        $this->db->beginTransaction();
+        try {
+            $lock=$this->db->prepare('SELECT status,email_requested_at,visitor_email FROM ai_conversations WHERE id=? FOR UPDATE');
+            $lock->execute([$conversation]);
+            $row=$lock->fetch(PDO::FETCH_ASSOC);
+            if (!$row || $row['status']==='closed') throw new \RuntimeException('This conversation has ended. Start a new chat to continue.');
+            if (!$row['email_requested_at']) throw new \RuntimeException('A callback e-mail address has not been requested.');
+            $first=empty($row['visitor_email']);
+            if ($first) {
+                $this->db->prepare('UPDATE ai_conversations SET visitor_email=?,updated_at=NOW() WHERE id=?')->execute([$email,$conversation]);
+                $cms=new CmsRepository($this->db,new EventBus());
+                $zone=LiveChatSettings::from((array)$cms->setting('live_chat_settings',[]))['availability']['timezone'];
+                $day=(new \DateTimeImmutable('now',new \DateTimeZone($zone)))->format('Y-m-d');
+                $this->db->prepare("INSERT INTO chat_callback_receipts (conversation_id,status,next_attempt_at,work_date,timezone,locale) VALUES (?,'pending',UTC_TIMESTAMP(),?,?,?)")->execute([$conversation,$day,$zone,mb_substr($locale,0,20)]);
+                $this->db->prepare("UPDATE ai_conversations SET channel='human',status='queued',queued_at=NOW(),ai_takeover_at=NULL WHERE id=? AND channel='ai' AND status='open'")->execute([$conversation]);
+                if ($visitorMessage!=='') $this->message($conversation,'visitor',$visitorMessage);
+                $this->message($conversation,'assistant',$confirmation,'core');
+            } elseif (strcasecmp($row['visitor_email'],$email)!==0) {
+                throw new \RuntimeException('A callback e-mail address has already been saved for this conversation.');
+            }
+            $this->db->commit();
+            return $first;
+        } catch (\Throwable $error) {
+            $this->db->rollBack();
+            throw $error;
+        }
+    }
     public function requestVisitorEmail(string $conversation): bool { $statement=$this->db->prepare('UPDATE ai_conversations SET email_requested_at=COALESCE(email_requested_at,NOW()),updated_at=NOW() WHERE id=? AND (visitor_email IS NULL OR visitor_email="")');$statement->execute([$conversation]);return $statement->rowCount()===1; }
     public function message(string $conversation, string $role, string $content, ?string $provider = null): void { $statement = $this->db->prepare('INSERT INTO ai_messages (conversation_id,role,content,provider_slug,created_at) VALUES (?,?,?,?,NOW())'); $statement->execute([$conversation, $role, $content, $provider]); $this->db->prepare('UPDATE ai_conversations SET updated_at = NOW() WHERE id = ?')->execute([$conversation]); }
 
@@ -351,6 +427,7 @@ final class AiRepository
             $this->db->prepare('DELETE FROM live_chat_reads WHERE conversation_id = ?')->execute([$conversation]);
             $this->db->prepare('DELETE FROM live_chat_transfers WHERE conversation_id = ?')->execute([$conversation]);
             $this->db->prepare('DELETE FROM ai_messages WHERE conversation_id = ?')->execute([$conversation]);
+            $this->db->prepare('DELETE FROM chat_callback_receipts WHERE conversation_id = ?')->execute([$conversation]);
             $statement = $this->db->prepare("UPDATE ai_conversations SET visitor_name = NULL, visitor_email = NULL, visitor_ip = NULL, visitor_country = NULL, channel = 'human', status = 'closed', assigned_user_id = NULL, assigned_team_id = NULL, updated_at = NOW() WHERE id = ?");
             $statement->execute([$conversation]);
             $this->db->commit();

@@ -16,6 +16,7 @@ def request(path,fields=None):
     except urllib.error.HTTPError as error:return error.code,error.read(),error.headers
 status,body,_=request('/login');assert status==200;csrf=re.search(rb'name="csrf" value="([a-f0-9]{64})"',body)[1].decode();sid=next(cookie.value for cookie in jar if cookie.name=='sensecms_session');captcha=subprocess.run(['runuser','-u','sensecms','--','php8.5','-r','session_save_path($argv[1]);session_id($argv[2]);session_start(["read_and_close"=>true]);echo $_SESSION["sensecms_captcha_login_code"]??"";',str(web/'storage/sessions'),sid],capture_output=True,check=True).stdout.decode();owner=json.loads(Path('/root/sensecms-private/owner.json').read_text());status,body,_=request('/login',{'csrf':csrf,'email':owner['email'],'password':owner['password'],'captcha':captcha});del owner,captcha;assert status==200 and json.loads(body)['ok']
 try:
+    status,page,_=request('/ai/knowledge');assert status==200 and b'New source' in page and b'<h6 class="card-title">Training workspace</h6>' not in page
     for tab,markers in {
         'sources':(b'data-ai-knowledge',b'Knowledge sources',b'TXT, PDF, RTF, DOC or DOCX',b'/theme/sensecms-ai-knowledge.js?v=20260921-1'),
         'content':(b'Website content sources',b'Save changes and rebuild',b'Pages and posts included in RAG'),

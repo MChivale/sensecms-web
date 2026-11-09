@@ -69,8 +69,9 @@ $check(str_contains($view,'data-builder-undo')&&str_contains($view,'data-builder
 $script=(string)file_get_contents(dirname(__DIR__).'/.cms/source/public/theme/sensecms-page-builder.js');
 $check(str_contains($script,'function applyHistory')&&str_contains($script,'function flushDraft')&&str_contains($script,"addEventListener('pagehide'"),'Builder provides Undo Redo and close-tab recovery autosave');
 $navigation=(string)file_get_contents(dirname(__DIR__).'/.cms/source/public/theme/sensecms-content-management.js');
-$check(str_contains($navigation,'async function pageBuilder()')&&str_contains($navigation,'sensecms-page-builder.js?v=20260921-ai-1'),'AJAX content navigation loads and rehydrates Page Builder safely');
 $console=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console.php');
+preg_match('~(/theme/sensecms-page-builder\.js\?v=[a-z0-9-]+)~',$console,$builderAsset);
+$check(isset($builderAsset[1])&&str_contains($navigation,'async function pageBuilder()')&&str_contains($navigation,$builderAsset[1])&&str_contains($navigation,"new Event('sensecms:navigated')"),'AJAX and full-page navigation load the same Page Builder release and rehydrate it');
 $searchIndex=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Core/ConsoleSearchIndex.php');
 $check(str_contains($console,"if(\$can('content.pages.collaborate'))")&&str_contains($searchIndex,"'content.pages.collaborate'"),'Reviewers can discover and open Page Builder through its collaboration permission');
 $style=(string)file_get_contents(dirname(__DIR__).'/.cms/source/public/theme/sensecms-page-builder.css');
@@ -83,7 +84,7 @@ $check(str_contains($controller,'function copyPageBuilderSections')&&str_contain
 $check(str_contains($view,'data-library-tab="outline"')&&str_contains($view,'data-builder-copy-selected')&&str_contains($view,'data-builder-paste'),'Builder exposes the Core navigator and cross-page clipboard controls');
 $check(str_contains($script,'function renderOutline()')&&str_contains($script,'function pasteClipboard()')&&str_contains($script,'60-blocks.length')&&str_contains($script,'copy.uid=uuid()'),'Navigator pastes fresh independent sections without exceeding the Core page limit');
 $check(str_contains($view,'data-library-tab="patterns"')&&str_contains($view,'data-builder-patterns'),'Builder exposes the Core pattern library alongside sections and shared content');
-$check(str_contains($script,'function renderPatterns()')&&str_contains($script,'function insertPattern(pattern)')&&str_contains($script,'plan.types.map(freshBlock)'),'Pattern insertion creates ordinary independent sections through the standard builder model');
+$check(str_contains($script,'function renderPatterns(')&&str_contains($script,'function insertPattern(pattern,')&&str_contains($script,'plan.types.map(freshBlock)'),'Pattern insertion creates ordinary independent sections through the standard builder model');
 $presets=PageBuilder::layoutPresets();
 $check(array_column($presets,'key')===['container','columns-50','columns-33','columns-25','grid','stack','sidebar-left','sidebar-right','full-width'],'Core exposes the complete controlled layout preset catalogue');
 $defaultLayout=PageBuilder::sanitizeLayout(['mode'=>'unsafe','container'=>'unsafe','desktop'=>['span'=>99,'order'=>-99,'hidden'=>true]]);
@@ -160,4 +161,14 @@ $diff=PageBuilder::revisionDiff($before,$after,$catalog);
 $check($diff['summary']['added']===1&&$diff['summary']['removed']===0&&$diff['summary']['moved']===2&&$diff['summary']['changed']===2&&!$diff['empty'],'Revision comparison reports added, moved and field-level changed sections by stable UID');
 $detail=implode(' ',array_merge(...array_column($diff['changes'],'details')));
 $check(str_contains($detail,'Position 1 → 2')&&str_contains($detail,'EN content: Headline'),'Revision history names precise position and localized field changes without exposing raw snapshots');
+$scheduled = [
+    ['uid'=>'before', 'visible'=>true, 'visible_until'=>'2030-05-01 12:00:00'],
+    ['uid'=>'after', 'visible'=>true, 'visible_from'=>'2030-05-01T12:00'],
+    ['uid'=>'hidden', 'visible'=>false],
+    ['uid'=>'always', 'visible'=>true],
+];
+$visibleAt = static fn(string $time): array => array_column(PageBuilder::previewBlocks($scheduled, 'en', 'en', $time), 'uid');
+$check($visibleAt('2030-05-01 11:59:59') === ['before','always'], 'Before the handover, only the old banner and unscheduled visible section are shown');
+$check($visibleAt('2030-05-01 12:00:00') === ['after','always'], 'At the exact handover, the new banner replaces the old one');
+$check(count(PageBuilder::previewBlocks($scheduled, 'en', 'en')) === 4, 'The normal editing canvas retains all sections for editing');
 echo "$count builder preset/compatibility checks passed; no database or network writes.\n";

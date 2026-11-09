@@ -3,3 +3,30 @@
 @media(max-width:1280px){.sensecms-media-toolbar{grid-template-columns:minmax(260px,1fr) repeat(3,minmax(130px,.45fr))}.sensecms-media-toolbar select:nth-of-type(4),.sensecms-media-toolbar select:nth-of-type(5){display:none}}
 @media(max-width:900px){.sensecms-media-layout{grid-template-columns:1fr}.sensecms-media-folders{position:static}.sensecms-media-folders nav{display:flex;overflow:auto}.sensecms-media-folders nav button,.sensecms-media-folder-row{flex:0 0 auto;width:auto}.sensecms-media-folder-row>[data-folder-manage]{opacity:1}.sensecms-media-folders>footer{display:none}.sensecms-media-toolbar{grid-template-columns:1fr 1fr}.sensecms-media-toolbar .sensecms-media-search{grid-column:1/-1}.sensecms-media-toolbar select{display:block!important}.sensecms-media-summary{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.sensecms-media-hero{align-items:flex-start;flex-direction:column;padding:20px}.sensecms-media-hero .btn{width:100%}.sensecms-media-toolbar{grid-template-columns:1fr}.sensecms-media-toolbar .sensecms-media-search{grid-column:auto}.sensecms-media-summary{grid-template-columns:1fr 1fr}.sensecms-media-summary article{padding:12px}.sensecms-media-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;padding:10px}.sensecms-media-card>div{padding:9px}.sensecms-media-dialog-fields,.sensecms-media-localized-grid,.sensecms-media-shared-fields{grid-template-columns:1fr}.sensecms-media-localized-grid .is-wide,.sensecms-media-shared-fields .is-wide{grid-column:auto}.sensecms-media-inspector-meta{grid-template-columns:1fr 1fr}.sensecms-media-overlay{padding:10px}.sensecms-media-dialog{max-height:calc(100vh - 20px)}.sensecms-media-inspector-body{padding:12px}.sensecms-media-inspector-preview{min-height:210px}.sensecms-media-inspector-actions .is-danger{margin-left:0}}
+
+/* Use the same readable controls as the content lists. */
+.sensecms-media-status-toggle { display:flex; align-items:center; gap:4px; padding:4px; min-height:44px; width:max-content; max-width:100%; border:1px solid var(--color-default-200); border-radius:10px; background:var(--color-default-50); }
+.sensecms-media-status-toggle button { min-height:36px; padding:8px 14px; border-radius:7px; font-size:13px; color:var(--color-default-700); }
+.sensecms-media-status-toggle button.is-active { background:var(--color-default-100); color:var(--color-primary); }
+.sensecms-media-card strong,.sensecms-media-folders nav span { font-size:13px; }
+.sensecms-media-card small,.sensecms-media-folders > footer { color:var(--color-default-600); font-size:12px; }
+
+/* Keep the preview at its natural proportions, even in a nearly empty library. */
+.sensecms-media-grid { align-content:start; }
+.sensecms-media-count { display:inline-block; padding:.125rem .45rem; border-radius:.4rem; background:var(--color-default-100); color:var(--color-default-700); font-size:.8125rem; font-variant-numeric:tabular-nums; vertical-align:middle; }
+.sensecms-media-card figure { grid-template:minmax(0,1fr) / minmax(0,1fr); }
+.sensecms-media-card figure :is(img,video) { min-width:0; min-height:0; object-fit:contain; }
+.sensecms-media-summary article > svg { flex:none; width:1.125rem; height:1.125rem; color:var(--color-default-600); }
+.sensecms-media-summary article span { color:var(--color-default-600); font-size:.75rem; letter-spacing:normal; text-transform:none; }
+.sensecms-media-folders > header,.sensecms-media-content > header,.sensecms-media-folders > footer { border-color:var(--color-default-200); }
+.sensecms-media-folders > footer strong { color:var(--color-default-800); }
+.sensecms-media-folders header button,.sensecms-media-dialog header button,.sensecms-media-inspector header button {
+    width:2.25rem; height:2.25rem; border-color:var(--color-default-200); background:var(--color-default-50); color:var(--color-default-700);
+}
+.sensecms-media-folders nav button { color:var(--color-default-700); }
+.sensecms-media-folders nav button:hover { background:var(--color-default-100); color:var(--color-default-900); }
+.sensecms-media-folders nav button.is-active {
+    background:color-mix(in srgb,var(--color-primary) 12%,transparent); color:var(--color-default-900);
+    box-shadow:inset 3px 0 var(--color-primary);
+}
+.sensecms-media-folders nav button.is-active svg { color:var(--color-primary); }

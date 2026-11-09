@@ -19,10 +19,10 @@ final class CmsRepository
         if ($key === 'theme_settings' && $this->runtime !== null && ($active = (new Packages\ThemeManager($this->runtime))->active()) !== null) {
             $configs = (array) $this->setting('theme_configurations', []);
             if (isset($configs[$active['slug']])) return $configs[$active['slug']];
-            $legacy = $this->db->query("SELECT value FROM settings WHERE `key`='active_theme'")->fetchColumn();
+            $legacy = $this->db->query("SELECT value FROM settings WHERE settings.key='active_theme'")->fetchColumn();
             if ((json_decode((string) $legacy, true) ?? $legacy) !== $active['slug']) return [];
         }
-        $statement = $this->db->prepare('SELECT value FROM settings WHERE `key` = :key LIMIT 1');
+        $statement = $this->db->prepare('SELECT value FROM settings WHERE settings.key = :key LIMIT 1');
         $statement->execute(['key' => $key]);
         $value = $statement->fetchColumn();
         return $value === false ? $fallback : json_decode($value, true) ?? $value;
@@ -30,7 +30,9 @@ final class CmsRepository
 
     public function saveSetting(string $key, mixed $value): void
     {
-        $statement = $this->db->prepare('INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)');
+        $statement = $this->db->prepare($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql'
+            ? 'INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value'
+            : 'INSERT INTO settings (`key`, value) VALUES (?, ?) ON DUPLICATE KEY UPDATE value = VALUES(value)');
         $statement->execute([$key, json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)]);
     }
 
@@ -39,8 +41,7 @@ final class CmsRepository
     {
         $this->db->beginTransaction();
         try {
-            $this->db->exec("INSERT INTO settings (`key`, value) VALUES ('theme_drafts', '{}') ON DUPLICATE KEY UPDATE `key` = VALUES(`key`)");
-            $this->db->query("SELECT value FROM settings WHERE `key` = 'theme_drafts' FOR UPDATE")->fetchColumn();
+            $this->lockThemeConfiguration();
             $result = $operation();
             $this->db->commit();
             return $result;
@@ -53,6 +54,15 @@ final class CmsRepository
     public function recordActivity(int $userId,string $event,string $type,array $context=[]):void
     {
         $this->db->prepare('INSERT INTO activity_log (user_id,event,subject_type,subject_id,context,created_at) VALUES (?,?,?,NULL,?,NOW())')->execute([$userId?:null,$event,$type,json_encode($context,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)]);
+    }
+
+    public function lockThemeConfiguration(): void
+    {
+        if (!$this->db->inTransaction()) throw new \LogicException('Theme lock requires a transaction.');
+        $this->db->exec($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql'
+            ? "INSERT INTO settings (key, value) VALUES ('theme_drafts', '{}') ON CONFLICT (key) DO NOTHING"
+            : "INSERT INTO settings (`key`, value) VALUES ('theme_drafts', '{}') ON DUPLICATE KEY UPDATE `key` = VALUES(`key`)");
+        $this->db->query("SELECT value FROM settings WHERE settings.key = 'theme_drafts' FOR UPDATE")->fetchColumn();
     }
 
     public function languages(): array
@@ -158,6 +168,13 @@ final class CmsRepository
     public function publicPagePaths(): array
     {
         return $this->db->query('SELECT public_path,id FROM pages WHERE public_path IS NOT NULL')->fetchAll(PDO::FETCH_KEY_PAIR);
+    }
+
+    public function localizedPublicPaths(string $locale, int $facilityId): array
+    {
+        $query = $this->db->prepare("SELECT p.public_path,t.slug FROM pages p JOIN page_translations t ON t.page_id=p.id AND t.locale=? WHERE p.facility_id=? AND p.public_path IS NOT NULL AND p.visibility='public' AND (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW()))");
+        $query->execute([$locale, $facilityId]);
+        return $query->fetchAll(PDO::FETCH_KEY_PAIR);
     }
 
     public function pageById(int $id,string $locale,string $fallbackLocale,int $facilityId):?array
@@ -545,7 +562,7 @@ final class CmsRepository
     {
         $rows = $this->db->query("SELECT 'page' content_type,p.id,p.updated_at,p.published_at,t.locale,t.slug,c.city_slug,c.facility_slug,c.is_primary,c.homepage_page_id FROM pages p INNER JOIN page_translations t ON t.page_id=p.id INNER JOIN languages l ON l.locale=t.locale AND l.enabled=1 INNER JOIN facilities c ON c.id=p.facility_id AND c.status='active' WHERE (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW())) AND p.visibility='public' UNION ALL SELECT 'post' content_type,p.id,p.updated_at,p.published_at,t.locale,t.slug,c.city_slug,c.facility_slug,c.is_primary,c.homepage_page_id FROM posts p INNER JOIN post_translations t ON t.post_id=p.id INNER JOIN languages l ON l.locale=t.locale AND l.enabled=1 INNER JOIN facilities c ON c.id=p.facility_id AND c.status='active' WHERE (p.status='published' OR (p.status='scheduled' AND p.published_at<=NOW())) ORDER BY content_type,id")->fetchAll();
         $excluded = [];
-        $settings = $this->db->query("SELECT `key`,value FROM settings WHERE `key` LIKE 'seo\\_page\\_%' OR `key` LIKE 'seo\\_post\\_%'")->fetchAll();
+        $settings = $this->db->query("SELECT settings.key,value FROM settings WHERE settings.key LIKE 'seo\\_page\\_%' OR settings.key LIKE 'seo\\_post\\_%'")->fetchAll();
         foreach ($settings as $setting) {
             $meta = json_decode((string) $setting['value'], true);
             if (is_array($meta) && str_contains((string) ($meta['robots'] ?? ''), 'noindex')) $excluded[$setting['key']] = true;
@@ -660,10 +677,17 @@ final class CmsRepository
             $globalIds=array_values(array_unique(array_filter(array_map(static fn(array$block):int=>(int)($block['global_section_id']??0),$document['blocks']))));
             $globalLocalized=[];
             if($globalIds){$globalMarks=implode(',',array_fill(0,count($globalIds),'?'));$globalRows=$this->db->prepare("SELECT global_section_id,locale,data FROM global_section_translations WHERE global_section_id IN ({$globalMarks})");$globalRows->execute($globalIds);foreach($globalRows->fetchAll()as$row){$data=json_decode((string)$row['data'],true);$globalLocalized[(int)$row['global_section_id']][(string)$row['locale']]=is_array($data)?$data:[];}}
-            foreach ($document['blocks'] as &$block) $block['localized'] = $globalLocalized[(int)($block['global_section_id']??0)] ?? $localized[(int) $block['id']] ?? [];
+            foreach ($document['blocks'] as &$block) $block['localized'] = BuilderMediaItems::identify($block['type'],$globalLocalized[(int)($block['global_section_id']??0)] ?? $localized[(int) $block['id']] ?? []);
             unset($block);
         }
         return $document;
+    }
+
+    public function builderPublication(int $pageId): array
+    {
+        $query = $this->db->prepare('SELECT status, visibility, UNIX_TIMESTAMP(published_at) AS publishAt, UNIX_TIMESTAMP() AS serverTime FROM pages WHERE id = ?');
+        $query->execute([$pageId]);
+        return $query->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 
     public function builderDraft(int $pageId, int $userId): ?array
@@ -674,14 +698,20 @@ final class CmsRepository
         if(!$draft)return null;
         $snapshot=json_decode((string)$draft['snapshot'],true);
         if(!is_array($snapshot)||!is_array($snapshot['blocks']??null))return null;
-        return['base_version'=>(int)$draft['base_version'],'blocks'=>$snapshot['blocks'],'updated_at'=>(string)$draft['updated_at']];
+        return['base_version'=>(int)$draft['base_version'],'baseBlocks'=>$snapshot['baseBlocks']??null,'blocks'=>$snapshot['blocks'],'themeEdits'=>$snapshot['themeEdits']??[],'updated_at'=>(string)$draft['updated_at']];
     }
 
-    public function saveBuilderDraft(int $pageId, int $userId, int $baseVersion, array $blocks): array
+    public function builderMergeBase(int $pageId,int $version): ?array
+    {
+        $stmt=$this->db->prepare('SELECT snapshot FROM page_builder_revisions WHERE page_id=? AND version=? LIMIT 1');
+        $stmt->execute([$pageId,$version]);
+        $snapshot=json_decode((string)$stmt->fetchColumn(),true);
+        return $snapshot['blocks']??null;
+    }
+
+    public function saveBuilderDraft(int $pageId, int $userId, int $baseVersion, array $blocks, array $themeEdits=[], ?callable $merge=null, ?array $openedBase=null): array
     {
         if($userId<1)throw new \RuntimeException('Your session is no longer valid. Sign in and try again.');
-        $snapshot=json_encode(['blocks'=>$blocks],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
-        if(strlen($snapshot)>2_000_000)throw new \RuntimeException('This recovery draft is too large to save safely.');
         $this->db->beginTransaction();
         try{
             $page=$this->db->prepare('SELECT id FROM pages WHERE id=? FOR UPDATE');$page->execute([$pageId]);
@@ -689,9 +719,21 @@ final class CmsRepository
             $this->db->prepare('INSERT IGNORE INTO page_builder_states (page_id,version,updated_by,updated_at) VALUES (?,0,?,NOW())')->execute([$pageId,$userId]);
             $state=$this->db->prepare('SELECT version FROM page_builder_states WHERE page_id=? FOR UPDATE');$state->execute([$pageId]);$current=(int)$state->fetchColumn();
             if($current!==$baseVersion)throw new \DomainException('This page was changed in another session. Reload the builder before continuing.');
+            $existing=$this->builderDraft($pageId,$userId);
+            if ($merge!==null) {
+                $resolved=$merge($existing);
+                $blocks=$resolved['blocks']; $themeEdits=$resolved['themeEdits']; $openedBase=$resolved['live'];
+            } elseif ($existing && $existing['base_version']!==$current) {
+                throw new \DomainException('Merge the older private draft before saving.');
+            }
+            $base=$merge===null?($existing['baseBlocks']??$openedBase):$openedBase;
+            $snapshot=json_encode(['blocks'=>$blocks,'themeEdits'=>$themeEdits],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+            if(strlen($snapshot)>2_000_000)throw new \RuntimeException('This recovery draft is too large to save safely.');
+            if ($base!==null) $snapshot=json_encode(['blocks'=>$blocks,'themeEdits'=>$themeEdits,'baseBlocks'=>$base],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES);
+            if(strlen($snapshot)>4_000_000)throw new \RuntimeException('This recovery draft is too large to save safely.');
             $this->db->prepare('INSERT INTO page_builder_drafts (page_id,user_id,base_version,snapshot,updated_at) VALUES (?,?,?,?,NOW()) ON DUPLICATE KEY UPDATE base_version=VALUES(base_version),snapshot=VALUES(snapshot),updated_at=NOW()')->execute([$pageId,$userId,$baseVersion,$snapshot]);
             $updated=$this->db->prepare('SELECT updated_at FROM page_builder_drafts WHERE page_id=? AND user_id=?');$updated->execute([$pageId,$userId]);$updatedAt=(string)$updated->fetchColumn();
-            $this->db->commit();return['base_version'=>$baseVersion,'updated_at'=>$updatedAt];
+            $this->db->commit();return ['base_version'=>$baseVersion,'updated_at'=>$updatedAt]+($resolved??[]);
         }catch(\Throwable$error){if($this->db->inTransaction())$this->db->rollBack();throw$error;}
     }
 
@@ -728,7 +770,7 @@ final class CmsRepository
         $this->db->prepare('DELETE FROM page_builder_clipboards WHERE user_id=?')->execute([$userId]);
     }
 
-    public function saveBuilderDocument(int $pageId, int $version, int $userId, string $theme, array $blocks, array $managedTypes): int
+    public function saveBuilderDocument(int $pageId, int $version, int $userId, string $theme, array $blocks, array $managedTypes, ?callable $beforeWrite=null): int
     {
         $this->db->beginTransaction();
         try {
@@ -737,18 +779,20 @@ final class CmsRepository
             $this->db->prepare('INSERT IGNORE INTO page_builder_states (page_id,version,updated_by,updated_at) VALUES (?,0,?,NOW())')->execute([$pageId,$userId]);
             $state = $this->db->prepare('SELECT version FROM page_builder_states WHERE page_id=? FOR UPDATE'); $state->execute([$pageId]); $current = (int) $state->fetchColumn();
             if ($current !== $version) throw new \DomainException('This page was changed in another session. Reload the builder before saving.');
+            if ($beforeWrite !== null) $beforeWrite();
             $existing = $this->db->prepare('SELECT id,page_id,uid FROM content_blocks WHERE page_id=? FOR UPDATE'); $existing->execute([$pageId]); $existing = array_column($existing->fetchAll(), null, 'uid');
             $locked=$this->db->prepare('SELECT l.section_uid,COALESCE(u.name,"Another editor") user_name FROM page_builder_section_locks l LEFT JOIN users u ON u.id=l.user_id WHERE l.page_id=? AND l.user_id<>? AND l.expires_at>NOW() FOR UPDATE');$locked->execute([$pageId,$userId]);
             if($locks=$locked->fetchAll()){$current=$this->builderDocument($pageId);$currentByUid=[];foreach((array)($current['blocks']??[])as$item)$currentByUid[(string)$item['uid']]=$this->builderComparable($item);$submittedByUid=[];foreach($blocks as$item)$submittedByUid[(string)$item['uid']]=$this->builderComparable($item);foreach($locks as$lock){$uid=(string)$lock['section_uid'];if(($currentByUid[$uid]??null)!==($submittedByUid[$uid]??null))throw new \DomainException((string)$lock['user_name'].' is editing this section. Your other changes remain safe; wait for the section lock to be released.');}}
             $saved = []; $linked = [];
             foreach ($blocks as $order => $block) {
+                $block['localized']=BuilderMediaItems::identify($block['type'],$block['localized']);
                 $uid = (string) $block['uid']; $saved[] = $uid;
                 $globalId=(int)($block['global_section_id']??0)?:null;
                 if($globalId){
                     if(isset($linked[$globalId]))throw new \RuntimeException('A shared section can only appear once on the same page.');
                     $linked[$globalId]=true;$global=$this->db->prepare('SELECT id,type,settings,version FROM global_sections WHERE id=? AND active=1 AND archived_at IS NULL FOR UPDATE');$global->execute([$globalId]);$global=$global->fetch();
                     if(!$global||$global['type']!==$block['type'])throw new \RuntimeException('The selected shared section is no longer available.');
-                    $storedShared=json_decode((string)$global['settings'],true);$storedShared=is_array($storedShared)?$storedShared:[];$storedTranslation=$this->db->prepare('SELECT locale,data FROM global_section_translations WHERE global_section_id=?');$storedTranslation->execute([$globalId]);$storedLocalized=[];foreach($storedTranslation->fetchAll()as$row){$data=json_decode((string)$row['data'],true);$storedLocalized[(string)$row['locale']]=is_array($data)?$data:[];}$changed=$storedShared!=$block['shared']||$storedLocalized!=$block['localized'];
+                    $storedShared=json_decode((string)$global['settings'],true);$storedShared=is_array($storedShared)?$storedShared:[];$storedTranslation=$this->db->prepare('SELECT locale,data FROM global_section_translations WHERE global_section_id=?');$storedTranslation->execute([$globalId]);$storedLocalized=[];foreach($storedTranslation->fetchAll()as$row){$data=json_decode((string)$row['data'],true);$storedLocalized[(string)$row['locale']]=is_array($data)?$data:[];}$storedLocalized=BuilderMediaItems::identify($block['type'],$storedLocalized);$changed=$storedShared!=$block['shared']||$storedLocalized!=$block['localized'];
                     if($changed&&(int)$global['version']!==(int)($block['global_version']??0))throw new \DomainException('This shared section was changed in another session. Reload the builder before saving.');
                     if($changed){$this->db->prepare('UPDATE global_sections SET source_theme=?,settings=?,version=version+1,updated_by=?,updated_at=NOW() WHERE id=?')->execute([$block['source'],json_encode($block['shared'],JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES),$userId,$globalId]);$globalTranslation=$this->db->prepare('INSERT INTO global_section_translations (global_section_id,locale,data) VALUES (?,?,?) ON DUPLICATE KEY UPDATE data=VALUES(data)');foreach($block['localized']as$locale=>$data)$globalTranslation->execute([$globalId,$locale,json_encode($data,JSON_THROW_ON_ERROR|JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES)]);}
                 }
@@ -796,11 +840,33 @@ final class CmsRepository
         return['items'=>$statement->fetchAll(),'pagination'=>['page'=>$page,'pages'=>$pages,'total'=>$total,'per_page'=>$perPage]];
     }
 
+    public function scheduleTimeAt(int $timestamp): ?string
+    {
+        $query = $this->db->prepare('SELECT FROM_UNIXTIME(?)');
+        $query->execute([$timestamp]);
+        return $query->fetchColumn() ?: null;
+    }
+
+    public function sharedSectionPages(int $id, string $locale, ?array $facilityIds): array
+    {
+        $where = ['b.global_section_id=?', 'b.archived_at IS NULL', "p.status<>'archived'"];
+        $params = [$locale, $locale, $id];
+        $this->facilityScope($where, $params, 'p.facility_id', $facilityIds);
+        $query = $this->db->prepare("SELECT DISTINCT p.id, COALESCE(NULLIF(t.title,''),NULLIF(t.slug,''),CONCAT('Page #',p.id)) title,
+            COALESCE(NULLIF(ft.name,''),f.facility_slug) facility
+            FROM content_blocks b JOIN pages p ON p.id=b.page_id JOIN facilities f ON f.id=p.facility_id
+            LEFT JOIN page_translations t ON t.page_id=p.id AND t.locale=?
+            LEFT JOIN facility_translations ft ON ft.facility_id=f.id AND ft.locale=?
+            WHERE ".implode(' AND ', $where).' ORDER BY facility,title,p.id');
+        $query->execute($params);
+        return $query->fetchAll(PDO::FETCH_ASSOC);
+    }
+
     public function globalSections():array
     {
         $sections=$this->db->query("SELECT g.id,g.uid,g.name,g.type,g.source_theme,g.settings,g.version,g.updated_at,(SELECT COUNT(*) FROM content_blocks b WHERE b.global_section_id=g.id AND b.archived_at IS NULL) usage_count FROM global_sections g WHERE g.active=1 AND g.archived_at IS NULL ORDER BY g.updated_at DESC,g.id DESC")->fetchAll();
         if(!$sections)return[];$ids=array_column($sections,'id');$marks=implode(',',array_fill(0,count($ids),'?'));$translations=$this->db->prepare("SELECT t.global_section_id,t.locale,t.data FROM global_section_translations t INNER JOIN languages l ON l.locale=t.locale AND l.enabled=1 WHERE t.global_section_id IN ({$marks}) ORDER BY l.sort_order,l.id");$translations->execute($ids);$localized=[];foreach($translations->fetchAll()as$row){$data=json_decode((string)$row['data'],true);$localized[(int)$row['global_section_id']][(string)$row['locale']]=is_array($data)?$data:[];}
-        foreach($sections as&$section){$settings=json_decode((string)$section['settings'],true);$section['shared']=is_array($settings)?$settings:[];$section['localized']=$localized[(int)$section['id']]??[];unset($section['settings']);}unset($section);return$sections;
+        foreach($sections as&$section){$settings=json_decode((string)$section['settings'],true);$section['shared']=is_array($settings)?$settings:[];$section['localized']=BuilderMediaItems::identify($section['type'],$localized[(int)$section['id']]??[]);unset($section['settings']);}unset($section);return$sections;
     }
 
     public function createGlobalSection(string $name,array $block,int $userId):array
@@ -824,7 +890,9 @@ final class CmsRepository
         $workflow=$this->db->prepare('SELECT w.section_uid,w.status,w.assigned_user_id,w.updated_at,COALESCE(a.name,"") assigned_name,COALESCE(u.name,"System") updated_by_name FROM page_builder_section_workflow w LEFT JOIN users a ON a.id=w.assigned_user_id LEFT JOIN users u ON u.id=w.updated_by WHERE w.page_id=? ORDER BY w.section_uid');$workflow->execute([$pageId]);$states=[];foreach($workflow->fetchAll()as$row){$row['assigned_user_id']=$row['assigned_user_id']!==null?(int)$row['assigned_user_id']:null;$states[(string)$row['section_uid']]=$row;}
         $comments=$this->db->prepare('SELECT c.id,c.section_uid,c.user_id,c.body,c.resolved_at,c.resolved_by,c.created_at,c.updated_at,COALESCE(u.name,"Former user") author,COALESCE(r.name,"") resolved_by_name FROM page_builder_section_comments c LEFT JOIN users u ON u.id=c.user_id LEFT JOIN users r ON r.id=c.resolved_by WHERE c.page_id=? ORDER BY c.created_at,c.id');$comments->execute([$pageId]);$threads=[];$open=0;foreach($comments->fetchAll()as$row){$row['id']=(int)$row['id'];$row['user_id']=(int)$row['user_id'];$row['is_mine']=(int)$row['user_id']===$userId;$row['resolved']=$row['resolved_at']!==null;if(!$row['resolved'])$open++;$threads[(string)$row['section_uid']][]=$row;}
         $locks=$this->db->prepare('SELECT l.section_uid,l.user_id,l.expires_at,COALESCE(u.name,"Another editor") user_name FROM page_builder_section_locks l LEFT JOIN users u ON u.id=l.user_id WHERE l.page_id=? AND l.expires_at>NOW() ORDER BY l.updated_at');$locks->execute([$pageId]);$active=[];foreach($locks->fetchAll()as$row){$row['user_id']=(int)$row['user_id'];$row['is_mine']=(int)$row['user_id']===$userId;$active[(string)$row['section_uid']]=$row;}
-        return['workflow'=>$states,'comments'=>$threads,'locks'=>$active,'open_comments'=>$open,'server_time'=>date('Y-m-d H:i:s')];
+        $revision=$this->db->prepare('SELECT version FROM page_builder_states WHERE page_id=?');
+        $revision->execute([$pageId]);
+        return['version'=>(int)$revision->fetchColumn(),'workflow'=>$states,'comments'=>$threads,'locks'=>$active,'open_comments'=>$open,'server_time'=>date('Y-m-d H:i:s')];
     }
 
     public function saveBuilderSectionWorkflow(int$pageId,string$uid,string$status,?int$assignedUserId,int$userId,array$allowedAssignees):array
@@ -1005,7 +1073,7 @@ final class CmsRepository
         $this->db->beginTransaction();
         $this->db->exec('UPDATE installed_themes SET active = 0');
         $this->db->prepare('UPDATE installed_themes SET active = 1 WHERE slug = :slug')->execute(compact('slug'));
-        $this->db->prepare("INSERT INTO settings (`key`, value) VALUES ('active_theme', :value) ON DUPLICATE KEY UPDATE value = VALUES(value)")->execute(['value' => json_encode($slug)]);
+        $this->saveSetting('active_theme', $slug);
         $this->db->commit();
         $this->events->dispatch('theme.activated', compact('slug'));
     }

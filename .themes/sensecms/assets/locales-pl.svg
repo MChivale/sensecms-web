@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="440" viewBox="0 0 480 440" role="img" aria-labelledby="title desc" lang="pl">
+<title id="title">Wspólny panel</title><desc id="desc">Treści organizacji i uprawnienia. Placówka A: Polski / English. Placówka B: Polski / English. Sprawdź każdą placówkę i język.</desc>
+<rect width="480" height="440" rx="24" fill="#eef5ff"/>
+<g font-family="Arial, sans-serif" text-anchor="middle">
+<text x="240" y="43" font-size="12" letter-spacing="1.5" fill="#1760dc">MIEJSCE I JĘZYK</text>
+<rect x="32" y="68" width="416" height="108" rx="18" fill="#0b254b"/>
+<text x="240" y="112" font-size="25" font-weight="700" fill="white">Wspólny panel</text>
+<text x="240" y="143" font-size="15" fill="#c4d9fa">Treści organizacji i uprawnienia</text>
+<path d="M240 176V206M240 206H120V237M240 206H360V237" fill="none" stroke="#9abbe9" stroke-width="2"/>
+<rect x="24" y="237" width="208" height="98" rx="15" fill="white" stroke="#cbdcf4"/>
+<rect x="248" y="237" width="208" height="98" rx="15" fill="white" stroke="#cbdcf4"/>
+<text x="128" y="278" font-size="21" font-weight="700" fill="#0b254b">Placówka A</text>
+<text x="128" y="307" font-size="14" fill="#506686">Polski / English</text>
+<text x="352" y="278" font-size="21" font-weight="700" fill="#0b254b">Placówka B</text>
+<text x="352" y="307" font-size="14" fill="#506686">Polski / English</text>
+<path d="M128 335V361H352V335M240 361V378" fill="none" stroke="#9abbe9" stroke-width="2"/>
+<text x="240" y="405" font-size="16" fill="#1760dc">Sprawdź każdą placówkę i język</text>
+</g></svg>

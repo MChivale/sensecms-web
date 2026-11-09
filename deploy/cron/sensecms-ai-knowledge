@@ -1,3 +1,3 @@
 # Process lightweight page/post changes every minute and reconcile the complete local index nightly.
-* * * * * sensecms /usr/bin/php8.5 /home/sensecms.com/web/scripts/ai-knowledge-sync.php >> /home/sensecms.com/web/storage/ai-knowledge-worker.log 2>&1
-0 5 * * * sensecms /usr/bin/php8.5 /home/sensecms.com/web/scripts/ai-knowledge-sync.php --reconcile >> /home/sensecms.com/web/storage/ai-knowledge-worker.log 2>&1
+* * * * * web128 /usr/bin/php8.5 /home/sensecms.com/private/sensecms/scripts/ai-knowledge-sync.php >> /home/sensecms.com/private/sensecms/storage/ai-knowledge-worker.log 2>&1
+0 5 * * * web128 /usr/bin/php8.5 /home/sensecms.com/private/sensecms/scripts/ai-knowledge-sync.php --reconcile >> /home/sensecms.com/private/sensecms/storage/ai-knowledge-worker.log 2>&1

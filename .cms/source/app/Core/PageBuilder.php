@@ -148,6 +148,7 @@ final class PageBuilder
             foreach ($locales as $locale) {
                 $data = is_array($block['localized'][$locale] ?? null) ? $block['localized'][$locale] : [];
                 $localized[$locale] = self::sanitizeData($data, $catalog[$type]['fields'], false, $draft);
+                BuilderMediaItems::preserve($type,$data,$localized[$locale]);
                 if(!$draft)self::validateComponent($type, $localized[$locale], $shared, (string) $locale);
             }
             $visibleFrom = self::dateTime($block['visible_from'] ?? null, 'The section start date is invalid.');
@@ -172,11 +173,17 @@ final class PageBuilder
     }
 
     /** Converts a sanitized Builder document into the portable public block contract. */
-    public static function previewBlocks(array $blocks, string $locale, string $fallbackLocale): array
+    public static function previewBlocks(array $blocks, string $locale, string $fallbackLocale, ?string $scheduleTime = null): array
     {
         $result = [];
         foreach ($blocks as $block) {
             if (!is_array($block)) continue;
+            if ($scheduleTime !== null) {
+                // The public query compares DATETIME values against the database clock.
+                $start = str_replace('T', ' ', (string) ($block['visible_from'] ?? ''));
+                $end = str_replace('T', ' ', (string) ($block['visible_until'] ?? ''));
+                if (empty($block['visible']) || ($start !== '' && $start > $scheduleTime) || ($end !== '' && $end <= $scheduleTime)) continue;
+            }
             $localized = is_array($block['localized'] ?? null) ? $block['localized'] : [];
             $payload = $localized[$locale] ?? $localized[$fallbackLocale] ?? reset($localized);
             $result[] = [

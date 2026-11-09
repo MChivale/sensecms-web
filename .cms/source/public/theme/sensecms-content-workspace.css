@@ -255,3 +255,15 @@
     .sensecms-content-actions .bg-default-150 svg { margin: 0; }
     .sensecms-form-actions-note { align-items: flex-start; }
 }
+
+/* One readable save state and wrapping document titles. */
+.sensecms-content-toolbar { margin-bottom:12px; }
+.sensecms-content-save-state { font-size:12px; }
+.sensecms-content-document label strong { white-space:normal; overflow-wrap:anywhere; }
+.sensecms-content-document { min-width:0; }
+.sensecms-content-state-stack { flex:none; }
+@media(max-width:700px) {
+    .sensecms-content-actions { flex-wrap:wrap; }
+    .sensecms-content-actions .btn { white-space:normal; }
+    .sensecms-content-save-state { white-space:normal; }
+}

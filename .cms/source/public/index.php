@@ -36,7 +36,7 @@ try {
     $postLimit = ini_parse_quantity((string) ini_get('post_max_size'));
     if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && $postLimit > 0 && (int) ($_SERVER['CONTENT_LENGTH'] ?? 0) > $postLimit) $reply(['message' => 'Upload exceeds this server’s POST limit. Send a smaller batch or ask the operator to review upload settings.'], 413);
     if ($installed && $path === '/packages/download') App\Http\DistributionController::run($runtime,(bool)$local);
-    $adminPath = preg_match('#^/(?:install|login|logout|dashboard|settings|license|account)(?:/|$)#D', $path)
+    $adminPath = ($workspaceEnabled && $path === '/workspace/context') || preg_match('#^/(?:install|login|logout|dashboard|settings|license|account)(?:/|$)#D', $path)
         || $workspaceEnabled && preg_match('#^/(?:profile|content|appearance|marketplace|system|api|calendar|surveys|forms|seo|ai|conversations|social-publishing|forgot-password|reset-password|set-password|captcha|extension-assets)(?:/|$)#D', $path);
     $managedPage = false;
     $publicPage = null;

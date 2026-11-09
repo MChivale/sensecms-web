@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Mastodon Publisher",
   "slug": "mastodon-publisher",
-  "version": "0.1.1",
+  "version": "0.1.4",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Publishes reviewed Sense CMS posts to connected accounts on independent Mastodon servers.",
@@ -36,6 +36,9 @@
     "/social-publishing/mastodon/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.1.4", "summary": "Refresh the shared Social Publishing stylesheet used on the Mastodon settings screen."},
+    {"version": "0.1.3", "summary": "Translate connected-account summaries and fallback labels."},
+    {"version": "0.1.2", "summary": "Localize the administration interface in Polish and English."},
     {"version": "0.1.1", "summary": "Prefill mastodon.social as the default server while keeping the field editable for every public Mastodon instance."},
     {"version": "0.1.0", "summary": "Connect multiple accounts across public Mastodon servers and publish reviewed link statuses through minimal-scope OAuth."}
   ]

@@ -1,0 +1,544 @@
+/* Shared administration roles. Canvas content and icon-only tools keep their own sizing. */
+#sensecms-main {
+    --console-title: 1rem;
+    --console-action: .875rem;
+    --console-compact: .8125rem;
+    --console-radius: .5rem;
+}
+#sensecms-main .sensecms-media-inspector-meta small { color: var(--console-muted); }
+html[data-theme="dark"] .sensecms-media-drop > strong,
+html[data-theme="dark"] .sensecms-media-inspector-meta strong,
+html[data-theme="dark"] .sensecms-media-section h4 { color: #e1eaf5; }
+html[data-theme="dark"] .sensecms-media-shared-fields,
+html[data-theme="dark"] .sensecms-media-localized { background-color: #192a3c; border-color: #364a62; }
+
+dialog.sensecms-media-overlay {
+    width: 100%; height: 100%; max-width: none; max-height: none;
+    margin: 0; border: 0; color: inherit;
+}
+dialog.sensecms-media-overlay::backdrop { background: transparent; }
+#sensecms-main .sensecms-survey-palette > header > span { color: #bfdcff; }
+html[data-theme="dark"] {
+    .sensecms-settings-panel > header p,
+    .sensecms-settings-group > span,
+    .sensecms-survey-panel-head p { color: var(--console-muted); }
+    .sensecms-settings-option input:checked + span,
+    .sensecms-survey-settings-card header span,
+    .sensecms-survey-panel-head span,
+    .sensecms-survey-publish-grid header span,
+    .sensecms-survey-inline-add { color: var(--console-accent); }
+    .sensecms-editor-shortcut b,
+    .sensecms-history b,
+    .sensecms-media-dialog > header h3,
+    .sensecms-media-inspector > header h3 { color: #e5edf7; }
+    .sensecms-media-drop,
+    .sensecms-survey-page-card > header,
+    .sensecms-survey-switches label { background-color: #192a3c; color: #dee9f6; }
+    .sensecms-survey-page-card > header small { color: var(--console-muted); }
+    .sensecms-builder-block-badges em.is-workflow.is-draft { color: #485a70; }
+}
+#sensecms-main .btn.bg-primary.text-white {
+    background-color:color-mix(in srgb,var(--color-primary) 82%,#102d4f);
+}
+#sensecms-main .btn.bg-primary.text-white:hover {
+    background-color:color-mix(in srgb,var(--color-primary) 70%,#102d4f);
+}
+#sensecms-main .card-header :is(.card-title, h2, h3),
+#sensecms-main .card-header > .card-title {
+    font-size: var(--console-title);
+    font-weight: 650;
+    line-height: 1.4;
+}
+#sensecms-main :is(.card-header, .sensecms-access-list-head, .sensecms-section-hero, .sensecms-content-actions,
+    .sensecms-save-actions, .sensecms-form-actions, .sensecms-email-actions) .btn {
+    min-height: 2.5rem;
+    border-radius: var(--console-radius);
+    font-size: var(--console-action);
+    line-height: 1.35;
+}
+#sensecms-main :is(.sensecms-survey-pagination, .sensecms-index-pagination) :is(a,button) {
+    min-height: 2.25rem;
+    font-size: var(--console-compact);
+    border-radius: var(--console-radius);
+}
+.sensecms-save-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: .625rem;
+}
+#sensecms-main .sensecms-taxonomy-list .sensecms-row-actions > a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .35rem;
+    width: auto;
+    min-height: 2.25rem;
+    padding-inline: .6rem;
+    font-size: var(--console-compact);
+}
+#sensecms-main :is(.card-header .card-title, .sensecms-media-content > header h3, .sensecms-media-folders > header h3) {
+    color: var(--color-default-900);
+}
+#sensecms-main .sensecms-media-toolbar {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: start;
+}
+.sensecms-media-filters[open] { grid-column: span 2; }
+#sensecms-main .sensecms-media-filters[open] ~ .sensecms-media-status-toggle { justify-self: start; }
+.sensecms-media-filter-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
+    gap: .5rem;
+    margin-top: .5rem;
+}
+#sensecms-main .sensecms-media-filter-fields > select { display: block; }
+.sensecms-media-filters > summary, .sensecms-media-folders > summary {
+    padding: .6rem .8rem;
+    border: 1px solid var(--color-default-200);
+    border-radius: var(--console-radius);
+    cursor: pointer;
+    font-size: var(--console-compact);
+    font-weight: 600;
+}
+@media (min-width: 769px) {
+    .sensecms-media-folders[open] > summary { display: none; }
+}
+@media (max-width: 768px) {
+    #sensecms-main .sensecms-taxonomy-list .sensecms-row-actions { justify-content: flex-end; }
+    #sensecms-main .sensecms-section-tabs { gap: .375rem; }
+    #sensecms-main .sensecms-section-tabs > :is(a,button) {
+        flex: 0 1 auto;
+        width: auto;
+        min-height: 2.75rem;
+        padding: .45rem .625rem;
+        overflow-wrap: anywhere;
+    }
+    #sensecms-main :is(.sensecms-ai-navigation, .sensecms-knowledge-tabs) small { display: none; }
+    #sensecms-main [data-ai-knowledge] { display: grid; grid-template-columns: minmax(0,1fr); }
+    #sensecms-main [data-ai-knowledge] > .sensecms-ai-summary { order: 1; grid-template-columns: repeat(2, minmax(0,1fr)); }
+    #sensecms-main .sensecms-media-toolbar { grid-template-columns: minmax(0, 1fr) auto; }
+    #sensecms-main .sensecms-media-search, .sensecms-media-filters[open] { grid-column: 1/-1; }
+    .sensecms-media-shell > .sensecms-media-summary { order: 1; }
+    #sensecms-main .sensecms-media-layout { grid-template-columns: minmax(0,1fr); }
+    #sensecms-main .sensecms-save-actions { justify-content: flex-start; }
+}
+.app-menu .sensecms-menu-brand {
+    align-items: center;
+    justify-content: flex-start;
+    gap: 12px;
+    padding-inline: 24px 54px;
+    container: menu-brand / inline-size;
+    color: #061b4f;
+    font: 750 26px/1.35 Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    letter-spacing: -.06em;
+    white-space: nowrap;
+}
+.sensecms-menu-brand img { width: 34px; height: 38px; flex: none; }
+.sensecms-menu-wordmark > span { font-weight: 420; }
+.sensecms-menu-wordmark > b { color: #145cde; font-weight: inherit; }
+[data-theme="dark"] .sensecms-menu-brand { color: #f2f6ff; }
+[data-theme="dark"] .sensecms-menu-wordmark > b { color: #82b4ff; }
+@container menu-brand (max-width: 163px) {
+    .sensecms-menu-wordmark { display: none; }
+}
+
+/* Interface text uses the same semantic colours across editors, settings and packages.
+   Pastel badges retain dark ink in either theme; dark surfaces use the lighter inks. */
+:where(html[data-theme="light"]) {
+    --console-muted: #485a70;
+    --console-accent: #1759ac;
+    --console-positive: #126244;
+    --console-danger: #a53a1b;
+
+    .sensecms-builder-live-toolbar > span.is-updating,
+    .sensecms-channel-note a,
+    .sensecms-dashboard-readiness-list a,
+    .sensecms-extension-heading > div > span,
+    .sensecms-extension-hero > div > span,
+    .sensecms-facility-directory .sensecms-overline,
+    .sensecms-facility-editor .sensecms-overline,
+    .sensecms-facility-geo .sensecms-overline,
+    .sensecms-facility-hero span,
+    .sensecms-index-health,
+    .sensecms-index-hero span,
+    .sensecms-index-workspace .sensecms-index-filters a.is-active,
+    .sensecms-installer > div:nth-child(2) > span,
+    .sensecms-location-tabs a.is-active strong,
+    .sensecms-media-status-toggle button.is-active,
+    .sensecms-overline,
+    .sensecms-shared-settings header span,
+    .wrapper .sensecms-section-tabs > .is-active,
+    .wrapper .sensecms-section-tabs > [aria-current="page"],
+    .wrapper .sensecms-section-tabs > [aria-selected="true"] {
+        color: var(--console-accent);
+    }
+
+    .calendar-day.is-outside .calendar-day-number,
+    .calendar-weekday,
+    .sensecms-access-help,
+    .sensecms-access-list-head span,
+    .sensecms-ai-budget > p,
+    .sensecms-ai-budget legend small,
+    .sensecms-ai-provider-card > header small,
+    .sensecms-ai-provider-card footer > span,
+    .sensecms-ai-summary span,
+    .sensecms-ai-usage small,
+    .sensecms-ai-usage span,
+    .sensecms-audit-row span,
+    .sensecms-builder-field > span small,
+    .sensecms-builder-inspector-group > header span,
+    .sensecms-builder-inspector-head span,
+    .sensecms-builder-library-tabs button,
+    .sensecms-builder-locales button,
+    .sensecms-builder-locales button span,
+    .sensecms-builder-view-switch > button,
+    .sensecms-builder-view-switch > span small,
+    .sensecms-channel-status small,
+    .sensecms-check small,
+    .sensecms-choice-grid label > span small,
+    .sensecms-content-identity small,
+    .sensecms-content-save-state,
+    .sensecms-dashboard-content-split small,
+    .sensecms-dashboard-facility-list small,
+    .sensecms-dimension-grid label span small,
+    .sensecms-editor-language-head span,
+    .sensecms-editor-workflow-note,
+    .sensecms-email-card .card-header p,
+    .sensecms-email-card label > small,
+    .sensecms-email-check small,
+    .sensecms-email-server-actions > small,
+    .sensecms-extension-card > p,
+    .sensecms-extension-card footer,
+    .sensecms-extension-heading p,
+    .sensecms-extension-hero p,
+    .sensecms-extension-meta span,
+    .sensecms-facility-form-actions p,
+    .sensecms-facility-readiness small,
+    .sensecms-field-note,
+    .sensecms-file-picker span,
+    .sensecms-form-actions > span,
+    .sensecms-input-suffix b,
+    .sensecms-installer-security span,
+    .sensecms-knowledge-content > footer > span,
+    .sensecms-knowledge-content-list small,
+    .sensecms-knowledge-editor label > small,
+    .sensecms-knowledge-index-grid li small,
+    .sensecms-knowledge-pagination,
+    .sensecms-knowledge-rebuild dt,
+    .sensecms-knowledge-rebuild p,
+    .sensecms-knowledge-rebuild small,
+    .sensecms-knowledge-source-list article p,
+    .sensecms-knowledge-source-list article small,
+    .sensecms-knowledge-toggle small,
+    .sensecms-language-tabs button,
+    .sensecms-lifecycle-toolbar p,
+    .sensecms-lifecycle.is-draft,
+    .sensecms-marketplace-action.is-uninstall,
+    .sensecms-marketplace-card-body > footer > span,
+    .sensecms-marketplace-search kbd,
+    .sensecms-marketplace-summary small,
+    .sensecms-marketplace-tags span,
+    .sensecms-marketplace-title small,
+    .sensecms-navigation-footer p,
+    .sensecms-permission-group > strong,
+    .sensecms-person-main small,
+    .sensecms-popup-toolbar p,
+    .sensecms-post-ai-guard small,
+    .sensecms-post-media-empty,
+    .sensecms-post-media-head small,
+    .sensecms-post-media-selection small,
+    .sensecms-publisher-grid label small,
+    .sensecms-publisher-list code,
+    .sensecms-publisher-list span,
+    .sensecms-publisher-workspace header p,
+    .sensecms-rich-media-actions button.is-url,
+    .sensecms-role-row small,
+    .sensecms-state-dot.is-off,
+    .sensecms-survey-empty p,
+    .sensecms-survey-kpis small,
+    .sensecms-survey-summary small,
+    .sensecms-taxonomy-items small,
+    .sensecms-team small,
+    .sensecms-theme-contract p,
+    .sensecms-training-approval small,
+    .sensecms-training-empty,
+    .sensecms-training-list p,
+    .sensecms-training-list small,
+    .sensecms-training-locked > small,
+    .sensecms-training-locked p,
+    .sensecms-workflow-stat span,
+    .social-panel-footer,
+    .social-stat small,
+    .social-table th,
+    .wrapper .sensecms-section-tabs small {
+        color: var(--console-muted);
+    }
+
+    .sensecms-addon-state.is-active,
+    .sensecms-ai-provider-card > header em.is-enabled,
+    .sensecms-channel-badge.is-ready,
+    .sensecms-dashboard-facility-list em.is-active,
+    .sensecms-dashboard-recent-list em.is-published,
+    .sensecms-facility-status.is-active,
+    .sensecms-index-health.is-ready,
+    .sensecms-knowledge-source-list article header span.is-published,
+    .sensecms-lifecycle.is-published,
+    .sensecms-status.is-active {
+        color: var(--console-positive);
+    }
+}
+:where(html[data-theme="dark"]) {
+    --console-muted: #b5c3d4;
+    --console-accent: #a2c6ff;
+    --console-positive: #91dcb7;
+    --console-danger: #ffad99;
+    --console-muted-on-light: #485a70;
+    --console-accent-on-light: #1759ac;
+    --console-positive-on-light: #126244;
+    --console-danger-on-light: #a53a1b;
+
+    .sensecms-builder-canvas-head span,
+    .sensecms-builder-gap,
+    .sensecms-builder-live-toolbar > span.is-updating,
+    .sensecms-dashboard-panel > header > a,
+    .sensecms-dashboard-readiness-list a,
+    .sensecms-dashboard-score,
+    .sensecms-extension-card footer a,
+    .sensecms-extension-heading > div > span,
+    .sensecms-extension-hero > div > span,
+    .sensecms-index-hero span,
+    .sensecms-installer > div:nth-child(2) > span,
+    .sensecms-lifecycle-toolbar > div > span,
+    .sensecms-location-tabs a.is-active strong,
+    .sensecms-marketplace-card-body > footer > button,
+    .sensecms-marketplace-launch small,
+    .sensecms-overline,
+    .sensecms-package-links button,
+    .sensecms-publisher-workspace > header > div > span,
+    .sensecms-search-index-groups b,
+    .sensecms-shared-settings header span,
+    .sensecms-theme-card header > div > span,
+    .sensecms-theme-contract > a,
+    .sensecms-theme-contract > div > span,
+    .sensecms-theme-hero > div > span,
+    .sensecms-update-kicker,
+    .social-account-kicker,
+    .social-table td > a,
+    .wrapper .sensecms-section-tabs > .is-active,
+    .wrapper .sensecms-section-tabs > [aria-current="page"],
+    .wrapper .sensecms-section-tabs > [aria-selected="true"] {
+        color: var(--console-accent);
+    }
+
+    .sensecms-index-health {
+        color: var(--console-accent-on-light);
+    }
+
+    .social-disconnect,
+    .social-table td small,
+    .social-youtube-page .social-account-kicker {
+        color: var(--console-danger);
+    }
+
+    .calendar-view-switch button,
+    .sensecms-access-tabs a,
+    .sensecms-ai-budget-fields label > span,
+    .sensecms-ai-provider-card footer > span,
+    .sensecms-ai-provider-fields label > span,
+    .sensecms-ai-provider-options label,
+    .sensecms-ai-summary span,
+    .sensecms-builder-field > span,
+    .sensecms-builder-locales button,
+    .sensecms-builder-view-switch > button,
+    .sensecms-channel-check small,
+    .sensecms-channel-metrics dt,
+    .sensecms-channel-results,
+    .sensecms-channel-status p,
+    .sensecms-channel-status small,
+    .sensecms-channel-summary span,
+    .sensecms-check small,
+    .sensecms-choice-grid label > span b,
+    .sensecms-content-empty strong,
+    .sensecms-dashboard-bars strong,
+    .sensecms-dashboard-readiness-list span,
+    .sensecms-editor-main label > span,
+    .sensecms-editor-sidebar label > span,
+    .sensecms-email-placeholders strong,
+    .sensecms-extension-card > p,
+    .sensecms-extension-card footer,
+    .sensecms-extension-heading h3,
+    .sensecms-extension-meta span,
+    .sensecms-facility-readiness b,
+    .sensecms-facility-toggle span b,
+    .sensecms-file-picker span,
+    .sensecms-inbox-list > footer,
+    .sensecms-installer h3,
+    .sensecms-installer p,
+    .sensecms-installer-security span,
+    .sensecms-installer-security strong,
+    .sensecms-knowledge-content-list label,
+    .sensecms-knowledge-pagination,
+    .sensecms-knowledge-rebuild p,
+    .sensecms-knowledge-rebuild small,
+    .sensecms-lifecycle-toolbar p,
+    .sensecms-marketplace-action.is-uninstall,
+    .sensecms-marketplace-chip-groups > div > span,
+    .sensecms-marketplace-launch p,
+    .sensecms-marketplace-search-row label > span:first-child,
+    .sensecms-navigation-item label > span,
+    .sensecms-post-ai-guard small,
+    .sensecms-post-ai-guard strong,
+    .sensecms-publisher-grid label > span,
+    .sensecms-publisher-list span,
+    .sensecms-publisher-workspace header p,
+    .sensecms-quick-nav-title,
+    .sensecms-rich-field > span,
+    .sensecms-rich-media-actions button,
+    .sensecms-search-index-stats small,
+    .sensecms-search-index-stats strong,
+    .sensecms-seo-section h4,
+    .sensecms-shared-settings h4,
+    .sensecms-survey-kpis small,
+    .sensecms-survey-summary small,
+    .sensecms-switch b,
+    .sensecms-taxonomy-editor label > span,
+    .sensecms-telegram-qr p,
+    .sensecms-telegram-status p,
+    .sensecms-theme-active p,
+    .sensecms-theme-contract p,
+    .sensecms-training-form label > span:first-child,
+    .sensecms-training-locked > small,
+    .sensecms-training-locked p,
+    .sensecms-web-push-privacy,
+    .social-account-meta dd,
+    .social-provider-identity span,
+    .social-table td,
+    .text-default-500,
+    .wrapper .sensecms-section-tabs small {
+        color: var(--console-muted);
+    }
+
+    .sensecms-builder-locales button span,
+    .sensecms-choice-grid label > span small,
+    .sensecms-editor-workflow-note,
+    .sensecms-facility-form-actions p,
+    .sensecms-field-note,
+    .sensecms-lifecycle.is-draft,
+    .sensecms-marketplace-search kbd,
+    .sensecms-marketplace-tags span,
+    .sensecms-survey-empty p,
+    .telegram-bot-notice p,
+    .wrapper .sensecms-section-tabs > a,
+    .wrapper .sensecms-section-tabs > button {
+        color: var(--console-muted-on-light);
+    }
+
+    .sensecms-state-dot {
+        color: var(--console-positive);
+    }
+
+    .sensecms-addon-state.is-active,
+    .sensecms-ai-provider-card > header em.is-enabled,
+    .sensecms-dashboard-facility-list em.is-active,
+    .sensecms-dashboard-recent-list em.is-published,
+    .sensecms-facility-status.is-active,
+    .sensecms-index-health.is-ready,
+    .sensecms-knowledge-source-list article header span.is-published,
+    .sensecms-lifecycle.is-published,
+    .sensecms-status.is-active {
+        color: var(--console-positive-on-light);
+    }
+}
+
+:where(html[data-theme="light"]) #sensecms-main {
+    --color-primary: var(--console-accent);
+    --color-success: var(--console-positive);
+    --color-danger: var(--console-danger);
+}
+:where(html[data-theme="dark"]) #sensecms-main :is(.text-primary, code) { color: var(--console-accent); }
+:where(html[data-theme="dark"]) #sensecms-main .text-danger { color: var(--console-danger); }
+:where(html[data-theme="dark"]) #sensecms-main .text-success { color: var(--console-positive); }
+:where(html[data-theme="dark"]) #sensecms-main .text-default-500 { color: var(--console-muted); }
+:where(html[data-theme="dark"]) .sensecms-language-tabs button:not(.is-active):not([aria-selected="true"]) { background-color: #202f44; color: var(--console-muted); }
+:where(html[data-theme="dark"]) .sensecms-highlight-card,
+:where(html[data-theme="dark"]) .sensecms-survey-empty { background-color: #182537; border-color: #37485d; }
+:where(html[data-theme="dark"]) .sensecms-survey-empty p { color: var(--console-muted); }
+:where(html[data-theme="dark"]) .social-hero-actions .btn.border-default-200,
+:where(html[data-theme="dark"]) .telegram-bot-notice { color: #243953; }
+:where(html[data-theme="dark"]) .telegram-bot-notice a { color: #1759ac; text-decoration: underline; }
+#sensecms-main .bg-success.text-white { background-color: #176647; }
+#sensecms-main .sensecms-builder-workspaces button[aria-pressed="true"] { color: #fff; background-color: #1759ac; }
+#sensecms-main .sensecms-builder-view-switch > span small { color: var(--console-muted); }
+#sensecms-main .sensecms-document-picker select > button { min-height: 2rem; }
+#sensecms-main li > a.text-primary { text-decoration: underline; text-underline-offset: .15em; }
+
+/* Set text and surface as a pair wherever the control supplies its own fill. */
+#sensecms-main .sensecms-marketplace-action.is-uninstall { color: #fff; background: #a32d3d; }
+#sensecms-main .sensecms-location-tabs .is-active strong { color: var(--console-accent); }
+html[data-theme="dark"] .wrapper .sensecms-section-tabs > :is(button,a):not(.is-active):not([aria-current="page"]):not([aria-selected="true"]) {
+    color: var(--console-muted); background-color: #182637;
+}
+html[data-theme="dark"] .sensecms-file-picker { background-color: #192636; border-color: #485a70; }
+html[data-theme="dark"] .sensecms-language-tabs button > span { color: #29405c; background-color: #dce6f1; }
+html[data-theme="dark"] #sensecms-main code { color: #c2daff; background-color: #192a40; }
+html[data-theme="dark"] .sensecms-choice-grid label > span,
+html[data-theme="dark"] .sensecms-source-kind label > span { background-color: #1a293c; color: #e1eaf5; }
+html[data-theme="dark"] .sensecms-source-kind input:checked + span { background-color: #203955; color: #c2daff; }
+html[data-theme="dark"] .sensecms-knowledge-content > footer > span { color: var(--console-muted); }
+
+/* Navigation, focus and details that appear only in open editors and panels. */
+html[data-theme="light"] { --sensecms-focus: #164e9b; }
+html[data-theme="dark"] { --sensecms-focus: #a9ccff; }
+html[data-theme="light"] #app-menu { --sidenav-item-active-color: #1655a6; }
+.sensecms-settings-panel > header p,
+.sensecms-settings-group > span { font-size: .75rem; }
+.sensecms-settings-option span,
+.sensecms-settings-links a { font-size: .875rem; line-height: 1.35; }
+.sensecms-settings-option input:focus-visible + span,
+.sensecms-choice-grid input:focus-visible + span,
+.sensecms-source-kind input:focus-visible + span {
+    outline: 3px solid var(--sensecms-focus);
+    outline-offset: 2px;
+}
+.sensecms-settings-panel .sensecms-text-scale-controls button:last-child { color: var(--console-accent); }
+.sensecms-dashboard-attention,
+.sensecms-marketplace-security small,
+.social-hero-summary small { color: #425b52; }
+.sensecms-builder-live-toolbar :is(button,a),
+.sensecms-survey-pagination span,
+.sensecms-marketplace-results-head p,
+.social-security-note { color: var(--console-muted); }
+:where(html[data-theme="light"]) {
+    .calendar-choices legend small,
+    .calendar-empty,
+    .calendar-field small,
+    .sensecms-builder-block-badges em.is-workflow,
+    .sensecms-builder-block-title span,
+    .sensecms-editor-shortcut small,
+    .sensecms-history small,
+    .sensecms-section-hero-state small,
+    .sensecms-survey-check-grid small,
+    .sensecms-survey-help,
+    .sensecms-survey-page-card > header small,
+    .sensecms-survey-palette small,
+    .sensecms-survey-panel-head p,
+    .sensecms-survey-rule-empty p,
+    .sensecms-survey-settings-card header small,
+    .sensecms-survey-tabs button { color: var(--console-muted); }
+    .sensecms-survey-hero span,
+    .sensecms-survey-settings-card header span,
+    .sensecms-survey-panel-head span,
+    .sensecms-survey-palette header span,
+    .sensecms-survey-publish-grid header span,
+    .sensecms-survey-results-toolbar span,
+    .sensecms-survey-drawer header span { color: var(--console-accent); }
+}
+:where(html[data-theme="dark"]) {
+    .sensecms-extension-tabs button:not(.is-active) span { color: var(--console-muted-on-light); }
+    .sensecms-choice-grid label > span small,
+    .sensecms-extension-group > h4,
+    .sensecms-console-search-field kbd { color: var(--console-muted); }
+    .sensecms-marketplace-results-head > div > span { color: var(--console-accent); }
+}

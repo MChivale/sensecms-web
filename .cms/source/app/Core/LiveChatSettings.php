@@ -11,6 +11,7 @@ final class LiveChatSettings
         return [
             'general' => ['localized' => [
                 'en' => ['title' => 'Live Chat', 'welcome' => 'How can we help?', 'intro' => 'Send us a message and our team will help you.', 'online' => 'Ready to help', 'offline' => 'Offline now · leave us a message'],
+                'pl' => ['title' => 'Czat na żywo', 'welcome' => 'Jak możemy pomóc?', 'intro' => 'Napisz do nas, a nasz zespół Ci pomoże.', 'online' => 'Gotowi do pomocy', 'offline' => 'Poza godzinami pracy · zostaw wiadomość'],
                 'km' => ['title' => 'ការជជែកផ្ទាល់', 'welcome' => 'តើយើងអាចជួយអ្វីបាន?', 'intro' => 'ផ្ញើសារមកយើង ហើយក្រុមការងាររបស់យើងនឹងជួយអ្នក។', 'online' => 'រួចរាល់ដើម្បីជួយ', 'offline' => 'ក្រៅម៉ោងធ្វើការ · សូមទុកសារ'],
                 'zh' => ['title' => '在线客服', 'welcome' => '我们能为您做什么？', 'intro' => '请发送消息，我们的团队将为您提供帮助。', 'online' => '随时为您服务', 'offline' => '当前离线 · 请留言'],
             ]],

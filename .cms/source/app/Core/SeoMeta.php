@@ -118,6 +118,8 @@ final class SeoMeta
         $imageType = self::first($document['og_image_type'] ?? '', $usingFallback ? ($context['fallback_image_type'] ?? '') : '', $global['default_image_type'] ?? '');
         $author = self::first($document['author'] ?? '', $global['author'] ?? '', $siteName);
         $publisher = self::first($global['publisher'] ?? '', $siteName);
+        $published = self::date($content['published_at'] ?? '');
+        $modified = self::date($content['updated_at'] ?? '');
         $alternates = [];
         foreach ((array) ($context['language_urls'] ?? []) as $code => $path) $alternates[(string) $code] = self::absolute((string) $path, $baseUrl);
         $defaultLocale = (string) ($context['default_locale'] ?? $locale);
@@ -131,14 +133,17 @@ final class SeoMeta
         foreach (['email','telephone'] as $schemaKey) { $profileKey = $schemaKey === 'telephone' ? 'phone' : 'email'; if (($context['profile'][$profileKey] ?? '') !== '') $organization[$schemaKey] = $context['profile'][$profileKey]; }
         if (($context['profile']['address'] ?? '') !== '') $organization['address'] = ['@type'=>'PostalAddress','streetAddress'=>$context['profile']['address'],'addressCountry'=>$global['country_code'] ?: null];
         $webPage = ['@type'=>$type==='post'?'WebPage':$document['schema_type'],'@id'=>$pageId,'url'=>$canonical,'name'=>$title,'description'=>$description,'inLanguage'=>$locale,'isPartOf'=>['@id'=>$websiteId],'about'=>['@id'=>$orgId]];
+        if ($published !== '') $webPage['datePublished'] = $published;
+        if ($modified !== '') $webPage['dateModified'] = $modified;
         if ($image !== '') $webPage['primaryImageOfPage'] = ['@type'=>'ImageObject','url'=>$image,'caption'=>$imageAlt,'width'=>$width ?: null,'height'=>$height ?: null];
         $graph = [$organization, ['@type'=>'WebSite','@id'=>$websiteId,'url'=>$baseUrl,'name'=>$siteName,'publisher'=>['@id'=>$orgId],'inLanguage'=>$locale], $webPage];$associated=[];
         foreach([['video_url','VideoObject','video'],['audio_url','AudioObject','audio']]as[$key,$schema,$suffix]){$url=self::absolute((string)($content[$key]??''),$baseUrl);if($url==='')continue;$id=$canonical.'#'.$suffix;$media=['@type'=>$schema,'@id'=>$id,'name'=>$rawTitle,'description'=>$description,'contentUrl'=>$url,'inLanguage'=>$locale,'uploadDate'=>$content['published_at']??null];if($schema==='VideoObject'&&$image!=='')$media['thumbnailUrl']=[$image];$graph[]=$media;$associated[]=['@id'=>$id];}
-        if ($type === 'post' || $document['og_type'] === 'article'){$article=['@type'=>$document['schema_type'],'headline'=>$rawTitle,'description'=>$description,'url'=>$canonical,'mainEntityOfPage'=>['@id'=>$pageId],'image'=>$image !== '' ? [$image] : [],'author'=>['@type'=>'Person','name'=>$author],'publisher'=>['@id'=>$orgId],'datePublished'=>$content['published_at'] ?? null,'dateModified'=>$content['updated_at'] ?? null,'inLanguage'=>$locale];if($associated)$article['associatedMedia']=$associated;$graph[]=$article;}
+        if ($type === 'post' || $document['og_type'] === 'article'){$article=['@type'=>$document['schema_type'],'headline'=>$rawTitle,'description'=>$description,'url'=>$canonical,'mainEntityOfPage'=>['@id'=>$pageId],'image'=>$image !== '' ? [$image] : [],'author'=>$author===$siteName?['@id'=>$orgId]:['@type'=>'Person','name'=>$author],'publisher'=>['@id'=>$orgId],'datePublished'=>$published,'dateModified'=>$modified,'inLanguage'=>$locale];if($associated)$article['associatedMedia']=$associated;$graph[]=$article;}
         return array_replace($document, [
             'site_name'=>$siteName,'site_url'=>$baseUrl,'raw_title'=>$rawTitle,'title'=>$title,'description'=>$description,
             'keywords'=>self::first($document['keywords'] ?? '', $localized['default_keywords'] ?? ''),'canonical'=>$canonical,
             'author'=>$author,'publisher'=>$publisher,'image'=>$image,'image_alt'=>$imageAlt,'image_width'=>$width,'image_height'=>$height,'image_type'=>$imageType,
+            'date_published'=>$published,'date_modified'=>$modified,
             'og_title'=>self::first($document['og_title'] ?? '', $title),'og_description'=>self::first($document['og_description'] ?? '', $description),
             'twitter_title'=>self::first($document['twitter_title'] ?? '', $document['og_title'] ?? '', $title),
             'twitter_description'=>self::first($document['twitter_description'] ?? '', $document['og_description'] ?? '', $description),
@@ -157,6 +162,8 @@ final class SeoMeta
     }
 
     private static function text(mixed $value, int $limit): string { return mb_substr(trim((string) $value), 0, $limit); }
+    // Legacy SQL dates have no timezone contract; retain day precision instead of inventing an offset.
+    private static function date(mixed $value): string { $value=trim((string)$value);if(!preg_match('/^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2}(?:Z|[+-]\d{2}:\d{2})?)?$/D',$value))return'';try{$date=new \DateTimeImmutable($value);$errors=\DateTimeImmutable::getLastErrors();return$errors&&($errors['warning_count']||$errors['error_count'])?'':$date->format(preg_match('/(?:Z|[+-]\d{2}:\d{2})$/D',$value)?DATE_ATOM:'Y-m-d');}catch(\Exception){return'';} }
     private static function choice(mixed $value, array $allowed, string $fallback): string { $value=(string)$value;return in_array($value,$allowed,true)?$value:$fallback; }
     private static function dimension(mixed $value, int $fallback): int { $value=(int)$value;return $value===0?0:($value>=1&&$value<=10000?$value:$fallback); }
     private static function first(mixed ...$values): string { foreach($values as$value){$value=trim((string)$value);if($value!=='')return$value;}return''; }

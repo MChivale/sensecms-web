@@ -27,6 +27,8 @@ foreach ($unsafe as $payload) {
 }
 $safe = HtmlSanitizer::sanitize('<unknown><p>Hello <strong>world</strong> <a href="https://example.test" target="_blank">link</a></p></unknown>');
 $check(str_contains($safe, '<strong>world</strong>') && str_contains($safe, 'rel="noopener noreferrer"'), 'Unwrapping preserves safe content and link protection');
+$formatted = HtmlSanitizer::sanitize('<p style="text-align:center"><s>Old</s> <u>New</u></p><p style="text-align:left;background:url(https://example.test/x)">Other</p>');
+$check(str_contains($formatted, 'style="text-align: center"') && str_contains($formatted, '<s>Old</s>') && str_contains($formatted, '<u>New</u>') && substr_count($formatted, 'style=') === 1, 'Formatting preserves strike and paragraph alignment without accepting additional CSS');
 $catalog = PageBuilder::catalog(['slug'=>'sensecms', 'supported_blocks'=>['custom-html']]);
 $blocks = PageBuilder::sanitizeBlocks([['uid'=>'12345678-1234-4234-8234-123456789abc', 'type'=>'custom-html', 'localized'=>['en'=>['html'=>'<unknown><unknown><img src="/image.png" onerror="alert(1)"><p>Keep me</p></unknown></unknown>']]]], $catalog, ['en']);
 $saved = $blocks[0]['localized']['en']['html'];

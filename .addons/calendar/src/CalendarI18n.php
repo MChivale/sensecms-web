@@ -39,12 +39,14 @@ final class CalendarI18n
 
     private function detect(?string $requested, string $fallback): string
     {
-        $candidates = [$requested, $_GET['lang'] ?? null];
+        $preference = $_COOKIE['sensecms_console_language'] ?? null;
+        $candidates = [$requested, in_array($preference, ['pl', 'en'], true) ? $preference : null];
         foreach (explode(',', (string) ($_SERVER['HTTP_ACCEPT_LANGUAGE'] ?? '')) as $part) $candidates[] = explode(';', trim($part), 2)[0] ?? '';
         $candidates[] = $fallback;
         $candidates[] = 'en';
         foreach ($candidates as $candidate) {
-            $candidate = strtolower(str_replace('_', '-', trim((string) $candidate)));
+            if (!is_string($candidate)) continue;
+            $candidate = strtolower(str_replace('_', '-', trim($candidate)));
             $candidate = explode('-', $candidate, 2)[0];
             if (in_array($candidate, self::LOCALES, true)) return $candidate;
         }

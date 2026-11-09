@@ -1,0 +1,10 @@
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+RewriteEngine On
+RewriteRule ^\.well-known/acme-challenge/ - [END]
+RewriteRule (^|/)\. - [R=404,L]
+RewriteRule ^(?:app|storage|config|private|database|website|scripts)(?:/|$) - [R=404,L,NC]
+RewriteRule ^(?!index\.php$).*\.(?:php[0-9]*|phtml|phar|cgi|pl)(?:/|$) - [R=404,L,NC]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [END]

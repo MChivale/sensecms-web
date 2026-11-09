@@ -4,7 +4,7 @@
 .sensecms-date-trigger{position:absolute;right:5px;top:50%;display:grid;width:32px;height:32px;padding:0;place-items:center;transform:translateY(-50%);border:0;border-radius:8px;background:transparent;color:#64748b;cursor:pointer;transition:background .16s,color .16s}
 .sensecms-date-trigger:hover,.sensecms-date-trigger:focus-visible{background:#eaf2ff;color:#2465ca;outline:0}
 .sensecms-date-trigger svg{width:16px;height:16px}
-.sensecms-date-picker{position:fixed;z-index:10020;width:min(330px,calc(100vw - 24px));overflow:hidden;border:1px solid #d9e3ef;border-radius:15px;background:#fff;color:#172033;box-shadow:0 24px 70px rgba(15,23,42,.2);animation:sensecmsDateIn .16s ease-out}
+.sensecms-date-picker{position:fixed;z-index:10020;width:min(330px,calc(100vw - 24px));overflow:auto;overscroll-behavior:contain;border:1px solid #d9e3ef;border-radius:15px;background:#fff;color:#172033;box-shadow:0 24px 70px rgba(15,23,42,.2);animation:sensecmsDateIn .16s ease-out}
 .sensecms-date-picker[hidden]{display:none}
 .sensecms-date-picker__head{display:grid;grid-template-columns:34px minmax(0,1fr) 34px;align-items:center;gap:8px;padding:12px;border-bottom:1px solid #e8edf4;background:#f8fafc}
 .sensecms-date-picker__head>button{display:grid;width:34px;height:34px;padding:0;place-items:center;border:1px solid #dce5ef;border-radius:9px;background:#fff;color:#526178;cursor:pointer}

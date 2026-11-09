@@ -8,10 +8,11 @@
     <link rel="alternate icon" href="/favicon.ico">
     <link rel="stylesheet" href="/theme/sensecms-admin.css">
     <link rel="stylesheet" href="/theme/sensecms-custom.css?v=20260901-toast-layer-1">
+    <link rel="stylesheet" href="/theme/sensecms-controls.css?v=20261101-shared-search-1">
     <title>License · SenseCMS</title>
     <script nonce="<?= htmlspecialchars((string) ($_SERVER['SENSE_CSP_NONCE'] ?? ''), ENT_QUOTES, 'UTF-8') ?>">(function(){const h=document.documentElement,k='__SENSECMS_CONFIG__',d={dir:'ltr',theme:'light',sidenav:{color:'light',size:'default'}},c=JSON.parse(sessionStorage.getItem(k)||'null')||d;window.defaultConfig=structuredClone(d);window.config=c;h.setAttribute('dir',c.dir);h.setAttribute('data-theme',c.theme);h.setAttribute('data-sidenav-color',c.sidenav.color);h.setAttribute('data-sidenav-size',innerWidth<=1140?'offcanvas':c.sidenav.size)})();</script>
 </head>
-<body data-sensecms-sounds="<?= $escape(json_encode($sounds, JSON_UNESCAPED_SLASHES)) ?>"<?= $flash ? ' data-sensecms-flash="' . $escape($flash) . '"' : '' ?><?= $licenseNotice ? ' data-sensecms-license="' . $escape($licenseNotice) . '"' : '' ?>>
+<body class="sensecms-console" data-sensecms-sounds="<?= $escape(json_encode($sounds, JSON_UNESCAPED_SLASHES)) ?>"<?= $flash ? ' data-sensecms-flash="' . $escape($flash) . '"' : '' ?><?= $licenseNotice ? ' data-sensecms-license="' . $escape($licenseNotice) . '"' : '' ?>>
 <div class="wrapper">
     <aside id="app-menu" class="app-menu">
         <a href="/dashboard" class="logo-box sticky top-0 flex min-h-topbar-height items-center justify-start px-6 backdrop-blur-xs"><div class="logo-light"><img src="/assets/logo.svg" class="logo-lg h-6 max-w-36 object-contain" alt="SenseCMS"><img src="/assets/logo.svg" class="logo-sm h-6" alt="SenseCMS"></div><div class="logo-dark"><img src="/assets/logo.svg" class="logo-lg h-6 max-w-36 object-contain" alt="SenseCMS"><img src="/assets/logo.svg" class="logo-sm h-6" alt="SenseCMS"></div></a>

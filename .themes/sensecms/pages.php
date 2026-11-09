@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 return (static function (): array {
 $pages = [
-    '/' => ['title' => 'A clear foundation for your next website', 'description' => 'Sense CMS is a modular PHP content management system. Explore its independent themes, licensing-first setup and development documentation.', 'kind' => 'home'],
+    '/' => ['title' => 'Self-hosted CMS for multilingual websites', 'description' => 'Build multilingual websites with Sense CMS. Edit pages in Page Builder, manage content for each branch and see how your team works in the demo.', 'kind' => 'home'],
     '/platform' => ['title' => 'One foundation. Room to grow.', 'description' => 'Understand the Sense CMS Core, independent administration and separately packaged extensions.', 'kind' => 'platform'],
     '/extensions' => ['title' => 'Add what your project needs.', 'description' => 'Modules, plugins, addons and themes: four clear roles in the Sense CMS package architecture.', 'kind' => 'extensions'],
     '/docs' => ['title' => 'A practical place to start.', 'description' => 'Sense CMS documentation for installation, licensing, server configuration and extension development.', 'kind' => 'docs'],
@@ -30,17 +30,22 @@ $pages = [
         ['Explicit compatibility', 'Each package declares its type, slug, version, publisher, PHP and Core version bounds, and dependencies in sense-package.json. Version ranges have an inclusive minimum and an exclusive maximum.'],
         ['Signed inventories', 'An archive contains a manifest, an Ed25519 signature and a payload with SHA-256 file hashes. Verification requires a publisher key trusted independently of the downloaded archive. PHP extensions execute trusted code; signatures do not create a sandbox.'],
         ['Controlled paths and size', 'The verifier rejects traversal, symlinks, hidden runtime files, unlisted payloads and case-colliding paths. Archives are limited to 25 MiB, with at most 100 MiB expanded data and 2,000 payload files.'],
-        ['Current implementation', 'Archive creation, signature verification and dependency planning are implemented. Signed themes also support operator-CLI installation and rollback. The general module lifecycle, package-owned migrations and package-management interface are still being developed. No public extension catalog is available yet.'],
+        ['Package availability and lifecycle', 'The public catalogue lists each product and its current availability. Supported package types use signed archives, compatibility and dependency checks, installation and controlled lifecycle operations. Selected development packages can be downloaded after the required licence is verified. Availability is specific to each product; a catalogue entry does not mean a package is ready to download or approved as Stable. Review its detail page and prepare a backup before installation or upgrade.'],
     ]],
     '/docs/server' => ['title' => 'Server configuration', 'description' => 'Public document roots, HTTPS and private storage for Nginx and Apache.', 'kind' => 'article', 'sections' => [
         ['Public means public only', 'Use public as the document root. Keep source code, license storage, database credentials and backups outside it. Grant the PHP runtime write access only to storage.'],
         ['Nginx', 'Nginx does not read .htaccess files. Configure routing in the server block: serve existing public assets and route other requests to index.php. Permit PHP execution only for that front controller, pass the HTTPS status to PHP-FPM and reject hidden or private file paths.'],
-        ['Apache', 'The distribution contains rewrite rules for Apache. Enable mod_rewrite and the appropriate AllowOverride permissions. A public document root is preferred over relying on parent-directory rewrites. Apache runtime verification is still pending for the development distribution.'],
+        ['Apache', 'The distribution includes Apache rewrite rules. Enable mod_rewrite and the required AllowOverride permissions, and use public as the document root. The current development installer has passed isolated licensed installation tests on Apache over HTTPS. Validate your own server configuration before deployment.'],
         ['Canonical HTTPS', 'Redirect HTTP and hostname aliases to the licensed HTTPS hostname, preserving the path and query. Sense CMS rejects unexpected installation hosts. Do not trust arbitrary forwarded headers from public clients.'],
         ['Before production', 'Verify private-file denial, certificate renewal, database recovery and fresh installation in a separate environment. Current development builds are not stable production releases.'],
     ]],
     '/download' => ['title' => 'Start with a verified release.', 'description' => 'Sense CMS release availability and the checks required before a public stable distribution.', 'kind' => 'download'],
     '/update' => ['title'=>'Stay current. Stay in control.', 'description'=>'Explore the latest Stable Sense CMS releases, release notes and requirements.', 'kind'=>'managed', 'sections'=>[]],
+    '/platform/ai' => ['title'=>'AI that supports your team.', 'description'=>'Editorial assistance, managed knowledge and a visitor assistant, with your choice of provider and human control over publishing.', 'kind'=>'platform', 'sections'=>[
+        ['Editorial assistance', 'Draft and improve page sections in Page Builder and post content. Review and edit suggestions before choosing what to publish.'],
+        ['Your provider and limits', 'Configure supported AI providers and their usage limits. Provider credentials remain encrypted within your installation.'],
+        ['Knowledge and visitor support', 'Use approved sources to support answers and source links. Keep knowledge up to date and hand the conversation to your team when more help is needed.'],
+    ]],
     '/contact' => ['title' => 'Let’s talk about your project.', 'description' => 'Contact Sense CMS about the platform, licensing or a technical question.', 'kind' => 'contact'],
 ];
 
@@ -57,7 +62,7 @@ $content = [
         ['Content and publishing', 'Create multilingual pages and posts, organise categories, build pages from supported sections and manage media, navigation and SEO. Draft, publication and review controls keep editorial work structured.'],
         ['Teams and facilities', 'Assign responsibility through roles and facility-scoped permissions. Manage each location’s profile and content in a shared workspace.'],
         ['Presentation without lock-in', 'Pages, public paths and editorial records remain in Core when you change the public theme. Compatible themes declare their settings, page templates and supported blocks.', null, 'Read the theme contract →', '/docs/themes'],
-        ['A development platform', 'The Workspace is running on this product website. Public stable distribution and the complete extension lifecycle still require release verification. Demo access will be published separately.', null, 'Check release status →', '/download'],
+        ['Explore the working demo', 'Sense CMS runs this website, and a separate public demo is available to explore. The current installer has passed isolated licensed installation tests on Nginx and Apache over HTTPS. It remains a development candidate; no Stable Core release has been published.', null, 'Try the demo →', 'https://demo.sensecms.com/'],
     ],
     '/extensions' => [
         ['Modules', 'Application capabilities with their own routes, data and lifecycle.', null, 'About modules →', '/extensions/modules'],
@@ -67,16 +72,18 @@ $content = [
         ['Release availability', 'Package architecture is not an open marketplace. There are no public stable extension downloads yet. Signing and verification must be followed by installation, update and recovery checks.'],
     ],
     '/docs' => [
-        ['Installation', 'Prepare your server and complete the license-first setup.', null, 'Installation guide →', '/docs/installation'],
-        ['Licensing', 'Understand domain binding and encrypted local storage.', null, 'Licensing guide →', '/docs/licensing'],
-        ['Package contract', 'Package identity, compatibility and independently trusted publishers.', null, 'Package documentation →', '/docs/packages'],
-        ['Theme development', 'Build a portable public presentation for an independent Core.', null, 'Theme contract →', '/docs/themes'],
-        ['Server configuration', 'Configure public document roots, HTTPS, Nginx or Apache.', null, 'Server guide →', '/docs/server'],
+        ['Installation', 'Start with the server requirements, a licensed domain and a new, empty database. Follow the setup sequence from licence verification to your first owner login. The guide also explains how to resume an interrupted installation and which private files to preserve. Use the development installer in an isolated environment; check release availability before planning deployment.', null, 'Installation guide →', '/docs/installation'],
+        ['Licensing', 'Understand how the system licence is tied to your installation domain and how verification works. Learn which extensions need a separate product licence and what to prepare before changing a domain or key.', null, 'Licensing guide →', '/docs/licensing'],
+        ['Package contract', 'Compare themes, modules, plugins and add-ons. Review package identity, compatible versions, dependencies and signature verification before installing code from a trusted publisher.', null, 'Package documentation →', '/docs/packages'],
+        ['Theme development', 'Create a public website theme while keeping content and administration in Core. Follow the rendering contract for page templates, editable sections, assets and multilingual links.', null, 'Theme contract →', '/docs/themes'],
+        ['Server configuration', 'Configure HTTPS, PHP and the public document root for Nginx or Apache. Keep private application files outside the web root and verify routing, access restrictions and recovery before deployment.', null, 'Server guide →', '/docs/server'],
+        ['Content and AI', 'Explore editorial assistance, approved knowledge sources and the visitor assistant. Understand where human review fits and how provider settings and usage limits support your team.', null, 'Explore content and AI →', '/platform/ai'],
+        ['Updates and release status', 'Review published Stable release notes when available and check the current development status. Plan updates with a backup and a recovery procedure; automatic Core installation is not available.', null, 'Check updates →', '/update'],
     ],
     '/download' => [
-        ['Development, not a stable release', 'The current Core and Workspace are being verified in isolated environments. Public installation downloads will appear here only after the release passes installation, update and recovery checks.'],
+        ['Development, not a stable release', 'The current installer has passed isolated licensed installation tests, including Nginx and Apache over HTTPS. It remains a development candidate. No Stable Core release has been published, and automatic Core installation is not available.'],
         ['What is implemented', 'License-first installation; owner authentication; multilingual pages, posts and media; navigation and SEO; facility-scoped access; theme settings with draft and publication; signed theme installation, activation and rollback.'],
-        ['What remains under verification', 'The complete extension lifecycle, public package distribution and deployment acceptance for new installations. The separate public demonstration site is not open yet.'],
+        ['Demo and package availability', 'The public demo is open. Selected signed development packages are available through the catalogue with the required licence; each product lists its own status. Stable Core publication remains separate from the completed installation tests.', null, 'Try the demo →', 'https://demo.sensecms.com/'],
         ['Prepare your environment', 'Read the requirements and installation flow before choosing a production release. No payment or release date is being offered on this page.', null, 'Read the installation guide →', '/docs/installation'],
     ],
     '/contact' => [
@@ -108,5 +115,6 @@ $pages['/docs/themes'] = ['title'=>'Build an independent theme', 'description'=>
     ['Independent administration', 'Do not style or replace the administration panel from a public theme. Keep configuration declarative so Core can provide draft, preview and publication controls. Test a second theme, preserved content, routing, keyboard access, mobile layout and rollback before release.'],
 ]];
 foreach ($content as $path => $sections) $pages[$path]['sections'] = $sections;
+foreach (require __DIR__ . '/industry-pages.php' as $path => $industry) $pages[$path] = ['title'=>$industry['en']['title'], 'description'=>$industry['en']['description'], 'kind'=>'platform', 'sections'=>$industry['en']['sections']];
 return $pages;
 })();

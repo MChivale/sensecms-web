@@ -30,31 +30,64 @@ final class AiProviderClient
         elseif($driver==='openai-compatible'){$url=$base.'/chat/completions';$headers[]='Authorization: Bearer '.$key;$payload=['model'=>$model,'messages'=>[['role'=>'system','content'=>$system],['role'=>'user','content'=>$user]],'temperature'=>0.2,'max_tokens'=>$maxTokens];}
         elseif($driver==='anthropic'){$url=$base.'/v1/messages';$headers[]='x-api-key: '.$key;$headers[]='anthropic-version: 2023-06-01';$payload=['model'=>$model,'system'=>$system,'messages'=>[['role'=>'user','content'=>$user]],'max_tokens'=>$maxTokens,'temperature'=>0.2];}
         else{$url=$base.'/models/'.rawurlencode($model).':generateContent';$headers[]='x-goog-api-key: '.$key;$payload=['systemInstruction'=>['parts'=>[['text'=>$system]]],'contents'=>[['role'=>'user','parts'=>[['text'=>$user]]]],'generationConfig'=>['temperature'=>0.2,'maxOutputTokens'=>$maxTokens]+($json?['responseMimeType'=>'application/json']:[])];}
-        $response=$this->request($url,$headers,$payload);$body=$response['body'];
+        $response=$this->request($url,$headers,$payload);
+        return $this->result($driver,$response['body']);
+    }
+
+    private function result(string$driver,array$body):array
+    {
         $text=match($driver){
             'openai-responses'=>$this->openAiResponseText($body),
             'openai-compatible'=>(string)($body['choices'][0]['message']['content']??''),
             'anthropic'=>(string)($body['content'][0]['text']??''),
             default=>(string)($body['candidates'][0]['content']['parts'][0]['text']??''),
         };
-        $text=trim($text);if($text==='')throw new RuntimeException('The AI provider returned an empty response.');
+        $text=trim($text);
         $usage=match($driver){
             'openai-responses'=>['input'=>(int)($body['usage']['input_tokens']??0),'output'=>(int)($body['usage']['output_tokens']??0)],
             'openai-compatible'=>['input'=>(int)($body['usage']['prompt_tokens']??0),'output'=>(int)($body['usage']['completion_tokens']??0)],
             'anthropic'=>['input'=>(int)($body['usage']['input_tokens']??0),'output'=>(int)($body['usage']['output_tokens']??0)],
             default=>['input'=>(int)($body['usageMetadata']['promptTokenCount']??0),'output'=>(int)($body['usageMetadata']['candidatesTokenCount']??0)],
         };
+        $usage=array_map(static fn(int$value):int=>max(0,$value),$usage);
+        $reported=$driver==='google-gemini'?($body['usageMetadata']??[]):($body['usage']??[]);
+        $keys=match($driver){'openai-compatible'=>['prompt_tokens','completion_tokens'],'google-gemini'=>['promptTokenCount','candidatesTokenCount'],default=>['input_tokens','output_tokens']};
+        if($text==='')throw new AiProviderException('The AI provider returned an empty response.',is_array($reported)&&array_intersect($keys,array_keys($reported))?$usage:null);
         return['text'=>$text,'usage'=>$usage];
     }
 
-    private function request(string$url,array$headers,array$payload):array
+    public function embeddings(#[\SensitiveParameter] string $key, array $texts, int $timeout = 25): array
+    {
+        if (!$texts || count($texts) > 16 || !array_is_list($texts)) throw new RuntimeException('Invalid embedding batch.');
+        $payload = ['model'=>AiSemanticSearch::MODEL, 'dimensions'=>AiSemanticSearch::DIMENSIONS,
+            'encoding_format'=>'float', 'input'=>$texts];
+        $response = $this->request('https://api.openai.com/v1/embeddings', ['Content-Type: application/json',
+            'Authorization: Bearer '.$key], $payload, $timeout)['body'];
+        if (($response['model'] ?? '') !== AiSemanticSearch::MODEL) throw new RuntimeException('Unexpected embedding model.');
+        $vectors = [];
+        foreach ($response['data'] ?? [] as $entry) {
+            $i = $entry['index'] ?? null;
+            $vector = $entry['embedding'] ?? null;
+            if (!is_int($i) || !isset($texts[$i]) || isset($vectors[$i]) || !is_array($vector)
+                || !array_is_list($vector) || count($vector) !== AiSemanticSearch::DIMENSIONS)
+                throw new RuntimeException('Incomplete embedding response.');
+            foreach ($vector as $value) if ((!is_float($value) && !is_int($value)) || !is_finite((float)$value))
+                throw new RuntimeException('Invalid embedding value.');
+            $vectors[$i] = json_encode($vector, JSON_THROW_ON_ERROR);
+        }
+        if (count($vectors) !== count($texts)) throw new RuntimeException('Missing embeddings.');
+        ksort($vectors);
+        return ['vectors'=>$vectors, 'tokens'=>(int)($response['usage']['total_tokens'] ?? 0)];
+    }
+
+    private function request(string$url,array$headers,array$payload,int $timeout=55):array
     {
         $parts=parse_url($url);if(!is_array($parts)||strtolower((string)($parts['scheme']??''))!=='https'||empty($parts['host'])||isset($parts['user'])||isset($parts['pass'])||isset($parts['fragment']))throw new RuntimeException('AI providers must use a valid HTTPS endpoint.');
         $host=strtolower((string)$parts['host']);$records=dns_get_record($host,DNS_A);$addresses=array_values(array_unique(array_filter(array_column($records?:[],'ip'))));if(!$addresses)throw new RuntimeException('The AI provider host could not be resolved.');
         foreach($addresses as$address)if(!filter_var($address,FILTER_VALIDATE_IP,FILTER_FLAG_IPV4|FILTER_FLAG_NO_PRIV_RANGE|FILTER_FLAG_NO_RES_RANGE))throw new RuntimeException('The AI provider endpoint cannot resolve to a private or reserved address.');
         $encoded=json_encode($payload,JSON_THROW_ON_ERROR|JSON_UNESCAPED_SLASHES);if(strlen($encoded)>262144)throw new RuntimeException('The AI request is too large.');
         $buffer='';$port=(int)($parts['port']??443);$handle=curl_init($url);if($handle===false)throw new RuntimeException('The AI provider request could not be initialized.');
-        curl_setopt_array($handle,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$encoded,CURLOPT_HTTPHEADER=>$headers,CURLOPT_RETURNTRANSFER=>false,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>55,CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_IPRESOLVE=>CURL_IPRESOLVE_V4,CURLOPT_RESOLVE=>[$host.':'.$port.':'.$addresses[0]],CURLOPT_USERAGENT=>'SenseCMS-AI/1.0',CURLOPT_WRITEFUNCTION=>static function($_handle,string$chunk)use(&$buffer):int{if(strlen($buffer)+strlen($chunk)>2097152)return 0;$buffer.=$chunk;return strlen($chunk);}]);
+        curl_setopt_array($handle,[CURLOPT_POST=>true,CURLOPT_POSTFIELDS=>$encoded,CURLOPT_HTTPHEADER=>$headers,CURLOPT_RETURNTRANSFER=>false,CURLOPT_FOLLOWLOCATION=>false,CURLOPT_CONNECTTIMEOUT=>8,CURLOPT_TIMEOUT=>$timeout,CURLOPT_PROTOCOLS=>CURLPROTO_HTTPS,CURLOPT_IPRESOLVE=>CURL_IPRESOLVE_V4,CURLOPT_RESOLVE=>[$host.':'.$port.':'.$addresses[0]],CURLOPT_USERAGENT=>'SenseCMS-AI/1.0',CURLOPT_WRITEFUNCTION=>static function($_handle,string$chunk)use(&$buffer):int{if(strlen($buffer)+strlen($chunk)>2097152)return 0;$buffer.=$chunk;return strlen($chunk);}]);
         $ok=curl_exec($handle);$code=(int)curl_getinfo($handle,CURLINFO_RESPONSE_CODE);$error=curl_error($handle);curl_close($handle);
         if($ok===false)throw new RuntimeException('The AI provider request failed'.($error!==''?': '.$error:'.'));
         if($code===429)throw new RuntimeException('The AI provider rate limit or quota was reached.',429);

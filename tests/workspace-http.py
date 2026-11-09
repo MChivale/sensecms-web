@@ -358,7 +358,9 @@ for location in ['primary', 'footer', 'footer-connect']:
         check(status == 200 and json.loads(body).get('ok'), 'An intentionally empty menu can be saved')
         status, home, _ = request('/')
         empty_nav = re.search(r'<nav id="navigation"[^>]*>(.*?)</nav>', home, re.S)
-        check(status == 200 and empty_nav is not None and not empty_nav[1].strip(), 'Empty saved menu does not restore hardcoded links')
+        # The mobile demo CTA is theme chrome, not an editable menu item.
+        menu_content = re.sub(r'<a class="mobile-demo"[^>]*>.*?</a>', '', empty_nav[1], flags=re.S) if empty_nav else None
+        check(status == 200 and menu_content is not None and not menu_content.strip(), 'Empty saved menu does not restore hardcoded links')
         status, body, _ = request('/content/navigation', navigation_data)
         check(status == 200 and json.loads(body).get('ok'), 'Menu restored through the normal editor endpoint')
 

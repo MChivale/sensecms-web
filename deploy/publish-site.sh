@@ -1,28 +1,32 @@
 #!/bin/sh
+# Publish the official public entry points after the private Core has been deployed.
 set -eu
-stage=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
-case "$stage" in /root/sensecms-deploy.*) ;; *) exit 1;; esac
-web=/home/sensecms.com/web
-test "$(id -u)" = 0
-test "$(realpath "$web")" = "$web"
-test -f "$web/storage/installed.json"
-test -f "$web/storage/theme.json"
-test ! -e "$web/public/index.php"
-# FPM reload returns before newly configured sockets become available.
-attempt=0
-until test -S /run/php/php8.5-sensecms.sock; do
-    attempt=$((attempt + 1))
-    test "$attempt" -lt 10
-    sleep 1
-done
-install -m 644 "$stage/deploy/nginx/sensecms.com.conf" /etc/nginx/sites-available/sensecms.com
-nginx -t
-systemctl reload nginx
-mkdir -p "$web/public/assets"
-cp "$stage/.cms/source/public/assets/"* "$web/public/assets/"
-chmod 755 "$web/public/assets"
-find "$web/public/assets" -type f -exec chmod 644 {} +
-# Publish last; the installer is already closed by the persisted installed state.
-install -m 644 "$stage/.cms/source/public/index.php" "$web/public/index.php.new"
-mv "$web/public/index.php.new" "$web/public/index.php"
-echo 'Initialized Sense CMS front controller published.'
+umask 077
+mode=${1:-}
+case "$mode" in --check|--apply) ;; *) echo "Usage: sh deploy/publish-site.sh --check|--apply" >&2; exit 2;; esac
+stage=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
+case "$stage" in /root/sensecms-deploy.*) ;; *) echo "Expected private deployment staging directory." >&2; exit 1;; esac
+sh "$stage/deploy/install-production.sh" --check
+web=/var/www/clients/client9/web128/web
+src=$stage/deploy/ispconfig
+php8.5 -l "$src/public-index.php"
+test -s "$src/public.htaccess"
+for f in index.php .htaccess; do test -f "$web/$f" && test ! -L "$web/$f"; done
+if [ "$mode" = --check ]; then exit 0; fi
+mkdir -p -m 700 /root/sensecms-backups
+backup=$(mktemp -d /root/sensecms-backups/apache-www.XXXXXXXX)
+cp -p "$web/index.php" "$web/.htaccess" "$backup/"
+# Stage outside DocumentRoot on the same filesystem and replace each file atomically.
+tmp=$(mktemp -d /var/www/clients/client9/web128/private/.publish.XXXXXXXX)
+trap 'rm -f "$tmp/index.php" "$tmp/.htaccess"; rmdir "$tmp"' EXIT
+replace() {
+    install -o web128 -g client9 -m 0644 "$1" "$tmp/$2" && mv -f "$tmp/$2" "$web/$2"
+}
+if ! { replace "$src/public.htaccess" .htaccess && replace "$src/public-index.php" index.php &&
+       curl -fsS --max-time 15 https://www.sensecms.com/login >/dev/null; }; then
+    replace "$backup/.htaccess" .htaccess
+    replace "$backup/index.php" index.php
+    echo "Publication failed; previous Apache entry points restored." >&2
+    exit 1
+fi
+echo "www entry points published; backup $backup"

@@ -1,6 +1,7 @@
 'use strict';
 
 document.querySelectorAll('[data-redirect-settings]').forEach(form => {
+    const ui = window.SenseCMSInterfaceText ?? (text => text);
     const list = form.querySelector('[data-redirect-rules]');
     const template = document.querySelector('[data-redirect-template]');
     const empty = form.querySelector('[data-redirect-empty]');
@@ -33,12 +34,12 @@ document.querySelectorAll('[data-redirect-settings]').forEach(form => {
         event.stopImmediatePropagation();
         if (pending || !form.reportValidity()) return;
         const button = form.querySelector('[type=submit]');
-        pending = true; button.disabled = true; form.setAttribute('aria-busy','true'); result.textContent = 'Saving…';
+        pending = true; button.disabled = true; form.setAttribute('aria-busy','true'); result.textContent = ui('Saving…');
         try {
             const response = await fetch(form.action,{method:'POST',body:new FormData(form),credentials:'same-origin',headers:{Accept:'application/json'}});
             const data = await response.json();
-            result.textContent = data.message || 'Unable to save redirect rules.';
-        } catch { result.textContent = 'Save could not be confirmed. Refresh to check the current rules.'; }
+            result.textContent = data.message || ui('Unable to save redirect rules.');
+        } catch { result.textContent = ui('Save could not be confirmed. Refresh to check the current rules.'); }
         finally { pending = false; button.disabled = false; form.removeAttribute('aria-busy'); }
     }, true);
     syncEmpty();

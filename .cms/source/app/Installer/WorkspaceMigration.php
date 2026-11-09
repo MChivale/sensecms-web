@@ -39,8 +39,14 @@ final class WorkspaceMigration
 
     private function inspect(array $plan): array
     {
-        $version = (string) $this->db->query('SELECT VERSION()')->fetchColumn();
-        if (!str_contains($version, 'MariaDB') || !preg_match('/^(\d+\.\d+\.\d+)/', $version, $match) || version_compare($match[1], '10.11.0', '<')) throw new RuntimeException('Workspace requires MariaDB 10.11 or newer.');
+        if ($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql') {
+            if ((int)$this->db->query('SHOW server_version_num')->fetchColumn() < 170000) {
+                throw new RuntimeException('The PostgreSQL workspace requires PostgreSQL 17 or newer.');
+            }
+        } else {
+            $version = (string) $this->db->query('SELECT VERSION()')->fetchColumn();
+            if (!str_contains($version, 'MariaDB') || !preg_match('/^(\d+\.\d+\.\d+)/', $version, $match) || version_compare($match[1], '10.11.0', '<')) throw new RuntimeException('Workspace requires MariaDB 10.11 or newer.');
+        }
         $tables = $this->db->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
         $initial = ['migrations','users','roles','user_roles','settings','activity_log','login_attempts'];
         if (array_diff($initial, $tables)) throw new RuntimeException('The initial Sense Core schema is incomplete.');
@@ -75,7 +81,8 @@ final class WorkspaceMigration
         return $this->locked(function (): int {
             $plan = $this->plan();
             $status = $this->inspect($plan); // Validate the entire journal before any DDL.
-            $this->db->exec('CREATE TABLE IF NOT EXISTS workspace_migrations (name VARCHAR(191) PRIMARY KEY, checksum CHAR(64) NOT NULL, applied_at DATETIME NOT NULL)');
+            $timeType = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql' ? 'timestamp' : 'datetime';
+            $this->db->exec("CREATE TABLE IF NOT EXISTS workspace_migrations (name VARCHAR(191) PRIMARY KEY, checksum CHAR(64) NOT NULL, applied_at {$timeType} NOT NULL)");
             $applied = 0;
             foreach ($status['pending'] as $name) {
                 $checksum = $plan['files'][$name];

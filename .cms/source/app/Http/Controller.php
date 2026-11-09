@@ -22,6 +22,9 @@ abstract class Controller
     protected function wantsJson(): bool { return str_contains((string) ($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json') || (($_SERVER['HTTP_X_SENSECMS_REQUEST'] ?? '') === '1'); }
     protected function result(bool $ok, string $message, ?string $redirect = null, int $status = 200, mixed $data = null): never
     {
+        if ($this->wantsJson() && ($this instanceof AuthController || $this instanceof DashboardController || $this instanceof LicenseController)) {
+            $message = (\App\Core\ConsoleLocale::messages())($message);
+        }
         if ($this->wantsJson()) { http_response_code($status); header('Content-Type: application/json; charset=utf-8'); echo json_encode(['ok' => $ok, 'message' => $message, 'redirect' => $redirect, 'data' => $data], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); exit; }
         $_SESSION['flash'] = $message;
         $this->redirect($redirect ?? ($_SERVER['HTTP_REFERER'] ?? '/dashboard'));

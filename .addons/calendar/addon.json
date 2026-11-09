@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Calendar",
   "slug": "calendar",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "author": "QUANT Software House",
   "type": "addon",
   "description": "Professional scheduling with conflict prevention, resources, recurring series, time zones, all-day events and multi-channel reminders.",
@@ -26,6 +26,7 @@
   "group": "Scheduling & operations",
   "release_channel": "development",
   "changelog": [
+    {"version": "1.0.2", "summary": "Follow the administration language preference and localize Calendar errors."},
     {
       "version": "0.1.0",
       "summary": "Sense CMS adaptation with facilities and user-managed event categories."

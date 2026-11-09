@@ -52,11 +52,24 @@ $check(str_contains($migration,'page_builder_ai_runs')&&str_contains($migration,
 $check(str_contains($repository,'20')&&str_contains($repository,'DATE_SUB(NOW(),INTERVAL 10 MINUTE)')&&str_contains($repository,'input_tokens'),'AI requests are rate-limited and record metadata rather than prompts or generated content');
 $check(str_contains($usageMigration,'ai_usage_events')&&str_contains($usageMigration,'estimated_cost_usd')&&!str_contains($usageMigration,'prompt')&&!str_contains($usageMigration,'content'),'Provider-neutral usage ledger stores bounded metadata without prompts or generated content');
 $check(str_contains($repository,'FOR UPDATE')&&str_contains($repository,'assertBudget')&&str_contains($repository,'reserved_output_tokens'),'Request, token and cost budgets reserve concurrent work before an external provider call');
-$check(str_contains($chat,"beginUsage(\$provider,'chat'")&&str_contains($chat,'finishUsage'),'Visitor assistant usage shares the same Core budget enforcement as Page Builder');
+$check(preg_match('/beginUsage\(\s*\$provider\s*,\s*[\'"]chat[\'"]/', $chat)===1&&str_contains($chat,'finishUsage'),'Visitor assistant usage shares the same Core budget enforcement as Page Builder');
 $check(str_contains($providerView,'Usage guardrails')&&str_contains($providerView,'No hard budget')&&str_contains($providerView,'Optional until the provider is enabled'),'Provider UI exposes usage, safe budget controls and key-later configuration');
 $check(str_contains($controller,'function proposePageBuilderAi')&&str_contains($workspace,"/(\\d+)/ai$#"),'Page Builder AI uses a dedicated authenticated Core endpoint');
 $check(!str_contains($controller,'$this->activeTheme()')&&str_contains($controller,"setting('active_theme','sensecms')"),'Builder AI resolves the active theme through the shared Core repository contract');
 $check(str_contains($view,'AI creates a proposal. It never saves or publishes your page.')&&str_contains($view,'Human approval required'),'Builder states the review-first contract at the point of use');
 $check(str_contains($script,'function renderAiProposal')&&str_contains($script,'function runAiProposal')&&str_contains($script,'aiBaseFingerprint'),'The browser previews, guards and explicitly applies proposals without automatic saving');
 
+$client=new AiProviderClient();$decode=(new ReflectionClass($client))->getMethod('result');
+foreach([
+    'openai-responses'=>['usage'=>['input_tokens'=>17,'output_tokens'=>4]],
+    'openai-compatible'=>['usage'=>['prompt_tokens'=>17,'completion_tokens'=>4]],
+    'anthropic'=>['usage'=>['input_tokens'=>17,'output_tokens'=>4]],
+    'google-gemini'=>['usageMetadata'=>['promptTokenCount'=>17,'candidatesTokenCount'=>4]],
+]as$driver=>$body){
+    try{$decode->invoke($client,$driver,$body);throw new RuntimeException('Empty response accepted');}
+    catch(App\Core\AiProviderException$error){$check($error->usage===['input'=>17,'output'=>4],$driver.' preserves consumed tokens when no text is returned');}
+    $text=match($driver){'openai-responses'=>['output_text'=>'Ready'],'openai-compatible'=>['choices'=>[['message'=>['content'=>'Ready']]]],'anthropic'=>['content'=>[['text'=>'Ready']]],default=>['candidates'=>[['content'=>['parts'=>[['text'=>'Ready']]]]]]};
+    $result=$decode->invoke($client,$driver,$body+$text);$check($result['text']==='Ready'&&$result['usage']===['input'=>17,'output'=>4],$driver.' keeps successful text and usage unchanged');
+}
+foreach([[],['usage'=>[]]]as$body){try{$decode->invoke($client,'openai-responses',$body);throw new RuntimeException('Empty response accepted');}catch(App\Core\AiProviderException$error){$check($error->usage===null,'Missing usage remains unknown rather than a fabricated zero');}}
 echo "{$count} Page Builder AI checks passed; no database, network or provider writes.\n";

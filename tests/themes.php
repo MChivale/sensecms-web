@@ -23,6 +23,16 @@ $assert($headStatus===200&&$headBody===''&&(int)$headHeaders['Content-Length']==
 $socialImage='/theme-assets/og.image.jpg';[$socialStatus,$socialHeaders,$socialBody]=$theme->response($socialImage);$socialSize=getimagesizefromstring($socialBody);
 $assert($socialStatus===200&&$socialHeaders['Content-Type']==='image/jpeg'&&$socialSize['mime']==='image/jpeg'&&$socialSize[0]===1200&&$socialSize[1]===630,'Default Open Graph image is an exact 1200 by 630 JPEG');
 $assert($theme->response('/theme-assets/logo-light.svg')[0]===200&&$theme->response('/theme-assets/logo-light.svg')[1]['Content-Type']==='image/svg+xml','Light footer logo is a public theme asset');
+foreach(['en','pl']as$graphicLocale){
+    foreach(['platform','ai','extensions','docs','releases']as$group){
+        [$assetStatus,$assetHeaders,$assetBody]=$theme->response('/theme-assets/share-'.$group.'-'.$graphicLocale.'.png');$size=getimagesizefromstring($assetBody);
+        $assert($assetStatus===200&&$assetHeaders['Content-Type']==='image/png'&&$size[0]===1200&&$size[1]===630,'Localized sharing image is served at its declared dimensions: '.$group.' '.$graphicLocale);
+    }
+    foreach(['architecture','knowledge','locales']as$diagram){
+        [$assetStatus,$assetHeaders,$assetBody]=$theme->response('/theme-assets/'.$diagram.'-'.$graphicLocale.'.svg');$xml=simplexml_load_string($assetBody);
+        $assert($assetStatus===200&&$assetHeaders['Content-Type']==='image/svg+xml'&&$xml!==false&&(string)$xml['lang']===$graphicLocale&&(string)$xml->title!=='','Diagram is valid and localized: '.$diagram.' '.$graphicLocale);
+    }
+}
 $villaRoot=dirname(__DIR__).'/.themes/villa-theme';$villaDescriptor=json_decode((string)file_get_contents($villaRoot.'/theme.json'),true,64,JSON_THROW_ON_ERROR);$villaDescriptor['_path']=$villaRoot;App\Core\ThemeContract::validateAll(['villa-theme'=>$villaDescriptor]);
 $villaResponse=(new PublicTheme($villaRoot,'https://villaitaliana.chivale.com'))->response('/');
 $assert($villaResponse[0]===200&&str_contains($villaResponse[2],'Villa Italiana')&&str_contains($villaResponse[2],'/theme-assets/villa.css'),'Villa Theme satisfies the public contract and its layout adapter renders the homepage');
@@ -62,7 +72,10 @@ foreach ($pages as $path => $page) {
     $assert($status === 200 && str_contains($body, htmlspecialchars($page['title'], ENT_QUOTES, 'UTF-8')), 'page and title ' . $path);
     $assert(str_contains($body, 'rel="canonical" href="https://www.sensecms.com' . $path . '"'), 'canonical ' . $path);
     $assert($theme->response($path, 'HEAD')[2] === '', 'HEAD ' . $path);
-    $assert(!preg_match('/href="[^" ]*#[^" ]+"/', str_replace('href="#main"', '', $body)), 'navigation uses real page URLs ' . $path);
+    preg_match('~<nav id="navigation".*?</nav>~s', $body, $primaryNav);
+    $assert(isset($primaryNav[0]) && !preg_match('/href="[^" ]*#[^" ]+"/', $primaryNav[0]), 'navigation uses real page URLs ' . $path);
+    preg_match_all('/href="([^"#]+)#([^" ]+)"/', $body, $anchors, PREG_SET_ORDER);
+    foreach ($anchors as $anchor) $assert(str_contains($theme->response($anchor[1])[2], 'id="'.$anchor[2].'"'), 'content anchor resolves to an existing section ' . $anchor[1]);
     preg_match_all('/(?:href|src)="(\/[^"#]*)(?:#[^"]*)?"/', $body, $links);
     foreach (array_unique($links[1]) as $link) {
         if($link==='/system/update'){$assert($theme->response($link,'HEAD')[0]===404,'Core Update link is not owned by the public theme');continue;}
@@ -75,6 +88,7 @@ $assert(!str_contains($theme->response('/download')[2], '.zip'), 'no fake releas
 $fields = json_decode((string) file_get_contents($source . '/theme.json'), true)['configuration'];
 $settings = array_column($fields, 'default', 'key');
 foreach ($settings as $key => $_value) {
+    if (str_ends_with($key, '_pl')) continue; // Polish fields are exercised with a Polish layout context below.
     $field = array_values(array_filter($fields, static fn(array $candidate): bool => $candidate['key'] === $key))[0];
     if ($field['type'] === 'select') continue;
     $value = str_ends_with($key, '_url') ? '/qa-' . str_replace('_', '-', $key) : 'QA-' . $key . '<unsafe>';
@@ -83,6 +97,58 @@ foreach ($settings as $key => $_value) {
     $body = $theme->response('/', 'GET', ['theme_settings'=>$input])[2];
     $expected = str_ends_with($key, '_url') ? $value : 'QA-' . $key . '&lt;unsafe&gt;';
     $assert(str_contains($body, $expected) && !str_contains($body, '<unsafe>'), 'editable homepage field escapes text: ' . $key);
+}
+$polishBody = (static function () use ($source, $pages, $settings): string {
+    $locale='pl'; $path='/'; $baseUrl='https://www.sensecms.com'; $status=200;
+    $page=$pages['/']; $themeSettings=$settings; $themeSettings['home_title_pl']='QA <unsafe>';
+    foreach (require $source.'/industry-pages.php' as $route=>$industry) $localizedPaths[$route]=$industry['slug'];
+    $e=static fn(mixed $value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    ob_start(); try { require $source . '/layout.php'; return (string)ob_get_contents(); } finally { ob_end_clean(); }
+})();
+$assert(str_contains($polishBody, 'QA &lt;unsafe&gt;') && !str_contains($polishBody, 'QA <unsafe>') && str_contains($polishBody, 'Wypróbuj demo'), 'Polish homepage settings and labels render safely');
+$assert(str_contains($polishBody,'<title>'.$settings['home_seo_title_pl'].' · Sense CMS</title>') && str_contains($polishBody,'name="description" content="'.$settings['home_seo_description_pl'].'"'), 'Polish homepage has localized fallback search metadata');
+foreach (['en'=>$theme->response('/')[2], 'pl'=>$polishBody] as $previewLocale=>$previewHome) {
+    $industries=require $source.'/industry-pages.php';
+    $imagePath='/theme-assets/page-builder-open-day-'.$previewLocale.'.webp';
+    [$assetStatus,$assetHeaders,$assetBody]=$theme->response($imagePath);
+    $size=getimagesizefromstring($assetBody);
+    $assert($assetStatus===200 && $assetHeaders['Content-Type']==='image/webp' && $size[0]===632 && $size[1]===354, 'Localized editor image matches its declared size '.$previewLocale);
+    $assert(str_contains($previewHome,'src="'.$imagePath.'"') && str_contains($previewHome,'href="'.$imagePath.'"'), 'Editor preview has a no-script enlargement '.$previewLocale);
+    $document=new DOMDocument(); @$document->loadHTML($previewHome); $xpath=new DOMXPath($document);
+    $assert($xpath->query('//main//h1')->length===1 && $xpath->query('//nav[@class="industry-links"]/a')->length===count($industries), 'Homepage has one H1 and crawlable industry links '.$previewLocale);
+    foreach ($industries as $route=>$industry) {
+        $url=$previewLocale==='en'?$route:'/pl/'.$industry['slug'];
+        $assert($xpath->query('//nav[@class="industry-links"]/a[@href="'.$url.'"]')->length===1, 'Direct industry link '.$url);
+    }
+    $schoolUrl=$previewLocale==='en'?'/platform/schools':'/pl/platform-schools';
+    $assert($xpath->query('//figure[contains(@class,"example-chat")]//a[@href="'.$schoolUrl.'#industry-example"]')->length===1 && !str_contains($previewHome,'class="chatbot-benefits"'), 'Short conversation links to its school announcement '.$previewLocale);
+}
+$navigationBody = static function (string $canonical, string $locale) use ($source): string {
+    $localizedPaths=['/platform'=>'platform','/platform/ai'=>'platform-ai','/docs'=>'docs','/docs/licensing'=>'docs-licensing','/docs/server'=>'docs-server'];
+    $path=$locale==='pl'?'/pl/'.($localizedPaths[$canonical]??'missing'):$canonical;
+    $baseUrl='https://www.sensecms.com'; $status=200; $themeSettings=[]; $blocks=[];
+    $page=['kind'=>'managed','title'=>'Navigation test','description'=>'','public_path'=>$canonical];
+    $languages=[['locale'=>'en','name'=>'English','native_name'=>'English','is_default'=>true],['locale'=>'pl','name'=>'Polish','native_name'=>'Polski']];
+    $languageUrls=['en'=>$canonical,'pl'=>'/pl/'.($localizedPaths[$canonical]??'missing')];
+    $e=static fn(mixed $value): string => htmlspecialchars((string)$value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    ob_start(); try { require $source.'/layout.php'; return (string)ob_get_contents(); } finally { ob_end_clean(); }
+};
+foreach (['en','pl'] as $navLocale) {
+    foreach (['/platform'=>'/platform','/platform/ai'=>'/platform/ai','/docs/licensing'=>'/docs/licensing','/docs'=>'/docs','/docs/server'=>'/docs','/platform/ai/details'=>'/platform/ai','/platform-other'=>null] as $route=>$selected) {
+        $html=$navigationBody($route,$navLocale);
+        $document=new DOMDocument(); @$document->loadHTML($html);
+        $xpath=new DOMXPath($document);
+        $active=$xpath->query('//nav[@id="navigation"]/a[@aria-current or @class="nav-parent"]');
+        $expected=$selected===null?null:($navLocale==='pl'?'/pl/'.str_replace('/','-',ltrim($selected,'/')):$selected);
+        $assert($active->length===($selected===null?0:1)&&($selected===null||$active->item(0)->getAttribute('href')===$expected),'one most specific navigation destination '.$navLocale.' '.$route);
+        if ($selected!==null) $assert(($active->item(0)->getAttribute('aria-current')==='page')===($route===$selected),'exact page differs from parent section '.$navLocale.' '.$route);
+    }
+    $assert($xpath->query('//details[@class="language-menu"]//a[@lang="en"]//img[@src="/theme-assets/flag-uk.svg"]')->length===1&&$xpath->query('//details[@class="language-menu"]//a[@lang="pl"]//img[@src="/theme-assets/flag-pl.svg"]')->length===1,'language choices retain labels and decorative UK/Polish flags '.$navLocale);
+    $assert($xpath->query('//details[@class="language-menu"]/summary/img[@src="/theme-assets/flag-'.($navLocale==='en'?'uk':'pl').'.svg"]')->length===1,'current language displays its flag '.$navLocale);
+}
+foreach (['uk','pl'] as $flag) {
+    [$flagStatus,$flagHeaders,$flagBody]=$theme->response('/theme-assets/flag-'.$flag.'.svg');
+    $assert($flagStatus===200&&$flagHeaders['Content-Type']==='image/svg+xml'&&str_contains($flagBody,'<svg'),'language flag served as a local SVG '.$flag);
 }
 $defaultFooter = $theme->response('/')[2];
 $assert(str_contains($defaultFooter, '© Copyright by Sense CMS · QUANT Software House Limited. All rights reserved.') && !str_contains($defaultFooter, 'Independent by design.'), 'product footer uses the requested copyright text');
@@ -135,7 +201,7 @@ $configured = $theme->response('/platform', 'GET', ['navigation' => [
 $assert(str_contains($configured, '&lt;Navigation&gt;') && str_contains($configured, 'aria-current="page"'), 'configured menu is escaped and marks current page');
 $assert(str_contains($configured, 'rel="noopener noreferrer"') && !str_contains($configured, 'javascript:'), 'configured links protect new windows and remove executable URLs');
 $assert(str_contains($configured, '<h2>Explore</h2></div>'), 'intentionally empty navigation stays empty');
-$managed = static function (array $page, ?array $seo=null) use ($source): string {
+$managed = static function (array $page, ?array $seo=null, array $localizedPaths=[]) use ($source): string {
     $locale = 'pl'; $baseUrl = 'https://www.sensecms.com';
     $requestUri=$_SERVER['REQUEST_URI']??null;$_SERVER['REQUEST_URI']=(string)($page['public_path']??'/');
     ob_start();
@@ -176,12 +242,14 @@ foreach (require dirname(__DIR__) . '/.src/package-catalog.php' as $product) {
 }
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog','blocks'=>$marketBlocks]);
 $assert(substr_count($market, 'data-market-item ')===25, 'marketplace presents all CMS products as cards');
+$polishMarket = $managed(['title'=>'Pakiety','public_path'=>'/extensions/catalog','blocks'=>[['type'=>'text','payload'=>['title'=>'Produkt','text'=>'<p><strong>12 USD / rok</strong></p><p>Opis</p><p>Dostępny</p>','cta_url'=>'/extensions/catalog/plugin/google-calendar']]]], null, ['/extensions/catalog/plugin/google-calendar'=>'extensions-catalog-plugin-google-calendar']);
+$assert(str_contains($polishMarket, 'data-product="plugin:google-calendar"') && str_contains($polishMarket, 'href="/pl/extensions-catalog-plugin-google-calendar"') && str_contains($polishMarket, '12 USD / rok'), 'Polish marketplace retains product identity, pricing and localized link');
 $entryMarket=$managed(['title'=>'Marketplace','public_path'=>'/extensions','blocks'=>$marketBlocks]);
-$assert(substr_count($entryMarket,'data-market-item ')===25 && str_contains($entryMarket,'marketplace-hero'), 'primary extensions route renders the complete marketplace');
-$assert(str_contains($entryMarket,'data-market-category="plugin"') && str_contains($entryMarket,'data-market-price="free"'), 'primary marketplace contains category and price chips');
-$assert(substr_count($entryMarket,'data-market-dialog ')===1 && str_contains($entryMarket,'aria-labelledby="market-dialog-title"'), 'marketplace provides one accessible inline details dialog');
-$assert(substr_count($entryMarket,'data-market-open href=')===50 && substr_count($entryMarket,'data-market-status hidden')===25, 'all product actions support dialogs with real no-JS detail links');
-$assert(str_contains($entryMarket,'disabled>Download unavailable') && str_contains($entryMarket,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
+$assert(!str_contains($entryMarket,'data-market-item ') && !str_contains($entryMarket,'marketplace-hero'), 'extensions overview uses editorial blocks instead of duplicating the catalogue');
+$assert(str_contains($market,'data-market-category="plugin"') && str_contains($market,'data-market-price="free"'), 'catalogue retains category and price chips');
+$assert(substr_count($market,'data-market-dialog ')===1 && str_contains($market,'aria-labelledby="market-dialog-title"'), 'catalogue retains one accessible inline details dialog');
+$assert(substr_count($market,'data-market-open href=')===50 && substr_count($market,'data-market-status hidden')===25, 'all product actions support dialogs with real no-JS detail links');
+$assert(str_contains($market,'disabled>Pobieranie niedostępne') && str_contains($market,'data-download-form hidden'), 'download form remains hidden until trusted server availability is loaded');
 $assert(substr_count($market, 'data-pricing="free"')===9, 'marketplace retains nine free product tiers');
 $catalogProducts=require dirname(__DIR__) . '/.src/package-catalog.php';$bluesky=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='bluesky-publisher'))[0]??[];$assert(($bluesky['usd_year']??null)===15&&($bluesky['license']['product_name']??'')==='Sense CMS Bluesky Publisher Plugin'&&($bluesky['license']['product_model']??'')==='Bluesky Publisher Plugin','Bluesky marketplace entry keeps separate paid licence identity');
 $mastodon=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='mastodon-publisher'))[0]??[];$assert(($mastodon['usd_year']??null)===15&&($mastodon['license']['product_name']??'')==='Sense CMS Mastodon Publisher Plugin'&&($mastodon['license']['product_model']??'')==='Mastodon Publisher Plugin','Mastodon marketplace entry keeps separate paid licence identity');
@@ -190,7 +258,7 @@ $pinterest=array_values(array_filter($catalogProducts,static fn(array$product):b
 $tiktok=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='tiktok-publisher'))[0]??[];$assert(($tiktok['usd_year']??null)===15&&($tiktok['license']['product_name']??'')==='Sense CMS TikTok Publisher Plugin'&&($tiktok['license']['product_model']??'')==='TikTok Publisher Plugin','TikTok marketplace entry keeps separate paid licence identity');
 $youtube=array_values(array_filter($catalogProducts,static fn(array$product):bool=>($product['slug']??'')==='youtube-publisher'))[0]??[];$assert(($youtube['usd_year']??null)===15&&($youtube['license']['product_name']??'')==='Sense CMS YouTube Publisher Plugin'&&($youtube['license']['product_model']??'')==='YouTube Publisher Plugin','YouTube marketplace entry keeps separate paid licence identity');
 $assert(str_contains($market, 'data-market-filters hidden') && str_contains($market, 'data-market-count'), 'marketplace controls progressively enhance visible server-rendered cards');
-$assert(str_contains($market, 'USD 120 / year') && str_contains($market, 'Separate licence'), 'marketplace displays prices and entitlement labels');
+$assert(str_contains($market, 'USD 120 / year') && str_contains($market, 'Osobna licencja'), 'marketplace displays prices and entitlement labels');
 $marketBlocks[] = ['type'=>'text','payload'=>['title'=>'Editorial <unsafe>','text'=>'<p>Preserved editorial note</p><script>unsafe()</script>']];
 $market = $managed(['title'=>'Packages','public_path'=>'/extensions/catalog/plugin','blocks'=>$marketBlocks]);
 $assert(str_contains($market, 'Preserved editorial note') && str_contains($market, 'Editorial &lt;unsafe&gt;') && !str_contains($market,'unsafe()'), 'marketplace preserves non-product editorial blocks safely');
@@ -207,10 +275,18 @@ $assert(!str_contains($platform, 'unsafe()') && !str_contains($platform, 'onerro
 $assert(!str_contains($html, 'class="platform-hero"'), 'default managed template stays unchanged');
 $assert(str_contains($managed(['template'=>'product','title'=>'Empty','blocks'=>[]]), 'class="platform-hero"'), 'product template handles an empty block collection');
 $assert(str_contains($theme->response('/platform')[2], 'class="platform-hero"'), 'starter platform uses same presentation as managed template');
-$assert(str_contains($platform, 'aria-label="Back to top" aria-hidden="true" tabindex="-1"') && str_contains($platform, '<main id="main" tabindex="-1">'), 'return control starts hidden and has an accessible focus destination');
+$chatbotAi=$managed(['template'=>'product','public_path'=>'/platform/ai','title'=>'AI','blocks'=>[['type'=>'text','payload'=>['title'=>'Editorial introduction','text'=>'<p>Review the draft.</p>']],['type'=>'text','payload'=>['title'=>'Provider configuration','text'=>'<p>Configure the provider.</p>']]]],null,['/platform/ai'=>'platform-ai','/contact'=>'contact']);
+$assert(substr_count($chatbotAi,'id="private-ai-chatbot"')===1&&strpos($chatbotAi,'Editorial introduction')<strpos($chatbotAi,'id="private-ai-chatbot"')&&strpos($chatbotAi,'id="private-ai-chatbot"')<strpos($chatbotAi,'Provider configuration'),'AI promotion appears once immediately after the editorial introduction');
+$assert(str_contains($chatbotAi,'Twój prywatny, spersonalizowany AI Chatbot.')&&str_contains($chatbotAi,'wybrany dostawca AI otrzymuje pytanie')&&str_contains($chatbotAi,'nie jest ponownym trenowaniem modelu'),'Polish promotion explains provider processing and knowledge-based personalization');
+$assert(str_contains($chatbotAi,'href="/pl/contact"')&&str_contains($chatbotAi,'<details class="chatbot-explainer">'),'AI promotion has a localized action and native accessible disclosure');
+$chatbotDocs=$managed(['public_path'=>'/docs','title'=>'Docs','blocks'=>[]],null,['/platform/ai'=>'platform-ai']);
+$assert(str_contains($chatbotDocs,'chatbot-compact')&&str_contains($chatbotDocs,'href="/pl/platform-ai#private-ai-chatbot"')&&!str_contains($chatbotDocs,'class="chatbot-visual"'),'Related-page promotion stays compact and links to the localized feature');
+$chatbotCustom=$theme->response('/','GET',['theme_settings'=>['chatbot_title'=>'Your <custom> assistant','chatbot_text'=>'A <script> label.']])[2];
+$assert(str_contains($chatbotCustom,'Your &lt;custom&gt; assistant')&&str_contains($chatbotCustom,'A &lt;script&gt; label.')&&!str_contains($chatbotCustom,'<script> label.'),'Configurable chatbot copy is escaped');
+$assert(str_contains($platform, 'aria-label="Wróć na górę" aria-hidden="true" tabindex="-1"') && str_contains($platform, '<main id="main" tabindex="-1">'), 'return control starts hidden and has an accessible focus destination');
 $seoFixture=App\Core\SeoMeta::resolve([],[],['title'=>'Installation','excerpt'=>'Install Sense CMS'],['base_url'=>'https://www.sensecms.com','current_path'=>'/docs/installation','locale'=>'en','fallback_image'=>'/theme-assets/og.image.jpg','fallback_image_type'=>'image/jpeg','fallback_image_width'=>1200,'fallback_image_height'=>630]);
 $seoPage=$managed(['title'=>'Installation','excerpt'=>'Install Sense CMS','public_path'=>'/docs/installation','blocks'=>[]],$seoFixture);
-$assert(str_contains($seoPage,'"@type":"BreadcrumbList"')&&str_contains($seoPage,'"name":"Documentation"')&&str_contains($seoPage,'property="og:image:width" content="1200"'),'visible breadcrumb trail matches structured data and complete default Open Graph metadata');
+$assert(str_contains($seoPage,'"@type":"BreadcrumbList"')&&str_contains($seoPage,'"name":"Dokumentacja"')&&str_contains($seoPage,'property="og:image:width" content="1200"'),'visible breadcrumb trail matches structured data and complete default Open Graph metadata');
 $assert(str_contains($theme->response('/docs')[2], 'data-back-to-top') && str_contains($theme->response('/')[2], 'data-back-to-top'), 'return control is shared by homepage and subpages');
 $assert(in_array('product', array_column(json_decode((string) file_get_contents($source . '/theme.json'), true)['page_templates'], 'key'), true), 'platform template is available to the CMS editor');
 foreach (['/contact','/docs','/docs/installation','/docs/licensing','/docs/packages','/docs/themes','/docs/server','/download','/extensions','/extensions/modules','/extensions/plugins','/extensions/addons','/extensions/themes'] as $route) {
@@ -242,15 +318,15 @@ $assert(!str_contains($composed, 'unsafe()') && substr_count($composed, 'data-co
 $fallback = $formView($contactCopy, false);
 $assert(!str_contains($fallback, 'contact-composed') && substr_count($fallback, 'Managed contact details') === 1, 'preview without form context preserves content');
 $docsHtml = $theme->response('/docs')[2];
-$assert(substr_count($docsHtml, 'resource-start') === 1 && substr_count($docsHtml, 'class="section-symbol"') === 5, 'documentation has one featured start and five category icons');
+$assert(substr_count($docsHtml, 'resource-start') === 1 && substr_count($docsHtml, 'class="section-symbol"') === 7, 'documentation has one featured start and seven category icons');
 $assert(!str_contains($theme->response('/docs/installation')[2], 'resource-start'), 'guide pages do not inherit the landing featured layout');
 $assert(substr_count($theme->response('/extensions')[2], 'class="section-symbol"') === 4, 'extension categories share the icon system');
 $heroCss = (string) file_get_contents($source . '/assets/product.css');
-$assert(str_contains($heroCss, '.product-hero,.platform-hero,.subpage-hero{overflow:hidden;background:radial-gradient(ellipse at 90% 10%,#2462b590,transparent 65%),#09244d;color:#fff}'), 'all public heroes share the approved contact palette');
+$assert(str_contains($heroCss, '.product-design :is(.product-hero,.platform-hero,.subpage-hero){') && str_contains($heroCss, '--surface:#fff;--canvas:#f6f8fc;'), 'public heroes and content share the product surface system');
 $assert(!str_contains($heroCss, '.subpage-contact{') && !str_contains($heroCss, '.subpage-guide .subpage-intro'), 'contact and documentation no longer override shared hero styling');
-$assert(str_contains($theme->response('/platform')[2], 'class="subpage-intro"') && str_contains($theme->response('/platform')[2], 'class="subpage-emblem"'), 'platform uses the same heading layout and emblem as other subpages');
+$assert(str_contains($theme->response('/platform')[2], 'class="subpage-intro"') && str_contains($theme->response('/platform')[2], 'class="hero-visual"') && str_contains($docsHtml, 'class="hero-visual"'), 'platform and documentation use the shared contextual hero illustration');
 $pageEditor=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Views/console-content-page-form.php');$pageController=(string)file_get_contents(dirname(__DIR__).'/.cms/source/app/Http/DashboardController.php');
-$assert(str_contains($pageEditor,'data-seo-image-upload')&&str_contains($pageEditor,'Open Graph / social image')&&str_contains($pageController,"'og_image_width','og_image_height','og_image_type'"),'page editor uploads localized Open Graph images through the existing media pipeline');
+$assert(str_contains($pageEditor,'data-library-upload')&&str_contains($pageEditor,'data-library-image')&&str_contains($pageEditor,'Open Graph / social image')&&str_contains($pageController,"'og_image_width','og_image_height','og_image_type'"),'page editor uploads localized Open Graph images through the existing media pipeline');
 $mail=App\Core\FormMail::render(['data'=>['fields'=>[['key'=>'message','label'=>'Message']]]],['message'=>'<script>alert(1)</script>'],'TEST-REFERENCE',true);
 $assert(str_contains($mail['html'],'&lt;script&gt;')&&!str_contains($mail['html'],'<script>'),'email template escapes visitor content');
 $assert(str_contains($mail['text'],'<script>alert(1)</script>') && str_contains($mail['html'],'TEST-REFERENCE'),'email includes readable text alternative and reference');
@@ -267,6 +343,23 @@ $metadata = static function (array $seo) use ($source): string {
 };
 $head = $metadata($seo);
 $assert(!str_contains($head, '<script>unsafe()</script>') && str_contains($head, '&lt;/title&gt;'), 'SEO title cannot inject markup or terminate structured data');
+$richSeo=App\Core\SeoMeta::resolve(['site_name'=>'Sense CMS','author'=>'Sense CMS','publisher'=>'QUANT Software House Limited','google_site_verification'=>'verify"<test>','bing_site_verification'=>'bing-test','twitter_site'=>'@sensecms','facebook_app_id'=>'123'],['keywords'=>'CMS, RAG, "<tag>','og_type'=>'article','schema_type'=>'BlogPosting'],['title'=>'Example','published_at'=>'2026-10-30 02:34:00','updated_at'=>'2026-10-31T05:00:00+01:00'],['type'=>'post','base_url'=>'https://www.sensecms.com','current_path'=>'/en/posts/example','locale'=>'en','default_locale'=>'en','language_urls'=>['en'=>'/en/posts/example','pl'=>'/pl/posts/przyklad']]);
+$richHead=$metadata($richSeo);
+foreach(['name="keywords" content="CMS, RAG, &quot;&lt;tag&gt;"','name="publisher" content="QUANT Software House Limited"','name="google-site-verification" content="verify&quot;&lt;test&gt;"','name="msvalidate.01" content="bing-test"','property="og:locale:alternate" content="pl_PL"','name="twitter:site" content="@sensecms"','property="fb:app_id" content="123"','property="article:published_time" content="2026-10-30"','property="article:modified_time" content="2026-10-31T05:00:00+01:00"']as$tag)$assert(str_contains($richHead,$tag),'configured SEO tag renders safely: '.$tag);
+$article=array_values(array_filter($richSeo['json_ld']['@graph'],static fn($node)=>$node['@type']==='BlogPosting'))[0];
+$assert($article['author']===['@id'=>'https://www.sensecms.com/#organization']&&$article['datePublished']==='2026-10-30','brand authors reference the organization and legacy SQL dates do not invent a timezone');
+$personSeo=App\Core\SeoMeta::resolve([],['author'=>'An Editor'],['title'=>'Example','published_at'=>'2026-02-30','updated_at'=>'tomorrow'],['type'=>'post','base_url'=>'https://example.test']);
+$personArticle=array_values(array_filter($personSeo['json_ld']['@graph'],static fn($node)=>$node['@type']==='BlogPosting'))[0];
+$assert($personArticle['author']===['@type'=>'Person','name'=>'An Editor']&&!isset($personArticle['datePublished'],$personArticle['dateModified']),'named authors remain people and invalid/relative dates are omitted');
+$assert(!str_contains($head,'name="keywords"')&&!str_contains($head,'site-verification')&&!str_contains($head,'property="article:')&&!str_contains($head,'name="twitter:site"'),'empty or inapplicable metadata is not emitted');
+$softwareSeo=App\Core\SeoMeta::resolve([],[],['title'=>'Platform','excerpt'=>'Content management'],['base_url'=>'https://www.sensecms.com','current_path'=>'/pl/platform','locale'=>'pl','language_urls'=>['en'=>'/platform','pl'=>'/pl/platform']]);
+$softwarePage=$managed(['title'=>'Platform','public_path'=>'/platform','blocks'=>[]],$softwareSeo,['/docs'=>'docs','/docs/licensing'=>'docs-licensing']);
+$assert(str_contains($softwarePage,'"@type":"SoftwareApplication"')&&str_contains($softwarePage,'https://www.sensecms.com/pl/docs-licensing')&&str_contains($softwarePage,'"mainEntity":{"@id":"https://www.sensecms.com/#software"}'),'software identity is linked to the page and localized visible help/licensing routes');
+$assert(!str_contains($softwarePage,'aggregateRating')&&!str_contains($softwarePage,'"offers"')&&!str_contains($seoPage,'"@type":"SoftwareApplication"'),'software schema does not invent ratings or offers and is limited to product pages');
+$seoCopy=require dirname(__DIR__).'/scripts/publish-product-seo.php';
+$assert(count($seoCopy['copy'])===27&&count($seoCopy['products'])===25,'reviewed SEO copy covers all 52 public pages');
+foreach($seoCopy['copy']as$route=>$translations)foreach($translations as$index=>$fields)$assert(count($fields)===3&&count(array_filter($fields))===3&&str_contains($fields[0],'Sense CMS'),'complete localized metadata for '.$route.' '.$index);
+$assert(count($seoCopy['overview'])===6&&count(array_unique(array_column($seoCopy['overview'],0)))===6,'extensions overview has six distinct useful destinations');
 
 $temp = sys_get_temp_dir() . '/sense-theme-test-' . bin2hex(random_bytes(12));
 mkdir($temp, 0700); mkdir($temp . '/source', 0700); mkdir($temp . '/config', 0700);

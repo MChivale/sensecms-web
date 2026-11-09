@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS YouTube Publisher",
   "slug": "youtube-publisher",
-  "version": "0.2.0",
+  "version": "0.2.3",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Uploads reviewed Sense CMS videos to connected YouTube channels with explicit audience and privacy controls.",
@@ -37,6 +37,8 @@
     "/social-publishing/youtube/connections/{id}/disconnect"
   ],
   "changelog": [
+    {"version": "0.2.3", "summary": "Translate connected-account summaries and fallback labels."},
+    {"version": "0.2.2", "summary": "Localize the administration interface in Polish and English."},
     {"version": "0.2.0", "summary": "Use post video defaults and accept validated MP4 or WebM uploads without audio conversion."},
     {"version": "0.1.1", "summary": "Restore expired-token refresh for editor choices and uploads."},
     {"version": "0.1.0", "summary": "Connect multiple YouTube channels and upload reviewed MP4 videos with explicit privacy and audience settings."}

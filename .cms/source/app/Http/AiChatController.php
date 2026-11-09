@@ -31,7 +31,7 @@ final class AiChatController extends Controller
         }
         catch (\Throwable $exception) {
             $message = $exception->getMessage();
-            $expected = in_array($message, ['Please enter a message up to 2,000 characters.', 'Please enter a valid callback e-mail address.', 'This conversation has ended. Start a new chat to continue.'], true);
+            $expected = in_array($message, ['Please enter a message up to 2,000 characters.', 'Please enter a valid callback e-mail address.', 'A callback e-mail address has not been requested.', 'A callback e-mail address has already been saved for this conversation.', 'This conversation has ended. Start a new chat to continue.'], true);
             if (!$expected) error_log('Public chat send failed: ' . $exception::class);
             http_response_code($expected ? 422 : 503);
             echo json_encode(['error' => $expected ? $message : 'Sending could not be confirmed. Check the conversation before trying again.']);

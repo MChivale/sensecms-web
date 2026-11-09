@@ -1,3 +1,5 @@
+window.SenseCMSInterfaceText ??= source => source;
+window.SenseCMSInterfaceHtml ??= source => source;
 (() => {
     'use strict';
 
@@ -74,12 +76,12 @@
 
     function render() {
         const grid = one('[data-marketplace-grid]');
-        grid.innerHTML = state.items.length ? state.items.map(card).join('') : '<div class="sensecms-marketplace-empty"><i data-lucide="search-x"></i><h3>No matching components</h3><p>Adjust the filters or search for another capability.</p><button type="button" data-marketplace-reset>Reset filters</button></div>';
+        grid.innerHTML = state.items.length ? state.items.map(card).join('') : ("<div class=\"sensecms-marketplace-empty\"><i data-lucide=\"search-x\"></i><h3>"+window.SenseCMSInterfaceHtml("No matching components")+"</h3><p>"+window.SenseCMSInterfaceHtml("Adjust the filters or search for another capability.")+"</p><button type=\"button\" data-marketplace-reset>"+window.SenseCMSInterfaceHtml("Reset filters")+"</button></div>");
         one('[data-marketplace-result-count]').textContent = `${state.pagination.total} matching component${state.pagination.total === 1 ? '' : 's'}`;
         const pagination = state.pagination;
         const navigation = one('[data-marketplace-pagination]');
         navigation.hidden = pagination.pages <= 1;
-        navigation.innerHTML = `<button type="button" data-marketplace-page="${pagination.page - 1}" ${pagination.page <= 1 ? 'disabled' : ''}><i data-lucide="arrow-left"></i>Previous</button><span>Page <b>${pagination.page}</b> of ${pagination.pages}</span><button type="button" data-marketplace-page="${pagination.page + 1}" ${pagination.page >= pagination.pages ? 'disabled' : ''}>Next<i data-lucide="arrow-right"></i></button>`;
+        navigation.innerHTML = `<button type="button" data-marketplace-page="${pagination.page - 1}" ${pagination.page <= 1 ? 'disabled' : ''}><i data-lucide="arrow-left"></i>${window.SenseCMSInterfaceHtml("Previous")}</button><span>${window.SenseCMSInterfaceHtml("Page")} <b>${pagination.page}</b> of ${pagination.pages}</span><button type="button" data-marketplace-page="${pagination.page + 1}" ${pagination.page >= pagination.pages ? 'disabled' : ''}>Next<i data-lucide="arrow-right"></i></button>`;
         renderSummary();
         syncChips();
         renderIcons(grid);
@@ -96,8 +98,8 @@
         target.innerHTML = `<div class="sensecms-marketplace-detail-cover is-${escape(item.type)}">${image}<div><span>${escape(typeLabel(item.type))} · ${escape(item.group)}</span><h3>${escape(item.name)}</h3><p>by ${escape(item.publisher)}</p></div></div>
             <div class="sensecms-marketplace-detail-body"><div class="sensecms-marketplace-state">${badge(item)}<span class="is-trust"><i data-lucide="${item.trust === 'verified' ? 'badge-check' : item.trust === 'unverified' ? 'triangle-alert' : 'shield-check'}"></i>${item.trust === 'verified' ? 'Verified publisher signature' : item.trust === 'unverified' ? 'Archive or publisher trust needs review' : 'Distribution'}</span></div>
             <div class="sensecms-marketplace-detail-price"><strong>${escape(item.price_label)}</strong><small>${item.price_model === 'paid' ? 'Licensed product' : 'Free product · license key still required'}</small></div>
-            <p class="sensecms-marketplace-description">${escape(item.description)}</p><dl><div><dt>Version</dt><dd>${version}</dd></div><div><dt>Compatibility</dt><dd class="${item.compatible ? 'is-ok' : 'is-error'}">${item.compatible ? 'Compatible' : 'Not compatible'} · ${escape(item.engine)}</dd></div><div><dt>Release</dt><dd>${escape(item.release_channel)}</dd></div><div><dt>Integrity</dt><dd>${item.trust === 'verified' ? 'Ed25519 + SHA-256' : item.trust === 'unverified' ? 'Verification required' : 'SenseCMS distribution'}</dd></div></dl>
-            <section><span>CAPABILITIES</span><ul>${features}</ul></section>${dependencies}${actions(item, true)}</div>`;
+            <p class="sensecms-marketplace-description">${escape(item.description)}</p><dl><div><dt>${window.SenseCMSInterfaceHtml("Version")}</dt><dd>${version}</dd></div><div><dt>${window.SenseCMSInterfaceHtml("Compatibility")}</dt><dd class="${item.compatible ? 'is-ok' : 'is-error'}">${item.compatible ? 'Compatible' : 'Not compatible'} · ${escape(item.engine)}</dd></div><div><dt>${window.SenseCMSInterfaceHtml("Release")}</dt><dd>${escape(item.release_channel)}</dd></div><div><dt>${window.SenseCMSInterfaceHtml("Integrity")}</dt><dd>${item.trust === 'verified' ? 'Ed25519 + SHA-256' : item.trust === 'unverified' ? 'Verification required' : 'SenseCMS distribution'}</dd></div></dl>
+            <section><span>${window.SenseCMSInterfaceHtml("CAPABILITIES")}</span><ul>${features}</ul></section>${dependencies}${actions(item, true)}</div>`;
         drawer.hidden = false;
         drawer.setAttribute('aria-hidden', 'false');
         document.documentElement.classList.add('sensecms-marketplace-open');
@@ -114,7 +116,7 @@
     async function post(url, payload) {
         const response = await fetch(url, {method: 'POST', headers: {'Content-Type': 'application/json', Accept: 'application/json', 'X-SenseCMS-Request': '1'}, body: JSON.stringify({csrf, ...payload})});
         const result = await response.json().catch(() => ({}));
-        if (!response.ok || !result.ok) throw new Error(result.message || 'The Marketplace operation could not be completed.');
+        if (!response.ok || !result.ok) throw new Error(result.message || window.SenseCMSInterfaceText('The Marketplace operation could not be completed.'));
         return result;
     }
 
@@ -139,7 +141,7 @@
                 ? await post(`/marketplace/official/${encodeURIComponent(item.official_id)}/stage`, {license})
                 : await post(`/marketplace/catalog/${Number(item.catalog_entry_id)}/stage`, {});
             closeLicense();
-            confirm(item.installed ? 'Install verified update' : 'Install verified component', `${staged.data.name} ${staged.data.version} passed license, publisher signature, checksum, compatibility and dependency verification. Continue with the protected installation?`, () => completeInstallation(staged).catch(error => toast('error', error.message)));
+            confirm(item.installed ? window.SenseCMSInterfaceText('Install verified update') : window.SenseCMSInterfaceText('Install verified component'), `${staged.data.name} ${staged.data.version} passed license, publisher signature, checksum, compatibility and dependency verification. Continue with the protected installation?`, () => completeInstallation(staged).catch(error => toast('error', error.message)));
         } catch (error) {
             if (licenseDialog.open) {
                 licenseStatus.hidden = false;
@@ -171,13 +173,13 @@
     }
 
     function install(item) {
-        if (!item.compatible) return toast('error', 'This component is not compatible with the installed SenseCMS engine.');
+        if (!item.compatible) return toast('error', window.SenseCMSInterfaceText('This component is not compatible with the installed SenseCMS engine.'));
         if (item.official_id) openLicense(item);
         else stageInstall(item);
     }
 
     function uninstall(item) {
-        confirm('Uninstall component', `Uninstall ${item.name}? SenseCMS will create a private recovery package before removing files and runtime data.`, async () => {
+        confirm(window.SenseCMSInterfaceText('Uninstall component'), `Uninstall ${item.name}? SenseCMS will create a private recovery package before removing files and runtime data.`, async () => {
             try {
                 const result = await post(`/marketplace/packages/${encodeURIComponent(item.type)}/${encodeURIComponent(item.slug)}/uninstall`, {});
                 toast('success', result.message);
@@ -196,7 +198,7 @@
         try {
             const response = await fetch(`/api/marketplace?${params}`, {headers: {Accept: 'application/json', 'X-SenseCMS-Request': '1'}, cache: 'no-store'});
             const payload = await response.json();
-            if (!response.ok || !payload.ok) throw new Error(payload.message || 'Marketplace could not be loaded.');
+            if (!response.ok || !payload.ok) throw new Error(payload.message || window.SenseCMSInterfaceText('Marketplace could not be loaded.'));
             state = payload.data;
             history.replaceState({}, '', location.pathname + (params.size ? `?${params}` : ''));
             render();
@@ -245,7 +247,7 @@
         const license = licenseInput.value.trim();
         if (!license || license.length > 128) {
             licenseStatus.hidden = false;
-            licenseStatus.textContent = 'Enter a valid license key containing no more than 128 characters.';
+            licenseStatus.textContent = window.SenseCMSInterfaceText('Enter a valid license key containing no more than 128 characters.');
             return;
         }
         stageInstall(activeItem, license);

@@ -1,7 +1,7 @@
 {
   "name": "Sense CMS Social Publishing",
   "slug": "social-publishing",
-  "version": "0.5.2",
+  "version": "0.5.6",
   "author": "QUANT Software House Limited",
   "type": "addon",
   "description": "Review-first publishing of Sense CMS posts through independently installed social network connectors, with an idempotent queue, retries and delivery history.",
@@ -20,6 +20,9 @@
   "group": "Content distribution",
   "release_channel": "development",
   "changelog": [
+    {"version": "0.5.6", "summary": "Keep media destination checkboxes in sync with the selected connection and refresh editor assets."},
+    {"version": "0.5.5", "summary": "Localize the administration interface in Polish and English."},
+    {"version": "0.5.3", "summary": "Accept provider publication identifiers containing a tilde for asynchronous tracking."},
     {"version": "0.5.2", "summary": "Rehydrate post destination controls after AJAX navigation between the post list, creation and editing views."},
     {"version": "0.5.1", "summary": "Use the installed release version for Social Publishing workspace assets to prevent stale UI caches."},
     {"version": "0.5.0", "summary": "Add ordered provider accordions, brand identities, planned destinations and post media distribution controls."},

@@ -28,7 +28,7 @@ final class SocialController
             'socialCanManage'=>$this->context->access->allows('social.settings.manage'),
             'csrf'=>$this->context->auth->csrf(),
             'extensionActive'=>'/social-publishing',
-            'extensionStyles'=>['/extension-assets/addon/social-publishing/social.css?v=0.5.2'],
+            'extensionStyles'=>['/extension-assets/addon/social-publishing/social.css?v=0.5.6'],
         ]);
     }
 
