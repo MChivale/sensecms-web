@@ -230,6 +230,8 @@ if ($method === 'POST' && preg_match('#^/system/extensions/packages/(theme|plugi
 if ($method === 'POST' && $path === '/system/extensions/publishers') $dashboard->trustPublisher();
 if ($method === 'POST' && preg_match('#^/system/extensions/publishers/([a-z0-9._-]+)/toggle$#', $path, $matches)) $dashboard->togglePublisher($matches[1]);
 if ($method === 'GET' && $path === '/system/access') $dashboard->accessControl();
+if ($method === 'GET' && $path === '/system/settings') $dashboard->systemSettings();
+if ($method === 'POST' && $path === '/system/settings') $dashboard->saveSystemSettings();
 if ($method === 'POST' && $path === '/system/access/users') $dashboard->saveAccessUser();
 if ($method === 'POST' && preg_match('#^/system/access/users/(\d+)/welcome$#',$path,$matches)) $dashboard->resendWelcome((int)$matches[1]);
 if ($method === 'POST' && $path === '/system/access/teams') $dashboard->saveAccessTeam();

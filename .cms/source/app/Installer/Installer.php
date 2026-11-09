@@ -15,7 +15,8 @@ final class Installer
     public function requirements(): array
     {
         $checks = ['PHP 8.5+' => PHP_VERSION_ID >= 80500];
-        foreach (['curl', 'pdo_mysql', 'sodium', 'zip', 'mbstring', 'session'] as $extension) $checks['PHP ' . $extension] = extension_loaded($extension);
+        foreach (['curl', 'sodium', 'zip', 'mbstring', 'session'] as $extension) $checks['PHP ' . $extension] = extension_loaded($extension);
+        $checks['PHP PDO database driver'] = extension_loaded('pdo_mysql') || extension_loaded('pdo_pgsql');
         $checks['Argon2id password hashing'] = in_array('argon2id', password_algos(), true);
         $checks['Writable private storage'] = is_writable($this->runtime->root . '/storage');
         $checks['Memory limit 128 MB+'] = ini_get('memory_limit') === '-1' || ini_parse_quantity(ini_get('memory_limit')) >= 134217728;
@@ -46,11 +47,19 @@ final class Installer
             if ($this->runtime->read('installed')) throw new RuntimeException('Sense CMS is already installed.');
             $baseUrl = $this->runtime->baseUrl(); $this->runtime->license()->enforce($baseUrl);
             $db = Runtime::connect($dbConfig);
-            $version = (string) $db->query('SELECT VERSION()')->fetchColumn();
-            preg_match('/\d+\.\d+\.\d+/', $version, $match);
-            if (!$match || version_compare($match[0], str_contains(strtolower($version), 'mariadb') ? '10.11.0' : '8.0.29', '<')) throw new RuntimeException('MySQL 8.0.29+ or MariaDB 10.11+ is required.');
+            $postgres = $dbConfig['driver'] === 'pgsql';
+            if ($postgres) {
+                if (!extension_loaded('pdo_pgsql')) throw new RuntimeException('PHP pdo_pgsql is required for PostgreSQL.');
+                if ((int) $db->query('SHOW server_version_num')->fetchColumn() < 170000) throw new RuntimeException('PostgreSQL 17 or newer is required.');
+                try {$db->exec('CREATE EXTENSION IF NOT EXISTS vector');} catch (\Throwable) {throw new RuntimeException('pgvector must be installed and this database user must be allowed to enable it.');}
+                PostgresSchema::prepare($db);
+            } else {
+                if (!extension_loaded('pdo_mysql')) throw new RuntimeException('PHP pdo_mysql is required for MariaDB.');
+                $version = (string) $db->query('SELECT VERSION()')->fetchColumn(); preg_match('/\d+\.\d+\.\d+/', $version, $match);
+                if (!$match || !str_contains(strtolower($version), 'mariadb') || version_compare($match[0], '10.11.0', '<')) throw new RuntimeException('MariaDB 10.11 or newer is required.');
+            }
             $dbLock = 'sense-install-' . substr(hash('sha256', $dbConfig['name']), 0, 48);
-            $stmt = $db->prepare('SELECT GET_LOCK(?, 0)'); $stmt->execute([$dbLock]);
+            $stmt = $postgres ? $db->prepare("SELECT pg_try_advisory_lock(hashtextextended(current_database() || ':' || ?, 0))") : $db->prepare('SELECT GET_LOCK(?, 0)'); $stmt->execute([$dbLock]);
             if ((int) $stmt->fetchColumn() !== 1) { $dbLock = null; throw new RuntimeException('Database installation is already locked.'); }
             $fingerprint = hash('sha256', json_encode([$dbConfig['host'], $dbConfig['port'], $dbConfig['name'], $dbConfig['user'], $admin['email'], $baseUrl], JSON_THROW_ON_ERROR));
             $progress = $this->runtime->read('installing');
@@ -59,7 +68,6 @@ final class Installer
             $fullWorkspace = !$progress || isset($progress['workspace_schema']);
             $migration = new WorkspaceMigration($db, $this->runtime->root);
             $plan = $fullWorkspace ? $migration->plan() : ['files'=>[], 'tables'=>[]];
-            if ($fullWorkspace && !str_contains(strtolower($version), 'mariadb')) throw new RuntimeException('This Workspace candidate requires MariaDB 10.11+. MySQL migration support is not yet verified.');
             if ($progress && $fullWorkspace && $progress['workspace_schema'] !== $plan['files']) throw new RuntimeException('Workspace schema changed during an unfinished installation. Restore the original migration files.');
             $tables = $db->query('SHOW TABLES')->fetchAll(PDO::FETCH_COLUMN);
             if (!$progress && $tables) throw new RuntimeException('Use a new empty database. Existing data will not be overwritten.');
@@ -69,7 +77,8 @@ final class Installer
             if (!$progress) $this->runtime->write('installing', ['fingerprint' => $fingerprint, 'schema' => $checksum, 'workspace_schema'=>$plan['files']]);
             // DDL is not transactional in MySQL; each statement is idempotent and
             // resumption is restricted to the same owned, initially empty database.
-            foreach (explode(';', $schema) as $statement) if (trim($statement) !== '') $db->exec($statement);
+            $schemaStatements = $postgres ? PostgresSchema::statements($schema) : explode(';', $schema);
+            foreach ($schemaStatements as $statement) if (trim($statement) !== '') $db->exec($statement);
             $db->beginTransaction();
             $db->exec("INSERT IGNORE INTO roles (slug,name) VALUES ('owner','Owner')");
             $stmt = $db->prepare('INSERT IGNORE INTO users (name,email,password,created_at) VALUES (?,?,?,UTC_TIMESTAMP())'); $stmt->execute(array_values($admin));
@@ -82,6 +91,7 @@ final class Installer
             $db->commit();
             if ($fullWorkspace) {
                 $migration->apply();
+                if ($postgres) $this->prepareSemanticSearch($db);
                 $workspace = $this->runtime->read('workspace');
                 if ($workspace && (!is_string($workspace['secret'] ?? null) || !preg_match('/^[a-f0-9]{64}$/D', $workspace['secret']))) throw new RuntimeException('Invalid Workspace encryption identity. Do not overwrite its private configuration.');
                 // Public routing also requires installed.json, written only after all migrations succeed.
@@ -91,8 +101,17 @@ final class Installer
             unlink($this->runtime->root . '/storage/installing.json');
         } finally {
             if ($db?->inTransaction()) $db->rollBack();
-            if ($db && $dbLock) $db->prepare('SELECT RELEASE_LOCK(?)')->execute([$dbLock]);
+            if ($db && $dbLock) ($dbConfig['driver'] ?? 'mysql') === 'pgsql' ? $db->prepare("SELECT pg_advisory_unlock(hashtextextended(current_database() || ':' || ?, 0))")->execute([$dbLock]) : $db->prepare('SELECT RELEASE_LOCK(?)')->execute([$dbLock]);
             flock($lock, LOCK_UN); fclose($lock);
         }
+    }
+
+    private function prepareSemanticSearch(PDO $db): void
+    {
+        // Installing pgvector makes semantic retrieval available after its provider is
+        // configured; it does not enable outbound embedding requests by itself.
+        $db->exec('ALTER TABLE ai_knowledge_chunks ADD COLUMN IF NOT EXISTS embedding_model text');
+        $db->exec('CREATE TABLE IF NOT EXISTS ai_semantic_cache (model text NOT NULL, content_hash text NOT NULL, embedding vector(1536) NOT NULL, PRIMARY KEY (model, content_hash))');
+        $db->exec('CREATE TABLE IF NOT EXISTS ai_semantic_usage (day date NOT NULL, purpose text NOT NULL, requests integer NOT NULL, input_tokens integer NOT NULL DEFAULT 0, PRIMARY KEY (day, purpose))');
     }
 }

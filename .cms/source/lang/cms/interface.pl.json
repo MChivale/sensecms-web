@@ -2953,5 +2953,19 @@
   "Configure administrator sign-in protection.": "Skonfiguruj ochronę logowania do panelu.",
   "Manage installed and active platform languages.": "Zarządzaj zainstalowanymi i aktywnymi językami.",
   "Manage the encrypted SenseCMS installation entitlement.": "Zarządzaj licencją tej instalacji Sense CMS.",
-  "Results: {count}": "Liczba wyników: {count}"
+  "Results: {count}": "Liczba wyników: {count}",
+  "Settings": "Ustawienia",
+  "System name": "Nazwa systemu",
+  "This name is set during installation and is used across the public site, e-mail and workspace.": "Ta nazwa jest ustawiana podczas instalacji i jest używana w witrynie publicznej, e-mailach oraz panelu.",
+  "Only the system owner can view or change these installation settings.": "Tylko właściciel systemu może wyświetlać lub zmieniać te ustawienia instalacji.",
+  "Database connection": "Połączenie z bazą danych",
+  "The connection is tested and required Sense CMS tables are checked before any private configuration is replaced.": "Przed zastąpieniem prywatnej konfiguracji sprawdzane są połączenie oraz wymagane tabele Sense CMS.",
+  "Database engine": "Silnik bazy danych",
+  "Database host": "Host bazy danych",
+  "Database name": "Nazwa bazy danych",
+  "Database user": "Użytkownik bazy danych",
+  "New database password": "Nowe hasło do bazy danych",
+  "Leave blank to keep the current password.": "Pozostaw puste, aby zachować obecne hasło.",
+  "Changing the database connection does not copy data. Save it only after the target database contains this installation.": "Zmiana połączenia z bazą nie kopiuje danych. Zapisz ją dopiero, gdy wskazana baza zawiera tę instalację.",
+  "Verify and save system settings": "Sprawdź i zapisz ustawienia systemu"
 }

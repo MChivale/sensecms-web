@@ -7,21 +7,21 @@ now create the full general-purpose Workspace after all migrations succeed on Ma
 Upgrading an existing initial console remains a separate, operator-controlled deployment
 gate. Installing the panel does not install optional packages or certify integrations.
 
-The ZIP includes `installer-manifest.json`, an exact SHA-256 file inventory, and no
-installation state, credentials or theme packages. The inventory detects accidental
-changes; it is not a publisher signature. Do not trust an installer from an unknown
-source merely because its embedded checksums match. Themes and optional extensions
-remain separately distributed packages. No demo content is installed by this build.
+The ZIP includes `installer-manifest.json`, an exact SHA-256 file inventory, all
+bundled presentation themes (Eduvixo, School, Sense CMS Demo, Sense CMS and Villa)
+and no installation state, credentials or demo content. The themes are available after
+setup but none is activated automatically. The inventory detects accidental changes;
+it is not a publisher signature.
 
 ## Server preparation
 
-Use PHP 8.5+ with curl, pdo_mysql, sodium, zip, mbstring, session and Argon2id,
-at least 128 MB memory, and MariaDB 10.11+ for a new full Workspace installation.
-The earlier initial Core supported MySQL 8.0.29+, but full Workspace migration SQL
-is not yet verified on MySQL; this candidate rejects a new MySQL installation before
-creating tables. Existing initial-Core installations are not automatically upgraded.
-Provision a new empty UTF-8 database and a dedicated user with schema-scoped
-permissions. Never point the installer at an existing application's database.
+Use PHP 8.5+ with curl, sodium, zip, mbstring, session, Argon2id and either
+`pdo_mysql` for MariaDB 10.11+ or `pdo_pgsql` for PostgreSQL 17+ with pgvector.
+Choose the engine in the browser installer and provision a new empty database with a
+dedicated schema-scoped user. PostgreSQL enables pgvector during setup and prepares
+semantic retrieval, which remains off until an embedding provider is configured.
+MariaDB supports the complete CMS with keyword retrieval only. Never point the
+installer at an existing application's database.
 
 Extract outside the public document root. Point Nginx/Apache at `public`, enable
 HTTPS, route missing public paths to `public/index.php`, and pass HTTPS status to

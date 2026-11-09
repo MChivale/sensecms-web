@@ -10,7 +10,7 @@ final class PostgresQuery
 {
     // Use the logical key of each operation, never an arbitrary unique index.
     private const CONFLICT_KEYS = [
-        'settings'=>'key', 'login_attempts'=>'bucket', 'languages'=>'locale', 'categories'=>'slug',
+        'settings'=>'key', 'login_attempts'=>'bucket', 'languages'=>'locale', 'categories'=>'slug', 'permissions'=>'slug', 'roles'=>'slug',
         'category_translations'=>'category_id,locale', 'facility_translations'=>'facility_id,locale',
         'post_translations'=>'post_id,locale', 'page_translations'=>'page_id,locale', 'post_tags'=>'locale,slug',
         'menus'=>'location', 'menu_item_translations'=>'menu_item_id,locale', 'forms'=>'block_uid',
@@ -61,7 +61,8 @@ REGEX;
             return $token;
         }, $sql);
         $sql = preg_replace('~\btable_schema\s*=\s*DATABASE\(\)~i', 'table_schema=current_schema()', $sql);
-        $sql = self::functions($sql);
+        $sql = self::functions($sql, $protected);
+        $sql = preg_replace('/(JSON_EXTRACT\s*\([^()]*\)\s*,\s*)TRUE\b/i', "$1'true'", $sql);
         $sql = preg_replace_callback('/\bAS\s+([a-z][A-Za-z0-9_]*[A-Z][A-Za-z0-9_]*)\b/', static fn(array $m): string => 'AS "'.$m[1].'"', $sql);
         // User names are optional display data. Lock the actual section lock rows only.
         if (preg_match('/\bFROM page_builder_section_locks l LEFT JOIN users u\b/i', $sql)) {
@@ -117,7 +118,8 @@ REGEX;
             . ') DO UPDATE SET ' . implode(', ', $updates);
     }
 
-    private static function functions(string $sql): string
+    /** @param array<string,string> $protected */
+    private static function functions(string $sql, array $protected = []): string
     {
         // Walk balanced parentheses so commas in subqueries and nested calls stay inside their argument.
         $out = '';
@@ -131,9 +133,9 @@ REGEX;
                 if ($sql[$end] === ')') $depth--;
             }
             if ($depth !== 0) break;
-            $body = self::functions(substr($sql, $open, $end - $open - 1));
+            $body = self::functions(substr($sql, $open, $end - $open - 1), $protected);
             $out .= substr($sql, $offset, $start - $offset)
-                . self::call(strtoupper($match[1][0]), $prefix, $body);
+                . self::call(strtoupper($match[1][0]), $prefix, $body, $protected);
             $offset = $end;
         }
         return $out . substr($sql, $offset);
@@ -153,7 +155,8 @@ REGEX;
         return $args;
     }
 
-    private static function call(string $name, string $prefix, string $body): string
+    /** @param array<string,string> $protected */
+    private static function call(string $name, string $prefix, string $body, array $protected): string
     {
         if ($name === 'GROUP_CONCAT') {
             if (preg_match('/^(DISTINCT\s+)?(.+?)(?:\s+ORDER\s+BY\s+(.+?))?(?:\s+SEPARATOR\s+(\x1f\d+\x1f))?$/is', trim($body), $m)) {
@@ -166,13 +169,17 @@ REGEX;
         if ($name === 'SUM' && preg_match('/^[\w.]+\s*(?:=|<>|IS\b|IN\b)/i', trim($body))) {
             return 'SUM((' . $body . ')::int)';
         }
-        if (!in_array($name, ['IF','DATE_SUB','DATE_ADD','FIELD','CURDATE','UTC_TIMESTAMP','UNIX_TIMESTAMP','DATABASE','TIMESTAMPDIFF','TIMESTAMPADD','JSON_OBJECT'], true)) {
+        if (!in_array($name, ['IF','DATE_SUB','DATE_ADD','DATE_FORMAT','FIELD','CURDATE','UTC_TIMESTAMP','UNIX_TIMESTAMP','DATABASE','TIMESTAMPDIFF','TIMESTAMPADD','JSON_OBJECT','UUID'], true)) {
             return $prefix . $body . ')';
         }
         $a = self::arguments($body);
         return match (true) {
             $name === 'IF' && count($a) === 3 => '(CASE WHEN ' . $a[0] . ' THEN ' . $a[1] . ' ELSE ' . $a[2] . ' END)',
-            $name === 'FIELD' && count($a) > 1 => 'sense_field(' . $body . ')',
+            // MySQL FIELD() returns the 1-based position or zero. A CASE expression
+            // preserves that ordering without requiring a custom database function.
+            $name === 'FIELD' && count($a) > 1 => '(CASE ' . $a[0] . self::fieldCases(array_slice($a, 1)) . ' ELSE 0 END)',
+            $name === 'DATE_FORMAT' && count($a) === 2 && ($protected[$a[1]] ?? null) === "'%Y-%m-01 00:00:00'" =>
+                "date_trunc('month', " . $a[0] . ')',
             $name === 'CURDATE' => 'CURRENT_DATE',
             $name === 'DATABASE' => 'current_database()',
             $name === 'UNIX_TIMESTAMP' => 'floor(extract(epoch FROM ' . ($body === '' ? 'statement_timestamp()' : $body) . '))::bigint',
@@ -183,8 +190,17 @@ REGEX;
                 'trunc(extract(epoch FROM (' . $a[2] . ' - ' . $a[1] . ')))::bigint',
             $name === 'TIMESTAMPADD' && count($a) === 3 && strtoupper($a[0]) === 'SECOND' =>
                 '('.$a[2].' + ('.$a[1].") * INTERVAL '1 second')",
-            $name === 'JSON_OBJECT' && $body === '' => "'{}'",
+            $name === 'JSON_OBJECT' => ($body === '' ? "'{}'" : 'jsonb_build_object('.$body.')::text'),
+            $name === 'UUID' && $body === '' => 'gen_random_uuid()::text',
             default => $prefix . $body . ')',
         };
+    }
+
+    /** @param list<string> $values */
+    private static function fieldCases(array $values): string
+    {
+        $cases = '';
+        foreach ($values as $position => $value) $cases .= ' WHEN ' . $value . ' THEN ' . ($position + 1);
+        return $cases;
     }
 }

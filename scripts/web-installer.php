@@ -13,19 +13,40 @@ $nonce = base64_encode(random_bytes(24));
 header("Content-Security-Policy: default-src 'none'; script-src 'nonce-$nonce'; style-src 'nonce-$nonce'; img-src data:; connect-src 'self'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'");
 $post = ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST';
 $error = null;
+$publicReview = [];
 $reply = static function (array $data, int $code = 200): never {
     http_response_code($code); header('Content-Type: application/json');
     echo json_encode($data, JSON_THROW_ON_ERROR); exit;
 };
 try {
     $public = __DIR__; $root = dirname($public); $work = $root . '/.sense-bootstrap';
-    $checkDestination = static function (bool $extracting = false) use ($root): void {
+    $published = [];
+    foreach (array_keys(INVENTORY) as $entry) $published[explode('/', $entry, 2)[0]] = true;
+    $publicTargets = [];
+    foreach (array_keys(INVENTORY) as $entry) {
+        if (!str_starts_with($entry, 'public/')) continue;
+        $name = explode('/', substr($entry, 7), 2)[0];
+        if ($name !== 'index.php') $publicTargets[$name] = true;
+    }
+    $inspectPublic = static function () use ($public, $publicTargets): array {
+        $items = [];
+        foreach (new DirectoryIterator($public) as $file) {
+            $name = $file->getFilename();
+            if ($file->isDot() || in_array($name, ['index.php', 'install.zip'], true)) continue;
+            $items[] = ['name'=>$name, 'replace'=>isset($publicTargets[$name])];
+        }
+        usort($items, static fn(array $left, array $right): int => strcmp($left['name'], $right['name']));
+        return $items;
+    };
+    $reviewFingerprint = static fn(array $items): string => hash('sha256', json_encode($items, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE));
+    $checkDestination = static function (bool $extracting = false) use ($root, $published): void {
         foreach (new DirectoryIterator($root) as $file) {
             $name = $file->getFilename();
             if ($file->isDot() || $name === 'public' || $extracting && $name === '.sense-bootstrap') continue;
             if ($name === 'storage' && !$file->isLink() && $file->isDir()
                 && !(new FilesystemIterator($file->getPathname()))->valid() && is_writable($file->getPathname())) continue;
-            throw new RuntimeException('The installation folder above public is not empty. Only public (containing index.php and install.zip) and an optional empty, writable storage directory are allowed. Existing data will not be overwritten.');
+            if ($name === 'storage') throw new RuntimeException('Private storage already contains data or is not writable. It will not be overwritten.');
+            if (isset($published[$name])) throw new RuntimeException('The existing "' . $name . '" path conflicts with Sense CMS Core files. It will not be overwritten.');
         }
     };
     $local = getenv('SENSE_LOCAL_HTTP') === '1' && in_array($_SERVER['REMOTE_ADDR'] ?? '', ['127.0.0.1', '::1'], true)
@@ -45,11 +66,17 @@ try {
     $_SESSION['csrf'] ??= bin2hex(random_bytes(32));
     if ($post) {
         if (!is_string($_POST['csrf'] ?? null) || !hash_equals($_SESSION['csrf'], $_POST['csrf'])) $reply(['message' => 'Session expired. Reload this page.'], 419);
-        if (($_POST['action'] ?? '') !== 'extract') throw new RuntimeException('Unsupported installer action.');
+        $action = $_POST['action'] ?? '';
+        $review = $inspectPublic(); $fingerprint = $reviewFingerprint($review);
+        if ($action === 'confirm-public') {
+            $_SESSION['public_review'] = $fingerprint;
+            $reply(['message'=>'Public directory reviewed.']);
+        }
+        if ($action !== 'extract') throw new RuntimeException('Unsupported installer action.');
+        if ($review && !hash_equals((string) ($_SESSION['public_review'] ?? ''), $fingerprint)) $reply(['message'=>'Review the current public directory before continuing.'], 409);
         if (is_link($work) || is_link($public . '/install.zip')) throw new RuntimeException('Linked installer paths are not allowed.');
         if (!is_dir($work)) {
             $checkDestination();
-            foreach (new DirectoryIterator($public) as $file) if (!$file->isDot() && !in_array($file->getFilename(), ['index.php', 'install.zip'], true)) throw new RuntimeException('The public directory must contain only index.php and install.zip.');
             if (!mkdir($work, 0700)) throw new RuntimeException('Cannot create private extraction workspace. Check parent directory permissions.');
         }
         if (is_link($work . '/lock') || is_link($work . '/state.json')) throw new RuntimeException('Invalid extraction workspace.');
@@ -110,8 +137,13 @@ try {
         }
         foreach (new DirectoryIterator($stage . '/public') as $file) {
             if ($file->isDot() || $file->getFilename() === 'index.php') continue;
-            $dest = $public . '/' . $file->getFilename();
-            if (file_exists($dest) || is_link($dest) || !rename($file->getPathname(), $dest)) throw new RuntimeException('Cannot publish public assets safely.');
+            $name = $file->getFilename(); $dest = $public . '/' . $name; $backup = $work . '/backup/public/' . $name;
+            if (file_exists($dest) || is_link($dest)) {
+                if (!is_dir(dirname($backup)) && !mkdir(dirname($backup), 0700, true)) throw new RuntimeException('Cannot create a private backup for existing public files.');
+                if (!file_exists($backup) && !is_link($backup) && !rename($dest, $backup)) throw new RuntimeException('Cannot preserve an existing public file before publishing Core.');
+                if (file_exists($dest) || is_link($dest)) throw new RuntimeException('Cannot publish public assets safely.');
+            }
+            if (!rename($file->getPathname(), $dest)) throw new RuntimeException('Cannot publish public assets safely.');
         }
         require_once $root . '/bootstrap.php';
         $runtime = new App\Core\Runtime($root);
@@ -131,14 +163,16 @@ try {
     http_response_code(422);
 }
 $e = static fn(string $value): string => htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+if (isset($inspectPublic)) $publicReview = $inspectPublic();
 ?>
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Install Sense CMS</title>
 <style nonce="<?= $e($nonce) ?>">
 :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#17243b;background:#f5f7fb;--primary:#2563eb;--line:#d9e0ea;--muted:#64748b}*{box-sizing:border-box}body{margin:0}.shell{min-height:100vh;display:grid;grid-template-columns:43% 57%}.brand{background:linear-gradient(135deg,#f0f5ff,#e9f0ff);color:#17243b;padding:clamp(32px,6vw,96px);display:flex;flex-direction:column;justify-content:space-between;gap:48px}.logo{display:flex;align-items:center;gap:14px;font-weight:750;font-size:25px}.logo img{width:48px;height:48px;border-radius:12px}.eyebrow{text-transform:uppercase;letter-spacing:.15em;font-size:12px;font-weight:750;color:#64748b}h1{font-size:clamp(36px,4vw,62px);line-height:1.1;letter-spacing:-.045em;margin:22px 0}p{line-height:1.7}.brand p{color:#64748b;max-width:440px}.main{background:white;padding:clamp(24px,6vw,96px);display:flex;align-items:center}.card{width:100%;max-width:550px;margin:auto}h2{font-size:32px;letter-spacing:-.035em;margin:22px 0 12px}.muted,small{color:var(--muted)}.tag{display:inline-block;color:#1e40af;background:#dbeafe;border-radius:30px;padding:7px 12px;font-size:12px;font-weight:700}.steps{display:flex;gap:10px;list-style:none;padding:0;margin:28px 0;font-size:12px;flex-wrap:wrap}.steps li{padding:8px 12px;border:1px solid var(--line);border-radius:8px}.steps li:first-child{border-color:var(--primary);color:var(--primary);background:white}button,.continue{display:inline-block;background:var(--primary);color:white;border:0;border-radius:8px;padding:14px 22px;font:inherit;font-weight:650;cursor:pointer;text-decoration:none}button:disabled{opacity:.6;cursor:wait}button:focus-visible,a:focus-visible{outline:3px solid #93c5fd;outline-offset:4px}progress{display:block;width:100%;height:14px;accent-color:var(--primary);margin:26px 0 12px}.status{min-height:48px;margin:0 0 20px;font-size:14px}.error{color:#b91c1c}.note{margin-top:28px;padding-top:22px;border-top:1px solid var(--line);font-size:13px}.brand footer{font-size:13px;color:#a8cbff}@media(max-width:760px){.shell{grid-template-columns:1fr}.brand{gap:24px;padding:28px}.brand h1{font-size:34px}.brand footer{display:none}.main{padding:32px 24px}}
 [hidden]{display:none!important}
-</style></head><body><main class="shell"><aside class="brand"><div class="logo"><img src="data:image/svg+xml;base64,__SENSE_LOGO__" alt="">Sense CMS</div><div><span class="eyebrow">YOUR WORKSPACE, YOUR WAY</span><h1>A clear starting point.<br>A system of your own.</h1><p>One secure foundation for your website, content and independently installed extensions.</p></div><footer>Sense CMS · Secure installation</footer></aside><section class="main"><div class="card"><span class="tag">Development installer · __SENSE_VERSION__</span><h2>Prepare your workspace.</h2><p class="muted">We’ll verify and unpack the Core files. The next screen asks for your CMS license key before any database or administrator account is created.</p><ol class="steps" aria-label="Installation steps"><li>1 · Unpack Core</li><li>2 · Verify license</li><li>3 · Set up your CMS</li></ol><progress id="progress" max="100" value="0" aria-label="Verified extraction progress"></progress><p id="status" class="status<?= $error ? ' error' : '' ?>" role="status" aria-live="polite"><?= $e($error ?? 'Ready to verify install.zip.') ?></p><button id="start" <?= $error ? 'disabled' : '' ?>>Prepare installation →</button><a id="continue" class="continue" href="/install" hidden>Continue to license →</a><p class="note muted">Keep this installation restricted to you until setup is complete. The public directory must contain only index.php and install.zip; its parent may also contain an empty, writable storage directory. Optional themes and extensions are installed separately.</p><noscript><p>JavaScript is required to display extraction progress.</p></noscript></div></section></main>
+</style></head><body><main class="shell"><aside class="brand"><div class="logo"><img src="data:image/svg+xml;base64,__SENSE_LOGO__" alt="">Sense CMS</div><div><span class="eyebrow">YOUR WORKSPACE, YOUR WAY</span><h1>A clear starting point.<br>A system of your own.</h1><p>One secure foundation for your website, content and independently installed extensions.</p></div><footer>Sense CMS · Secure installation</footer></aside><section class="main"><div class="card"><span class="tag">Development installer · __SENSE_VERSION__</span><h2>Prepare your workspace.</h2><p class="muted">We’ll verify and unpack the Core files. The next screen asks for your CMS license key before any database or administrator account is created.</p><ol class="steps" aria-label="Installation steps"><li>1 · Unpack Core</li><li>2 · Verify license</li><li>3 · Set up your CMS</li></ol><progress id="progress" max="100" value="0" aria-label="Verified extraction progress"></progress><p id="status" class="status<?= $error ? ' error' : '' ?>" role="status" aria-live="polite"><?= $e($error ?? 'Ready to verify install.zip.') ?></p><button id="start" <?= $error ? 'disabled' : '' ?>>Prepare installation →</button><a id="continue" class="continue" href="/install" hidden>Continue to license →</a><p class="note muted">The public directory must contain only index.php and install.zip. Other files and directories beside public are preserved; Core paths and private storage are never overwritten. Keep setup restricted to you until it is complete.</p><noscript><p>JavaScript is required to display extraction progress.</p></noscript></div></section></main>
 <script nonce="<?= $e($nonce) ?>">
 const start=document.getElementById('start'),status=document.getElementById('status'),progress=document.getElementById('progress');
-start.addEventListener('click',async()=>{start.disabled=true;status.classList.remove('error');try{for(;;){status.textContent='Verifying and unpacking Core files… '+progress.value+'%';const response=await fetch('/index.php',{method:'POST',headers:{'Accept':'application/json'},body:new URLSearchParams({action:'extract',csrf:<?= json_encode($_SESSION['csrf'] ?? '') ?>})});const data=await response.json();if(!response.ok)throw new Error(data.message||'Extraction failed.');progress.value=data.progress;if(data.redirect){status.textContent='Core verified. Opening license activation…';start.hidden=true;document.getElementById('continue').hidden=false;location.assign('/install');break;}}}catch(error){status.textContent=error.message;status.classList.add('error');start.disabled=false;start.textContent='Retry preparation';}});
-if(!start.disabled)start.click();
+const publicReview=<?= json_encode($publicReview, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE) ?>;let publicConfirmed=!publicReview.length;
+start.addEventListener('click',async()=>{start.disabled=true;status.classList.remove('error');try{if(!publicConfirmed){status.textContent='Confirming the public directory review…';const confirmation=await fetch('/index.php',{method:'POST',headers:{'Accept':'application/json'},body:new URLSearchParams({action:'confirm-public',csrf:<?= json_encode($_SESSION['csrf'] ?? '') ?>})}),confirmed=await confirmation.json();if(!confirmation.ok)throw new Error(confirmed.message||'Could not confirm the public directory review.');publicConfirmed=true}for(;;){status.textContent='Verifying and unpacking Core files… '+progress.value+'%';const response=await fetch('/index.php',{method:'POST',headers:{'Accept':'application/json'},body:new URLSearchParams({action:'extract',csrf:<?= json_encode($_SESSION['csrf'] ?? '') ?>})});const data=await response.json();if(!response.ok)throw new Error(data.message||'Extraction failed.');progress.value=data.progress;if(data.redirect){status.textContent='Core verified. Opening license activation…';start.hidden=true;document.getElementById('continue').hidden=false;location.assign('/install');break;}}}catch(error){status.textContent=error.message;status.classList.add('error');start.disabled=false;start.textContent='Retry preparation';}});
+if(!start.disabled&&publicReview.length){const review=document.createElement('div'),heading=document.createElement('strong'),copy=document.createElement('p'),list=document.createElement('ul'),cancel=document.createElement('button'),replaced=publicReview.filter(item=>item.replace);review.className='note';heading.textContent='Review existing public files';copy.textContent=replaced.length?'Matching Core paths will be moved to a private backup before they are replaced. Other entries stay unchanged.':'These public entries stay unchanged; review them before installation.';publicReview.forEach(item=>{const row=document.createElement('li');row.textContent=item.name+(item.replace?' — backed up, then replaced':' — preserved');list.append(row)});cancel.type='button';cancel.textContent='Cancel installation';cancel.style.cssText='margin-right:10px;background:#fff;color:#17243b;border:1px solid #d9e0ea';cancel.addEventListener('click',()=>{start.disabled=true;cancel.disabled=true;status.textContent='Installation cancelled. No files were changed.'});review.append(heading,copy,list);start.parentNode.insertBefore(review,start);start.parentNode.insertBefore(cancel,start);start.textContent='Continue installation →';status.textContent='Review the public directory, then continue or cancel.'}else if(!start.disabled)start.click();
 </script></body></html>

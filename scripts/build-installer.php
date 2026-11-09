@@ -12,7 +12,7 @@ final class InstallerBuilder
     private const ENTRIES = ['bootstrap.php', '.htaccess', 'README.md', 'app', 'config', 'database', 'lang', 'public', 'scripts'];
     private const REQUIRED = ['bootstrap.php', '.htaccess', 'README.md', 'public/.htaccess', 'public/index.php', 'app/workspace.php', 'app/Installer/Installer.php', 'app/Installer/WorkspaceMigration.php', 'config/product.php', 'config/workspace.php', 'config/page-builder-layouts.json', 'database/001_core.sql', 'lang/cms/en.json', 'scripts/prepare.php', 'scripts/migrate-workspace.php'];
 
-    public static function build(string $root, string $target): array
+    public static function build(string $root, string $target, ?string $themeRoot = null): array
     {
         if (is_link($root) || !($root = realpath($root)) || !is_dir($root)) throw new RuntimeException('Invalid installer source.');
         $parent = realpath(dirname($target));
@@ -35,6 +35,27 @@ final class InstallerBuilder
                 $size += $file->getSize();
                 if ($file->getSize() > 10485760 || $size > 104857600 || count($files) >= 2000) throw new RuntimeException('Installer source exceeds distribution limits.');
                 $files[$name] = $resolved;
+            }
+        }
+        if ($themeRoot !== null) {
+            if (is_link($themeRoot) || !($themeRoot = realpath($themeRoot)) || !is_dir($themeRoot)) throw new RuntimeException('Invalid bundled theme source.');
+            $themePrefix = strtolower(str_replace('\\', '/', $themeRoot) . '/');
+            foreach (new DirectoryIterator($themeRoot) as $theme) {
+                if ($theme->isDot()) continue;
+                if (!$theme->isDir() || $theme->isLink() || !preg_match('/^[a-z][a-z0-9-]*$/D', $theme->getFilename())) throw new RuntimeException('Invalid bundled theme directory.');
+                $manifest = $theme->getPathname() . '/theme.json';
+                if (!is_file($manifest) || is_link($manifest)) throw new RuntimeException('Bundled theme manifest is missing.');
+                $items = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($theme->getPathname(), FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST);
+                foreach ($items as $file) {
+                    if ($file->isLink() || !($resolved = $file->getRealPath()) || !str_starts_with(strtolower(str_replace('\\', '/', $resolved)), $themePrefix)) throw new RuntimeException('Bundled theme path escapes its source.');
+                    if ($file->isDir()) continue;
+                    if (!$file->isFile()) throw new RuntimeException('Bundled theme must contain regular files.');
+                    $name = 'themes/' . str_replace('\\', '/', substr($file->getPathname(), strlen($themeRoot) + 1));
+                    Manifest::path($name); self::filePath($name); Manifest::uniquePath($name, $seen);
+                    $size += $file->getSize();
+                    if ($file->getSize() > 10485760 || $size > 104857600 || count($files) >= 2000) throw new RuntimeException('Installer source exceeds distribution limits.');
+                    $files[$name] = $resolved;
+                }
             }
         }
         foreach (self::REQUIRED as $name) if (!isset($files[$name])) throw new RuntimeException('Required installer file is missing: ' . $name);
@@ -102,7 +123,7 @@ final class InstallerBuilder
         $top = explode('/', $name)[0];
         $allowed = match ($top) {
             'app', 'scripts' => ['php'], 'config' => ['php', 'json'], 'database' => ['sql'], 'lang' => ['json'],
-            'public' => ['css', 'js', 'svg', 'png', 'jpg', 'jpeg', 'ico', 'webp', 'mp3', 'woff', 'woff2'], default => [],
+            'public', 'themes' => ['php', 'json', 'css', 'js', 'svg', 'png', 'jpg', 'jpeg', 'ico', 'webp', 'mp3', 'woff', 'woff2', 'txt'], default => [],
         };
         if ($name === 'public/index.php') return;
         if ($top === 'public' && basename($name) === 'LICENSE.txt') return;
@@ -114,12 +135,12 @@ final class InstallerBuilder
         if (!$zip->addFromString($name, $contents) || !$zip->setMtimeName($name, 946684800) || !$zip->setExternalAttributesName($name, ZipArchive::OPSYS_UNIX, 0100644 << 16)) throw new RuntimeException('Cannot add installer entry.');
     }
 
-    public static function web(string $root, string $directory): array
+    public static function web(string $root, string $directory, ?string $themeRoot = null): array
     {
         if (is_link($directory) || !is_dir($directory) || count(scandir($directory)) !== 2) throw new RuntimeException('Web installer output must be an existing empty directory.');
         $version = (require $root . '/config/product.php')['core_version'];
         if (!is_string($version) || !preg_match('/^\d+\.\d+\.\d+$/D', $version)) throw new RuntimeException('Invalid Core build version.');
-        $result = self::build($root, $directory . '/install.zip');
+        $result = self::build($root, $directory . '/install.zip', $themeRoot);
         $inventory = self::verify($directory . '/install.zip')['files'];
         $zip = new ZipArchive();
         if ($zip->open($directory . '/install.zip', ZipArchive::RDONLY) !== true) throw new RuntimeException('Cannot open generated installer.');
@@ -143,14 +164,14 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
         if (($argv[1] ?? '') === '--web') {
             $directory = dirname(__DIR__) . '/.install/web';
             if (!is_dir($directory) && !mkdir($directory, 0755, true)) throw new RuntimeException('Cannot create web installer output.');
-            $result = InstallerBuilder::web(dirname(__DIR__) . '/.cms/source', $directory);
+            $result = InstallerBuilder::web(dirname(__DIR__) . '/.cms/source', $directory, dirname(__DIR__) . '/.themes');
             echo 'Web bootstrap and development install.zip created; SHA-256 ' . $result['sha256'] . PHP_EOL;
             exit;
         }
         $version = (require dirname(__DIR__) . '/.cms/source/config/product.php')['core_version'];
         $target = $argv[1] ?? dirname(__DIR__) . '/.cms/releases/sensecms-install-' . $version . '-workspace-dev.zip';
         if ($argc === 1 && !is_dir(dirname($target)) && !mkdir(dirname($target), 0700, true)) throw new RuntimeException('Cannot create development release directory.');
-        $result = InstallerBuilder::build(dirname(__DIR__) . '/.cms/source', $target);
+        $result = InstallerBuilder::build(dirname(__DIR__) . '/.cms/source', $target, dirname(__DIR__) . '/.themes');
         echo $result['files'] . ' inventoried installer files; unsigned development build with fresh Workspace installation.' . PHP_EOL;
         echo basename($target) . ' SHA-256 ' . $result['sha256'] . PHP_EOL;
     } catch (Throwable $error) { fwrite(STDERR, $error->getMessage() . PHP_EOL); exit(1); }

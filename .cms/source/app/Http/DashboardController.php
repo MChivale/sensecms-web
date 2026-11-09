@@ -71,6 +71,52 @@ final class DashboardController extends Controller
     public function notificationSettings(array $data): never { $this->guard();$this->access->assert('system.manage');$this->render('Notification channels','notification-settings',$data); }
     public function systemUpdate(array $state): never { $this->guard();$this->access->assert('system.manage');$this->render('Update','system-update',['updateState'=>$state]); }
     public function settings(): never { $this->guard(); $this->render('My settings', 'settings', ['user' => $this->auth->user()]); }
+    public function systemSettings(): never
+    {
+        $this->guard();
+        $this->access->assert('system.owner');
+        $installed = (new \App\Core\Runtime(dirname(__DIR__, 2)))->read('installed');
+        $database = (array) ($installed['database'] ?? []);
+        if (!$database) $this->result(false, 'The private installation database configuration is unavailable.', null, 503);
+        $database = array_intersect_key($database, array_flip(['driver', 'host', 'port', 'name', 'user']));
+        $database['password_configured'] = !empty($installed['database']['password']);
+        $this->render('System settings', 'system-settings', ['systemName' => (string) $this->cms->setting('site_name', 'Sense CMS'), 'databaseSettings' => $database]);
+    }
+    public function saveSystemSettings(): never
+    {
+        $this->guard();
+        $this->access->assert('system.owner');
+        if (!$this->auth->verifyCsrf($_POST['csrf'] ?? null)) $this->result(false, 'Your session token is invalid. Refresh and try again.', null, 419);
+        $name = trim((string) ($_POST['system_name'] ?? ''));
+        if ($name === '' || mb_strlen($name) > 120) $this->result(false, 'Enter a system name up to 120 characters.', null, 422);
+        $runtime = new \App\Core\Runtime(dirname(__DIR__, 2));
+        $installed = $runtime->read('installed');
+        $current = (array) ($installed['database'] ?? []);
+        if (!$current) $this->result(false, 'The private installation database configuration is unavailable.', null, 503);
+        $password = (string) ($_POST['db_password'] ?? '');
+        try {
+            $candidate = \App\Core\Runtime::databaseInput([
+                'db_driver' => $_POST['db_driver'] ?? '', 'db_host' => $_POST['db_host'] ?? '', 'db_port' => $_POST['db_port'] ?? '',
+                'db_name' => $_POST['db_name'] ?? '', 'db_user' => $_POST['db_user'] ?? '', 'db_password' => $password === '' ? ($current['password'] ?? '') : $password,
+            ]);
+        } catch (\RuntimeException $error) { $this->result(false, $error->getMessage(), null, 422); }
+        $changed = $candidate !== $current;
+        try {
+            $target = $changed ? \App\Core\Runtime::connect($candidate) : null;
+            if ($target) foreach (['settings', 'users', 'migrations'] as $table) $target->query('SELECT 1 FROM ' . $table . ' LIMIT 1');
+        } catch (\Throwable) { $this->result(false, 'The proposed database could not be connected or does not contain a complete Sense CMS schema.', null, 422); }
+        $targetCms = $target ? new \App\Core\CmsRepository($target, new \App\Core\EventBus(), $runtime) : $this->cms;
+        try {
+            $targetCms->saveSetting('site_name', $name);
+            if ($changed) {
+                $runtime->write('installed-database-backup', $installed);
+                $installed['database'] = $candidate;
+                $runtime->write('installed', $installed);
+            }
+            $targetCms->recordActivity($this->auth->id() ?? 0, 'system.settings.saved', 'system', ['database_changed' => $changed]);
+        } catch (\Throwable) { $this->result(false, 'The system settings could not be saved.', null, 500); }
+        $this->result(true, $changed ? 'System name and database connection settings saved.' : 'System name saved.', '/system/settings');
+    }
     public function extensionPage(string $title, string $view, array $data = []): never
     {
         $this->guard();

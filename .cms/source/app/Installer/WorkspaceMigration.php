@@ -67,13 +67,14 @@ final class WorkspaceMigration
 
     private function locked(callable $action): mixed
     {
-        $schema = (string) $this->db->query('SELECT DATABASE()')->fetchColumn();
+        $postgres=$this->db->getAttribute(PDO::ATTR_DRIVER_NAME)==='pgsql';
+        $schema = (string) $this->db->query($postgres ? 'SELECT current_database()' : 'SELECT DATABASE()')->fetchColumn();
         if ($schema === '') throw new RuntimeException('Select the installation database.');
         $lock = 'sense-workspace-' . substr(hash('sha256', $schema), 0, 40);
-        $statement = $this->db->prepare('SELECT GET_LOCK(?,0)'); $statement->execute([$lock]);
+        $statement = $postgres ? $this->db->prepare("SELECT pg_try_advisory_lock(hashtextextended(current_database() || ':' || ?, 0))") : $this->db->prepare('SELECT GET_LOCK(?,0)'); $statement->execute([$lock]);
         if ((int) $statement->fetchColumn() !== 1) throw new RuntimeException('Workspace migration is already running.');
         try { return $action(); }
-        finally { $this->db->prepare('SELECT RELEASE_LOCK(?)')->execute([$lock]); }
+        finally {($postgres ? $this->db->prepare("SELECT pg_advisory_unlock(hashtextextended(current_database() || ':' || ?, 0))") : $this->db->prepare('SELECT RELEASE_LOCK(?)'))->execute([$lock]); }
     }
 
     public function apply(): int
@@ -90,7 +91,8 @@ final class WorkspaceMigration
                 $sql = (string) file_get_contents($file);
                 if (!hash_equals($checksum, hash('sha256', $sql))) throw new RuntimeException('Workspace migration changed during execution.');
                 // These reviewed schema files contain no routines or quoted semicolons.
-                foreach (explode(';', $sql) as $part) if (trim($part) !== '') $this->db->exec($part);
+                $parts=$this->db->getAttribute(PDO::ATTR_DRIVER_NAME)==='pgsql'?PostgresSchema::statements($sql):explode(';',$sql);
+                foreach ($parts as $part) if (trim($part) !== '') $this->db->exec($part);
                 $statement = $this->db->prepare('INSERT INTO workspace_migrations (name,checksum,applied_at) VALUES (?,?,UTC_TIMESTAMP())');
                 $statement->execute([$name, $checksum]); $applied++;
             }
@@ -125,6 +127,12 @@ final class WorkspaceMigration
     private function ciphertexts(): \Generator
     {
         foreach (['ai_providers'=>'api_key_encrypted', 'notification_channel_settings'=>'encrypted_settings', 'web_push_subscriptions'=>'encrypted_subscription'] as $table => $column) {
+            if ($this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql') {
+                $statement = $this->db->query("SELECT \"$column\" FROM \"$table\" WHERE \"$column\" IS NOT NULL AND \"$column\" <> ''");
+                while (($value = $statement->fetchColumn()) !== false) yield (string) $value;
+                $statement->closeCursor();
+                continue;
+            }
             $buffered = $this->db->getAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY);
             $this->db->setAttribute(\Pdo\Mysql::ATTR_USE_BUFFERED_QUERY, false);
             $statement = null;

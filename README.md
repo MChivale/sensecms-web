@@ -140,8 +140,10 @@ an empty writable `storage` directory (not a symbolic link); set the
 web server's DocumentRoot to that `public` directory. During extraction the PHP
 runtime user needs write access to both directories; afterwards restrict writes
 to private `storage`. Keep setup accessible only to the operator until finished.
-Prepare a licence valid for the canonical domain and a NEW empty MariaDB 10.11+
-database with its own schema-scoped user. The browser performs extraction, licence
+Prepare a licence valid for the canonical domain and a NEW empty MariaDB 10.11+ or
+PostgreSQL 17+ database with its own schema-scoped user. PostgreSQL requires
+pgvector and prepares optional semantic retrieval; MariaDB uses keyword retrieval.
+The browser performs extraction, licence
 verification, requirements checks, database setup and owner creation; no PHP CLI
 preparation command is needed for this two-file path.
 

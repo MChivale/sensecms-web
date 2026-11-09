@@ -32,6 +32,10 @@ try {
     $assert(true, 'Every packaged file matches the current source');
     foreach (['lang/en.json', 'lang/cms/en.json', 'config/page-builder-layouts.json', 'public/theme/sensecms-themes.js', 'public/theme/sensecms-themes.css', 'public/assets/lib/quill/LICENSE.txt', 'app/Installer/WorkspaceMigration.php'] as $name) $assert(isset($inventory['files'][$name]), 'Required Workspace resource included: ' . $name);
     $assert(!preg_grep('#^(storage|themes|plugins|addons|modules|\.cfg|tests)/#', array_keys($inventory['files'])), 'Runtime state and optional packages stay outside distribution');
+    $withThemes = InstallerBuilder::build($source, $temp . '/themes.zip', dirname(__DIR__) . '/.themes');
+    $themeInventory = InstallerBuilder::verify($temp . '/themes.zip')['files'];
+    foreach (['eduvixo','school','sense-demo','sensecms','villa-theme'] as $theme) $assert(isset($themeInventory['themes/' . $theme . '/theme.json']), 'Bundled theme included: ' . $theme);
+    $assert($withThemes['files'] > $first['files'], 'Bundled themes extend the Core installer without private runtime state');
     $again = InstallerBuilder::build($source, $temp . '/again.zip');
     $assert($first['sha256'] === $again['sha256'], 'Same source produces byte-identical ZIPs');
     $reject(fn() => InstallerBuilder::build($source, $temp . '/first.zip'), 'Existing release cannot be overwritten');

@@ -51,12 +51,14 @@ final class Runtime
 
     public static function databaseInput(#[\SensitiveParameter] array $input): array
     {
-        $host = trim((string) ($input['db_host'] ?? '')); $port = filter_var($input['db_port'] ?? 3306, FILTER_VALIDATE_INT);
+        $driver = (string) ($input['db_driver'] ?? 'mysql');
+        if (!in_array($driver, ['mysql','pgsql'], true)) throw new RuntimeException('Choose MariaDB or PostgreSQL.');
+        $host = trim((string) ($input['db_host'] ?? '')); $port = filter_var($input['db_port'] ?? ($driver === 'pgsql' ? 5432 : 3306), FILTER_VALIDATE_INT);
         $name = trim((string) ($input['db_name'] ?? '')); $user = trim((string) ($input['db_user'] ?? '')); $password = (string) ($input['db_password'] ?? '');
         if (!preg_match('/^[A-Za-z0-9.-]{1,253}$/D', $host) || !$port || $port < 1 || $port > 65535
             || !preg_match('/^[A-Za-z0-9_-]{1,64}$/D', $name) || $user === '' || strlen($user) > 128 || preg_match('/[\x00-\x1f]/', $user)
             || strlen($password) > 512 || str_contains($password, "\0")) throw new RuntimeException('Enter valid database connection details.');
-        return compact('host', 'port', 'name', 'user', 'password');
+        return compact('driver', 'host', 'port', 'name', 'user', 'password');
     }
 
     public static function connect(#[\SensitiveParameter] array $config): PDO

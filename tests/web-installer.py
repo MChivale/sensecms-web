@@ -167,14 +167,50 @@ with fixture() as (root, url):
     (root / 'storage').mkdir()
     (root / 'storage/keep.txt').write_text('existing private data')
     code, body, _ = request(browser, url + '/index.php', {'action': 'extract', 'csrf': csrf})
-    check(code == 422 and 'above public' in body and (root / 'storage/keep.txt').read_text() == 'existing private data', 'Nonempty storage is refused without modifying private data')
+    check(code == 422 and 'Private storage already contains data' in body and (root / 'storage/keep.txt').read_text() == 'existing private data', 'Nonempty storage is refused without modifying private data')
 
 with fixture() as (root, url):
     browser = client()
     csrf = start(browser, url)
     (root / 'keep.txt').write_text('existing data')
     code, body, _ = request(browser, url + '/index.php', {'action': 'extract', 'csrf': csrf})
-    check(code == 422 and 'not empty' in body and (root / 'keep.txt').read_text() == 'existing data', 'Existing root files preserved')
+    check(code == 200 and (root / 'keep.txt').read_text() == 'existing data' and not (root / 'app').exists(), 'Unrelated root files are preserved while extraction begins')
+
+with fixture() as (root, url):
+    browser = client()
+    csrf = start(browser, url)
+    (root / 'app').mkdir()
+    (root / 'app/keep.txt').write_text('existing Core-path data')
+    code, body, _ = request(browser, url + '/index.php', {'action': 'extract', 'csrf': csrf})
+    check(code == 422 and 'conflicts with Sense CMS Core files' in body and (root / 'app/keep.txt').read_text() == 'existing Core-path data', 'Existing Core paths are refused without modification')
+
+with fixture(empty_storage=True) as (root, url):
+    (root / 'public/statistics').mkdir()
+    (root / 'public/statistics/keep.txt').write_text('statistics target')
+    browser = client()
+    csrf = start(browser, url)
+    check('Review existing public files' in request(browser, url)[1], 'Existing public entries require an explicit review')
+    check(request(browser, url + '/index.php', {'action': 'extract', 'csrf': csrf})[0] == 409, 'Extraction waits for public-directory confirmation')
+    check(request(browser, url + '/index.php', {'action': 'confirm-public', 'csrf': csrf})[0] == 200, 'Public-directory review is confirmed in the current session')
+    for _ in range(100):
+        code, body, _ = request(browser, url + '/index.php', {'action': 'extract', 'csrf': csrf})
+        data = json.loads(body)
+        if data.get('redirect'):
+            break
+    check(data.get('redirect') == '/install' and (root / 'public/statistics/keep.txt').read_text() == 'statistics target', 'Unrelated public entries remain after installation')
+
+with fixture(empty_storage=True) as (root, url):
+    (root / 'public/theme').mkdir()
+    (root / 'public/theme/keep.txt').write_text('old theme')
+    browser = client()
+    csrf = start(browser, url)
+    check(request(browser, url + '/index.php', {'action': 'confirm-public', 'csrf': csrf})[0] == 200, 'Core public-path replacement is explicitly confirmed')
+    for _ in range(100):
+        code, body, _ = request(browser, url + '/index.php', {'action': 'extract', 'csrf': csrf})
+        data = json.loads(body)
+        if data.get('redirect'):
+            break
+    check(data.get('redirect') == '/install' and (root / '.sense-bootstrap/backup/public/theme/keep.txt').read_text() == 'old theme', 'Replaced public Core paths are retained in a private backup')
 
 with fixture() as (root, url):
     browser = client()
@@ -194,7 +230,7 @@ with fixture(empty_storage=True) as (root, url):
         code, body, _ = request(browser, url + '/index.php', {'action': 'extract', 'csrf': csrf})
         if code != 200:
             break
-    check(code == 422 and 'above public' in body and not (root / 'app').exists() and (root / 'storage/keep.txt').read_text() == 'new private data', 'Storage is rechecked before publishing; new data preserved')
+    check(code == 422 and 'Private storage already contains data' in body and not (root / 'app').exists() and (root / 'storage/keep.txt').read_text() == 'new private data', 'Storage is rechecked before publishing; new data preserved')
 
 if os.name == 'posix':
     with fixture() as (root, url):

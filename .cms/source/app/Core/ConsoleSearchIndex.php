@@ -176,6 +176,7 @@ final class ConsoleSearchIndex
             ['Appearance','Manage shared brand assets, colors and typography.','/appearance','Experience','palette','appearance.manage',['logo','favicon','colors','fonts']],
             ['Themes','Configure, preview and activate presentation themes.','/appearance/themes','Experience','panels-top-left','appearance.manage',['theme','design']],
             ['SenseCMS Marketplace','Discover verified themes, plugins and add-ons.','/marketplace','Experience','store','extensions.manage',['catalog','packages']],
+            ['Settings','Manage the system name and private database connection.','/system/settings','System','settings-2','system.owner',['system name','database','installation']],
             ['Access control','Manage users, teams, roles, permissions and audit history.','/system/access','System','shield-user','users.view',['roles','users','teams','permissions']],
             ['Extensions','Manage installed modules, plugins, add-ons and packages.','/system/extensions','System','blocks','extensions.manage',['addons','plugins','modules']],
             ['Search index','Inspect and rebuild the dynamic administration search index.','/system/search-index','System','scan-search','system.manage',['quick search','indexing','ctrl k']],
