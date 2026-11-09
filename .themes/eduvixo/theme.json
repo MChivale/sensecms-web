@@ -1,0 +1,86 @@
+{
+    "contract_version": 1,
+    "name": "Eduvixo",
+    "slug": "eduvixo",
+    "version": "1.1.6",
+    "author": "Quant Software House",
+    "description": "Eduvixo's flagship editorial theme for modern multilingual schools.",
+    "compatible_engine_version": "^1.0",
+    "parent": null,
+    "release_channel": "stable",
+    "license": {
+        "type": "commercial",
+        "entitlement": "eduvixo.core",
+        "support": "included"
+    },
+    "changelog": [
+        {"version": "1.1.6", "date": "2026-08-29", "summary": "Aligned the four primary footer columns to the header container while preserving the full-width lower footer row."},
+        {"version": "1.1.5", "date": "2026-08-29", "summary": "Refined the admissions section with a tighter heading rhythm, shorter cards and more balanced responsive spacing."},
+        {"version": "1.1.4", "date": "2026-08-29", "summary": "Added editor-controlled image focal points, responsive image variants and complete Khmer and Chinese starter content."},
+        {"version": "1.1.3", "date": "2026-08-29", "summary": "Replaced the decorative gallery placeholder with a photographic, editable fifth school-life story."},
+        {"version": "1.1.2", "date": "2026-08-28", "summary": "Final visual polish with tighter responsive rhythm, improved navigation accessibility and more stable media rendering."},
+        {"version": "1.1.1", "date": "2026-08-28", "summary": "Comprehensive multilingual SEO, social cards, structured data and precise footer alignment."},
+        {"version": "1.1.0", "date": "2026-08-28", "summary": "Refined contemporary education design with corrected typography loading, a lighter colour system and editorial school highlights."},
+        {"version": "1.0.0", "date": "2026-08-28", "summary": "Initial flagship release with an independent design system and complete Eduvixo Page Builder coverage."}
+    ],
+    "screenshot": "/theme-assets/eduvixo/images/eduvixo-hero.webp",
+    "screenshot_url": "/theme-assets/eduvixo/images/eduvixo-hero.webp",
+    "preview_url": "/en/home",
+    "category": "Flagship education",
+    "featured": true,
+    "tags": ["education", "editorial", "multilingual", "admissions", "campuses", "accessible"],
+    "features": [
+        "Original editorial design system",
+        "Responsive and accessible presentation",
+        "Multilingual and multi-campus navigation",
+        "Admissions, search and engagement tools",
+        "Complete Eduvixo Page Builder coverage"
+    ],
+    "supported_blocks": [
+        "hero",
+        "hero-slider",
+        "story",
+        "values",
+        "programs",
+        "statistics",
+        "gallery",
+        "motion",
+        "admissions",
+        "news",
+        "cta",
+        "text",
+        "image-text",
+        "contact-form",
+        "custom-html"
+    ],
+    "navigation_locations": ["primary", "footer"],
+    "page_templates": [
+        {"key": "default", "label": "Default", "description": "Uses the Eduvixo public frame and Page Builder sections."}
+    ],
+    "regions": [
+        {"key": "header-primary", "label": "Primary header navigation", "type": "navigation", "required": true},
+        {"key": "footer-primary", "label": "Primary footer navigation", "type": "navigation", "required": false},
+        {"key": "page-overlay", "label": "Page overlays", "type": "extensions", "required": false}
+    ],
+    "configuration": [
+        {"key": "primary_color", "label": "Primary colour", "type": "color", "default": "#1f4b67"},
+        {"key": "secondary_color", "label": "Accent colour", "type": "color", "default": "#e26442"},
+        {"key": "surface_color", "label": "Surface colour", "type": "color", "default": "#f1f5f4"},
+        {"key": "body_font", "label": "Body font", "type": "select", "default": "Source Sans 3", "options": {"DM Sans": "DM Sans", "Inter": "Inter", "Nunito Sans": "Nunito Sans", "Source Sans 3": "Source Sans 3"}},
+        {"key": "heading_font", "label": "Heading font", "type": "select", "default": "DM Sans", "options": {"Playfair Display": "Playfair Display", "DM Sans": "DM Sans", "Inter": "Inter"}},
+        {"key": "logo_url", "label": "Primary logo", "type": "asset", "default": "/theme-assets/eduvixo/images/eduvixo-logo.svg"},
+        {"key": "favicon_url", "label": "Favicon", "type": "asset", "default": "/favicon.svg"},
+        {"key": "content_width", "label": "Content width", "type": "number", "default": 1440, "min": 1040, "max": 1680, "unit": "px"},
+        {"key": "corner_radius", "label": "Corner radius", "type": "number", "default": 22, "min": 0, "max": 40, "unit": "px"},
+        {"key": "reduced_motion", "label": "Prefer reduced motion", "type": "toggle", "default": false}
+    ],
+    "design_tokens": {
+        "--school-navy": "primary_color",
+        "--school-red": "secondary_color",
+        "--eduvixo-surface": "surface_color",
+        "--school-content-width": "content_width",
+        "--eduvixo-radius": "corner_radius"
+    },
+    "settings": ["logo", "favicon", "primary_color", "secondary_color", "surface_color", "body_font", "heading_font", "content_width", "corner_radius"],
+    "builder": {"blocks": {}}
+}

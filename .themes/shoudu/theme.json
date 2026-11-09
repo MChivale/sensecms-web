@@ -1,0 +1,12 @@
+{
+  "name": "Shoudu",
+  "slug": "shoudu",
+  "version": "1.0",
+  "author": "Quant Software House",
+  "description": "Original premium international-school presentation for Shoudu.",
+  "compatible_engine_version": "^1.0",
+  "screenshot": "screenshot.png",
+  "supported_blocks": ["hero", "split", "programs", "statistics", "cta", "text", "gallery", "news", "contact"],
+  "navigation_locations": ["primary", "footer"],
+  "settings": ["logo", "favicon", "primary_color", "secondary_color", "body_font", "heading_font", "header_style", "footer_style"]
+}
