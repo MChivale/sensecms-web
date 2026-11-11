@@ -89,7 +89,7 @@ document.querySelectorAll('[data-marketplace]').forEach(market => {
             card.querySelector('.market-availability').textContent = siteText('Signed ', 'Podpisany pakiet ') + offer.channel + ' · v' + offer.version;
         });
         const note = market.querySelector('.market-note p');
-        if (note && Object.keys(offers).length) note.textContent = siteText('Only releases marked as available can be downloaded. Free packages require a CMS licence; paid packages require their own licence. Development packages are not Stable releases.', 'Pobrać można wyłącznie wydania oznaczone jako dostępne. Bezpłatne pakiety wymagają licencji CMS, a płatne — własnej licencji. Pakiety rozwojowe nie są wydaniami stabilnymi.');
+        if (note && Object.keys(offers).length) note.textContent = siteText('Signed Stable packages are ready to download after licence verification. Free packages require a CMS licence; paid packages require their own licence.', 'Podpisane stabilne pakiety są gotowe do pobrania po weryfikacji licencji. Bezpłatne pakiety wymagają licencji CMS, a płatne — własnej licencji.');
     };
     refreshOffers().catch(() => {});
     let opener;

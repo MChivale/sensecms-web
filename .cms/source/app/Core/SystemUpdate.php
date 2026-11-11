@@ -99,6 +99,51 @@ final class SystemUpdate
             $runtime = new Runtime($this->root); $state = $runtime->read('core-update-state');
             if (($state['attempted_at'] ?? 0) <= time() - (!empty($state['error']) ? 3600 : 21600)) $this->requestCheck();
         } catch (Throwable) { /* Persisted check failures remain visible on the Update screen. */ }
+        $this->checkMarketplaceIfDue();
+    }
+
+    /** Refresh the separately signed extension catalogue; it never installs code. */
+    public function requestMarketplaceCatalog(): void
+    {
+        $runtime = new Runtime($this->root);
+        $lockPath = $this->root . '/storage/marketplace-catalog.lock';
+        if (is_link($lockPath)) throw new RuntimeException('Unsafe Marketplace catalogue lock.', 503);
+        $lock = fopen($lockPath, 'c');
+        if (!$lock || !flock($lock, LOCK_EX | LOCK_NB)) { if ($lock) fclose($lock); throw new RuntimeException('A Marketplace catalogue refresh is already running.', 429); }
+        try {
+            $state = $runtime->read('marketplace-catalog-state');
+            if (($state['attempted_at'] ?? 0) > time() - 60) {
+                if (!empty($state['error'])) throw new RuntimeException('The last Marketplace catalogue refresh failed. Retry in one minute.', 503);
+                return;
+            }
+            $state['attempted_at'] = time();
+            try {
+                $raw = OfficialCatalog::download(OfficialCatalog::BASE . '/catalog', 524288);
+                $catalog = OfficialCatalog::verify($raw);
+                $path = $this->root . '/storage/system-updates/catalog.json';
+                $directory = dirname($path);
+                if (is_link($directory) || is_link($path) || !is_dir($directory) && !mkdir($directory, 0700, true)) throw new RuntimeException('Marketplace catalogue storage is unavailable.');
+                $old = is_file($path) ? OfficialCatalog::verify((string) file_get_contents($path)) : null;
+                if (is_array($old) && ($old['issued_at'] ?? 0) > $catalog['issued_at']) throw new RuntimeException('Marketplace catalogue rollback refused.');
+                $temp = $path . '.' . bin2hex(random_bytes(8));
+                try {
+                    if (file_put_contents($temp, $raw, LOCK_EX) !== strlen($raw) || !chmod($temp, 0600) || !rename($temp, $path)) throw new RuntimeException('Marketplace catalogue storage is unavailable.');
+                } finally { if (isset($temp) && is_file($temp)) unlink($temp); }
+                $state['checked_at'] = time(); $state['error'] = false;
+                $runtime->write('marketplace-catalog-state', $state);
+            } catch (Throwable) {
+                $state['error'] = true; $runtime->write('marketplace-catalog-state', $state);
+                throw new RuntimeException('Marketplace catalogue refresh failed. The saved verified catalogue was retained.', 503);
+            }
+        } finally { flock($lock, LOCK_UN); fclose($lock); }
+    }
+
+    public function checkMarketplaceIfDue(): void
+    {
+        try {
+            $state = (new Runtime($this->root))->read('marketplace-catalog-state');
+            if (($state['attempted_at'] ?? 0) <= time() - (!empty($state['error']) ? 3600 : 21600)) $this->requestMarketplaceCatalog();
+        } catch (Throwable) { /* Keep the last verified catalogue visible when a refresh is unavailable. */ }
     }
     public function requestInstall(string $version, int $userId): void { throw new RuntimeException(self::UNAVAILABLE, 503); }
 

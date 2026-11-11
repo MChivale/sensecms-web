@@ -3,7 +3,7 @@
   "slug": "sense-demo",
   "name": "Sense CMS Demo",
   "version": "1.0.1",
-  "release_channel": "development",
+  "release_channel": "stable",
   "description": "A bilingual example website for the independent Sense CMS demo installation.",
   "page_templates": [{"key": "default", "label": "Standard page"}, {"key": "home", "label": "Homepage"}],
   "supported_blocks": ["hero", "text", "cta", "image-text", "gallery"],

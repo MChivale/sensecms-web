@@ -10,7 +10,7 @@
   "permissions": [],
   "icon": "chart-line",
   "group": "Analytics integrations",
-  "release_channel": "development",
+  "release_channel": "stable",
   "runtime": "runtime.php",
   "config_url": "/system/extensions/google-analytics",
   "license": {"model": "free", "price": 0, "currency": "USD"},

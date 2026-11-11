@@ -565,11 +565,34 @@ final class PackageManager
 
     private function locked(callable $operation): array
     {
-        $key = 'sensecms:packages:' . substr(hash('sha256', (string) $this->db->query('SELECT DATABASE()')->fetchColumn()), 0, 32);
-        $lock = $this->db->prepare('SELECT GET_LOCK(?,10)'); $lock->execute([$key]);
-        if ((int) $lock->fetchColumn() !== 1) throw new RuntimeException('Another package operation is in progress.');
+        $postgres = $this->db->getAttribute(PDO::ATTR_DRIVER_NAME) === 'pgsql';
+        $database = (string) $this->db->query($postgres ? 'SELECT current_database()' : 'SELECT DATABASE()')->fetchColumn();
+        $key = 'sensecms:packages:' . substr(hash('sha256', $database), 0, 32);
+
+        if ($postgres) {
+            $lock = $this->db->prepare("SELECT CASE WHEN pg_try_advisory_lock(hashtextextended(current_database() || ':' || ?, 0)) THEN 1 ELSE 0 END");
+            $acquired = false;
+            for ($attempt = 0; $attempt < 100; $attempt++) {
+                $lock->execute([$key]);
+                if ((int) $lock->fetchColumn() === 1) {
+                    $acquired = true;
+                    break;
+                }
+                usleep(100000);
+            }
+            if (!$acquired) throw new RuntimeException('Another package operation is in progress.');
+        } else {
+            $lock = $this->db->prepare('SELECT GET_LOCK(?,10)'); $lock->execute([$key]);
+            if ((int) $lock->fetchColumn() !== 1) throw new RuntimeException('Another package operation is in progress.');
+        }
+
         try { return $operation(); }
-        finally { $this->db->prepare('SELECT RELEASE_LOCK(?)')->execute([$key]); }
+        finally {
+            ($postgres
+                ? $this->db->prepare("SELECT pg_advisory_unlock(hashtextextended(current_database() || ':' || ?, 0))")
+                : $this->db->prepare('SELECT RELEASE_LOCK(?)')
+            )->execute([$key]);
+        }
     }
 
     private function preserveSource(string $source, string $checksum): void

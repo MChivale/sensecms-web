@@ -1,19 +1,28 @@
 {
   "contract_version": 1,
-  "slug": "shoudu",
-  "name": "School Theme",
-  "version": "1.0.0",
-  "release_channel": "development",
-  "description": "A calm, editorial website theme for schools and educational institutions.",
+  "slug": "school-blue-red",
+  "name": "Language School",
+  "version": "1.1.7",
+  "release_channel": "stable",
+  "description": "A polished, accessible language-school theme for online courses, practical communication and learner enquiries.",
   "page_templates": [{"key": "default", "label": "Standard page"}, {"key": "home", "label": "Homepage"}],
   "regions": [{"key": "header-primary", "label": "Primary navigation", "type": "navigation", "required": true}, {"key": "footer-primary", "label": "Footer navigation", "type": "navigation", "required": false}],
   "configuration": [
-    {"key": "primary_color", "type": "color", "label": "Primary colour", "default": "#163b5c"},
-    {"key": "accent_color", "type": "color", "label": "Accent colour", "default": "#d15d45"},
-    {"key": "surface_color", "type": "color", "label": "Surface colour", "default": "#f4f1eb"},
-    {"key": "logo_url", "type": "asset", "label": "Logo", "default": ""},
-    {"key": "favicon_url", "type": "asset", "label": "Favicon", "default": ""},
-    {"key": "contact_label", "type": "text", "label": "Contact button label", "max_length": 80, "default": "Contact us"}
+    {"key": "primary_color", "type": "color", "label": "Primary colour", "default": "#071d41"},
+    {"key": "secondary_color", "type": "color", "label": "Accent colour", "default": "#cf3240"},
+    {"key": "surface_color", "type": "color", "label": "Surface colour", "default": "#f1f5f4"},
+    {"key": "body_font", "type": "select", "label": "Body font", "default": "Source Sans 3", "options": {"DM Sans": "DM Sans", "Inter": "Inter", "Nunito Sans": "Nunito Sans", "Source Sans 3": "Source Sans 3"}},
+    {"key": "heading_font", "type": "select", "label": "Heading font", "default": "DM Sans", "options": {"Playfair Display": "Playfair Display", "DM Sans": "DM Sans", "Inter": "Inter"}},
+    {"key": "logo_url", "type": "asset", "label": "Header logo", "default": "/theme-assets/images/elingo-logo-header.svg"},
+    {"key": "footer_logo_url", "type": "asset", "label": "Footer logo", "default": "/theme-assets/images/elingo-logo-footer.svg"},
+    {"key": "favicon_url", "type": "asset", "label": "Favicon", "default": "/theme-assets/elingo-favicon.ico"},
+    {"key": "content_width", "type": "number", "label": "Content width", "default": 1440, "min": 1040, "max": 1680, "unit": "px"},
+    {"key": "corner_radius", "type": "number", "label": "Corner radius", "default": 22, "min": 0, "max": 40, "unit": "px"},
+    {"key": "reduced_motion", "type": "toggle", "label": "Prefer reduced motion", "default": false}
   ],
-  "design_tokens": {"--school-primary": "primary_color", "--school-accent": "accent_color", "--school-surface": "surface_color"}
+  "design_tokens": {"--school-navy": "primary_color", "--school-red": "secondary_color", "--eduvixo-surface": "surface_color", "--school-content-width": "content_width", "--eduvixo-radius": "corner_radius"},
+  "supported_blocks": ["hero", "hero-slider", "story", "values", "programs", "statistics", "gallery", "motion", "admissions", "news", "cta", "text", "image-text", "contact-form", "custom-html"],
+  "features": ["Language-school starter page", "Online-course presentation", "Accessible navigation and search", "Page Builder block coverage"],
+  "tags": ["language learning", "online courses", "education", "accessible"],
+  "navigation_locations": ["primary", "footer"]
 }

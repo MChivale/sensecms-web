@@ -1,7 +1,7 @@
 {
   "name": "Apple Calendar",
   "slug": "apple-calendar",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Outbound CalDAV event delivery from Sense CMS Calendar to a writable private Apple iCloud calendar. Requires the active Calendar addon. Private events are not exported.",
@@ -10,7 +10,7 @@
   "permissions": [],
   "icon": "calendar-days",
   "group": "Calendar integrations",
-  "release_channel": "development",
+  "release_channel": "stable",
   "license": {"model": "commercial-subscription", "billing_period": "year", "price": 12, "currency": "USD"},
   "config_url": "/calendar",
   "calendar_integration": {

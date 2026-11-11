@@ -70,12 +70,13 @@ $e = static fn(string $v): string => htmlspecialchars($v, ENT_QUOTES | ENT_SUBST
 $path = static fn(array $p): string => '/extensions/catalog/' . $p['type'] . '/' . $p['slug'];
 $price = static fn(array $p): string => $p['usd_year'] === 0 ? 'Free' : 'USD ' . $p['usd_year'] . ' / year';
 $availability = static fn(array $p): string => match($p['status']) {
+    'available'=>'Signed Stable package available through the Sense CMS Marketplace.',
     'packaged'=>'Signed development package prepared · public download not open',
     'development'=>'Development installer · Stable release not available',
     default=>'Sense CMS adaptation pending · not available to download',
 };
 $card = static fn(array $p): array => [$p['name'], '<p><strong>' . $price($p) . '</strong> · ' . $types[$p['type']] . '</p><p>' . $e($p['description']) . '</p><p>' . $e($availability($p)) . '</p>', 'View package →', $path($p)];
-$pages = ['/extensions/catalog'=>['title'=>'Find the right tools for your system.','description'=>'Explore all packages, annual licence tiers and their actual Sense CMS release status. Prices are in USD; purchasing and public downloads are not open yet.','sections'=>array_map($card,$products)]];
+$pages = ['/extensions/catalog'=>['title'=>'Find the right tools for your system.','description'=>'Explore signed packages available for installation with a valid Sense CMS licence.','sections'=>array_map($card,$products)]];
 foreach ($products as $p) {
     if (!in_array($p['type'],array_keys($types),true) || !is_int($p['usd_year']) || $p['usd_year']<0) throw new RuntimeException('Invalid product classification.');
     $license = $p['usd_year'] === 0 ? 'Downloading this free package requires a valid Sense CMS system licence. It is not an anonymous download.' : ($p['type']==='system' ? 'Core installation requires the Sense CMS system licence.' : 'This paid package requires its own product licence. A Sense CMS system licence alone does not authorise this download.');
@@ -83,16 +84,18 @@ foreach ($products as $p) {
         [$price($p),'<p>' . $e($license) . '</p>'],
         ['Release availability','<p>' . $e($availability($p)) . '</p>' . (isset($p['version']) ? '<p>Prepared version: ' . $e($p['version']) . '.</p>' : '') . (isset($p['requires']) ? '<p>Requires ' . $e($p['requires']) . '.</p>' : '')],
         ['One product. One licence.','<p>New package versions do not require a replacement key while the same product licence is valid. Product identity, domain binding and validity dates are checked separately from PHP, Core and package compatibility.</p>','Licensing guide →','/docs/licensing'],
-        ['Explore the ecosystem','<p>Compare the available product tiers and development status.</p>','All packages →','/extensions/catalog'],
+        ['Explore the ecosystem','<p>Compare signed packages available for your Sense CMS installation.</p>','All packages →','/extensions/catalog'],
     ]];
 }
-foreach (['theme','plugin','addon','module'] as $type) $pages['/extensions/catalog/' . $type] = ['title'=>$types[$type] . ' for Sense CMS','description'=>'Compare licence tiers and actual availability.','sections'=>array_map($card,array_values(array_filter($products,static fn($p)=>$p['type']===$type))) ?: [['No module release yet','<p>No separately installable Sense CMS module has been released. This category will list packages after implementation and acceptance.</p>']]];
+foreach (['theme','plugin','addon','module'] as $type) $pages['/extensions/catalog/' . $type] = ['title'=>$types[$type] . ' for Sense CMS','description'=>'Compare signed packages available for installation.','sections'=>array_map($card,array_values(array_filter($products,static fn($p)=>$p['type']===$type))) ?: [['No module release yet','<p>No separately installable Sense CMS module is available.</p>']]];
 $themeRoot = (new App\Core\Packages\ThemeManager($runtime))->activePath();
 $descriptor = json_decode((string) file_get_contents($themeRoot . '/theme.json'),true);
 $catalog = App\Core\PageBuilder::catalog($descriptor);
 $facility = (new App\Core\FacilityRepository($db))->primary('en','en');
 $owner = (int) $db->query("SELECT ur.user_id FROM user_roles ur JOIN roles r ON r.id=ur.role_id JOIN users u ON u.id=ur.user_id WHERE r.slug='owner' AND u.active=1 ORDER BY ur.user_id LIMIT 1")->fetchColumn();
 if (!$facility || !$owner || $cms->defaultLocale()!=='en') throw new RuntimeException('Expected English product site with an active owner and primary facility.');
+$locales = array_column($cms->languages(), 'locale');
+if (!$locales || !in_array('en', $locales, true)) throw new RuntimeException('Expected English to be an active product-site language.');
 $existingPages=[];
 foreach ($pages as $url=>$copy) {
     $existingPages[$url]=$cms->pageAtPath($url);
@@ -105,7 +108,11 @@ foreach ($pages as $url=>$copy) {
     if ($check->fetchColumn()) throw new RuntimeException('Existing catalogue slug needs review.');
 }
 $uuid = static function (): string { $s=bin2hex(random_bytes(16)); return substr($s,0,8).'-'.substr($s,8,4).'-4'.substr($s,13,3).'-a'.substr($s,17,3).'-'.substr($s,20); };
-$block = static fn(array $s): array => ['uid'=>$uuid(),'type'=>'text','visible'=>true,'shared'=>[],'localized'=>['en'=>['title'=>$s[0],'text'=>$s[1],'cta_label'=>$s[2]??'','cta_url'=>$s[3]??'']]];
+$block = static function (array $s) use ($uuid, $locales): array {
+    $localized = [];
+    foreach ($locales as $locale) $localized[$locale] = ['title'=>$s[0],'text'=>$s[1],'cta_label'=>$s[2]??'','cta_url'=>$s[3]??''];
+    return ['uid'=>$uuid(),'type'=>'text','visible'=>true,'shared'=>[],'localized'=>$localized];
+};
 $state = ['created'=>[],'links'=>[],'before'=>[]];
 $persist = static function () use (&$state,$stateFile): void { if (file_put_contents($stateFile,json_encode($state,JSON_THROW_ON_ERROR),LOCK_EX)===false) throw new RuntimeException('Cannot save publication journal.'); };
 $persist();
@@ -137,9 +144,10 @@ foreach ($pages as $url=>$copy) {
         $updatedPages++; $addedCards+=count($added);
         continue;
     }
-    $blocks = App\Core\PageBuilder::sanitizeBlocks(array_map($block,$copy['sections']),$catalog,['en']);
+    $blocks = App\Core\PageBuilder::sanitizeBlocks(array_map($block,$copy['sections']),$catalog,$locales);
     $input = ['id'=>0,'facility_id'=>(int)$facility['id'],'template'=>'default','status'=>'draft','visibility'=>'public','published_at'=>null];
-    $translations = ['en'=>['title'=>$copy['title'],'slug'=>str_replace('/','-',ltrim($url,'/')),'excerpt'=>$copy['description'],'seo_title'=>$copy['title'],'seo_description'=>$copy['description']]];
+    $translations = [];
+    foreach ($locales as $locale) $translations[$locale] = ['title'=>$copy['title'],'slug'=>str_replace('/','-',ltrim($url,'/')),'excerpt'=>$copy['description'],'seo_title'=>$copy['title'],'seo_description'=>$copy['description']];
     $id = $cms->savePage($input,$translations,$owner);
     $state['created'][] = ['id'=>$id,'path'=>$url]; $persist();
     $cms->saveBuilderDocument($id,0,$owner,'sensecms',$blocks,array_keys($catalog));

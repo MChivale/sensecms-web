@@ -601,7 +601,7 @@ final class DashboardController extends Controller
 
     public function marketplace(): never
     {
-        $this->guard();$this->render('SenseCMS Marketplace','marketplace',['marketplace'=>$this->marketplacePayload($_GET),'marketplaceGovernance'=>$this->governance->overview(),'marketplacePublishers'=>$this->packages->publishers(),'officialMarketplace'=>$this->updater?->status()??[]]);
+        $this->guard();$this->updater?->checkMarketplaceIfDue();$this->render('SenseCMS Marketplace','marketplace',['marketplace'=>$this->marketplacePayload($_GET),'marketplaceGovernance'=>$this->governance->overview(),'marketplacePublishers'=>$this->packages->publishers(),'officialMarketplace'=>$this->updater?->status()??[]]);
     }
 
     public function marketplaceData(): never

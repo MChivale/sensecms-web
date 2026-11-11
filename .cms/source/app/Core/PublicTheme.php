@@ -47,6 +47,9 @@ final class PublicTheme
         if ($method === 'HEAD') return [$status, $headers, ''];
         $e = static fn(mixed $value): string => htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $navigation = (array) ($context['navigation'] ?? []);
+        $locale = preg_match('/^[a-z]{2,5}$/D', (string) ($context['locale'] ?? '')) ? (string) $context['locale'] : 'en';
+        $languages = array_values(array_filter((array) ($context['languages'] ?? []), static fn(mixed $language): bool => is_array($language) && preg_match('/^[a-z]{2,5}$/D', (string) ($language['locale'] ?? ''))));
+        $languageUrls = array_filter((array) ($context['language_urls'] ?? []), static fn(mixed $url): bool => is_string($url) && str_starts_with($url, '/'));
         $themeSettings = [];
         if (is_file($this->root . '/theme.json')) {
             $descriptor = json_decode((string) file_get_contents($this->root . '/theme.json'), true, 64, JSON_THROW_ON_ERROR);

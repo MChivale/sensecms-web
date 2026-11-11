@@ -11,8 +11,22 @@ umask(0077);
 // Operator-only artifact preparation. This does not publish downloads or set prices.
 $stage = null; $secret = null; $lock = null; $status = 0;
 try {
-    if ($argc !== 2) throw new RuntimeException('Usage: php scripts/build-packages.php <new-release-directory>');
-    $parent = realpath(dirname($argv[1])); $name = basename($argv[1]);
+    $outputArgument = null; $channel = 'development'; $excluded = [];
+    foreach (array_slice($argv, 1) as $argument) {
+        if (str_starts_with($argument, '--channel=')) {
+            $channel = substr($argument, strlen('--channel='));
+        } elseif (str_starts_with($argument, '--exclude=')) {
+            $identity = substr($argument, strlen('--exclude='));
+            if (!preg_match('~^(?:theme|addon|plugin|module):[a-z0-9]+(?:-[a-z0-9]+)*$~D', $identity)) throw new RuntimeException('Invalid excluded package identity.');
+            $excluded[$identity] = true;
+        } elseif ($outputArgument === null && !str_starts_with($argument, '--')) {
+            $outputArgument = $argument;
+        } else {
+            throw new RuntimeException('Usage: php scripts/build-packages.php <new-release-directory> [--channel=development|stable] [--exclude=type:slug]');
+        }
+    }
+    if ($outputArgument === null || !in_array($channel, ['development', 'stable'], true)) throw new RuntimeException('Choose a release directory and a supported channel.');
+    $parent = realpath(dirname($outputArgument)); $name = basename($outputArgument);
     if (!$parent || !preg_match('/^[a-z0-9][a-z0-9.-]{0,99}$/D', $name)) throw new RuntimeException('Choose an existing parent and a safe release directory name.');
     $output = $parent . '/' . $name;
     $root = dirname(__DIR__);
@@ -25,11 +39,18 @@ try {
             if ($entry->isDot()) continue;
             if ($entry->isLink() || !$entry->isDir()) throw new RuntimeException('Package roots must contain only package directories.');
             $source = $entry->getPathname();
+            $sourceIdentity = $type . ':' . $entry->getFilename();
+            $manifestFile = $source . '/sense-package.json';
+            if (!is_file($manifestFile) && isset($excluded[$sourceIdentity])) continue;
+            if (!is_file($manifestFile)) throw new RuntimeException('Every non-excluded package directory must include sense-package.json.');
             $manifest = Manifest::validate(json_decode((string) file_get_contents($source . '/sense-package.json'), true, 16, JSON_THROW_ON_ERROR));
-            if ($manifest['type'] !== $type || $manifest['slug'] !== $entry->getFilename()) throw new RuntimeException('Source directory and package identity differ.');
+            if ($manifest['type'] !== $type) throw new RuntimeException('Source directory and package type differ.');
+            if (isset($excluded[Manifest::identity($manifest)])) continue;
             $prefix = strtolower(str_replace('\\', '/', realpath($source))) . '/';
             if (str_starts_with(strtolower(str_replace('\\', '/', $output)) . '/', $prefix)) throw new RuntimeException('Release output cannot be inside package source.');
-            $sources[Manifest::identity($manifest)] = [$source, $manifest];
+            $identity = Manifest::identity($manifest);
+            if (isset($sources[$identity])) throw new RuntimeException('Two source directories declare the same package identity.');
+            $sources[$identity] = [$source, $manifest];
         }
     }
     if (!$sources) throw new RuntimeException('No package sources found.');
@@ -56,7 +77,7 @@ try {
         $trust[$manifest['publisher']['key_id']] = base64_encode($public);
         $products[] = ['identity'=>$identity, 'name'=>$manifest['name'], 'version'=>$manifest['version'],
             'file'=>$file, 'sha256'=>$built['sha256'], 'bytes'=>$built['bytes'], 'requires'=>$manifest['requires'],
-            'publisher'=>$manifest['publisher'], 'channel'=>'development', 'distribution'=>'unpublished'];
+            'publisher'=>$manifest['publisher'], 'channel'=>$channel, 'distribution'=>'unpublished'];
         $checksums[] = $built['sha256'] . '  ' . $file;
     }
     $write = static function (string $file, string $data) use ($stage): void {

@@ -12,7 +12,7 @@
   "config_url": "/social-publishing/x",
   "icon": "twitter",
   "group": "Content distribution",
-  "release_channel": "development",
+  "release_channel": "stable",
   "social_publisher": {
     "platform": "x",
     "label": "X account",

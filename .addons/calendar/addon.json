@@ -24,7 +24,7 @@
   "config_url": "/calendar?panel=settings",
   "icon": "calendar-days",
   "group": "Scheduling & operations",
-  "release_channel": "development",
+  "release_channel": "stable",
   "changelog": [
     {"version": "1.0.2", "summary": "Follow the administration language preference and localize Calendar errors."},
     {

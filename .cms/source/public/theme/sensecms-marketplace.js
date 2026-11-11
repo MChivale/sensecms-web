@@ -243,6 +243,9 @@ window.SenseCMSInterfaceHtml ??= source => source;
     one('[data-marketplace-drawer]').addEventListener('click', event => { if (event.target === event.currentTarget) closeDetail(); });
     licenseForm.addEventListener('submit', event => {
         event.preventDefault();
+        // This is an in-page protocol handled below; do not let the generic
+        // asynchronous form handler submit the dialog to the current route.
+        event.stopImmediatePropagation();
         if (!activeItem) return;
         const license = licenseInput.value.trim();
         if (!license || license.length > 128) {

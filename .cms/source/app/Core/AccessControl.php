@@ -115,10 +115,27 @@ final class AccessControl
 
     public function users(): array
     {
-        $rows = $this->db->query("SELECT u.id,u.name,u.email,u.job_title,u.avatar_url,u.active,u.is_demo,u.created_at,u.updated_at,GROUP_CONCAT(DISTINCT r.name ORDER BY r.name SEPARATOR ' · ') role_names,GROUP_CONCAT(DISTINCT c.id ORDER BY c.id) facility_ids,GROUP_CONCAT(DISTINCT COALESCE(ct.name,c.facility_slug) ORDER BY c.id SEPARATOR ' · ') facility_names FROM users u LEFT JOIN user_roles ur ON ur.user_id=u.id LEFT JOIN roles r ON r.id=ur.role_id LEFT JOIN user_facilities uc ON uc.user_id=u.id LEFT JOIN facilities c ON c.id=uc.facility_id LEFT JOIN facility_translations ct ON ct.facility_id=c.id AND ct.locale=(SELECT locale FROM languages WHERE enabled=1 ORDER BY is_default DESC,sort_order,id LIMIT 1) GROUP BY u.id ORDER BY u.active DESC,u.name,u.id")->fetchAll();
+        $rows = $this->db->query('SELECT id,name,email,job_title,avatar_url,active,is_demo,created_at,updated_at FROM users ORDER BY active DESC,name,id')->fetchAll();
+        $roles = $this->db->query('SELECT ur.user_id,ur.role_id,r.name FROM user_roles ur INNER JOIN roles r ON r.id=ur.role_id ORDER BY ur.user_id,r.name,ur.role_id')->fetchAll();
+        $facilities = $this->db->query('SELECT uc.user_id,c.id,COALESCE(ct.name,c.facility_slug) name FROM user_facilities uc INNER JOIN facilities c ON c.id=uc.facility_id LEFT JOIN facility_translations ct ON ct.facility_id=c.id AND ct.locale=(SELECT locale FROM languages WHERE enabled=1 ORDER BY is_default DESC,sort_order,id LIMIT 1) ORDER BY uc.user_id,c.id')->fetchAll();
+        $rolesByUser = [];
+        foreach ($roles as $role) {
+            $userId = (int)$role['user_id'];
+            $rolesByUser[$userId]['ids'][] = (int)$role['role_id'];
+            $rolesByUser[$userId]['names'][] = (string)$role['name'];
+        }
+        $facilitiesByUser = [];
+        foreach ($facilities as $facility) {
+            $userId = (int)$facility['user_id'];
+            $facilitiesByUser[$userId]['ids'][] = (int)$facility['id'];
+            $facilitiesByUser[$userId]['names'][] = (string)$facility['name'];
+        }
         foreach ($rows as &$row) {
-            $row['role_ids'] = $this->ids('SELECT role_id FROM user_roles WHERE user_id=? ORDER BY role_id', (int)$row['id']);
-            $row['facility_ids'] = $this->ids('SELECT facility_id FROM user_facilities WHERE user_id=?', (int)$row['id']);
+            $userId = (int)$row['id'];
+            $row['role_ids'] = $rolesByUser[$userId]['ids'] ?? [];
+            $row['role_names'] = implode(' · ', $rolesByUser[$userId]['names'] ?? []);
+            $row['facility_ids'] = $facilitiesByUser[$userId]['ids'] ?? [];
+            $row['facility_names'] = implode(' · ', $facilitiesByUser[$userId]['names'] ?? []);
             if ($row['is_demo']) $row['role_names'] = 'Demo User - read only' . ($row['role_names'] ? ' · ' . $row['role_names'] : '');
         }
         unset($row);

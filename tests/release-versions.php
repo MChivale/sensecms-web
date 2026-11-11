@@ -7,7 +7,7 @@ $check = static function (bool $ok, string $label) use (&$count): void { if (!$o
 $product = require $root . '/.cms/source/config/product.php';
 $check($product['core_version'] === '1.0.0', 'Canonical Core release is 1.0.0');
 $check($product['license']['product_name'] === 'Sense CMS' && $product['license']['product_model'] === 'Sense CMS System' && $product['license']['product_version'] === '1.0', 'Licence identity and protocol unchanged');
-$expected = ['addon:calendar'=>'1.0.0','theme:sensecms'=>'1.0.14','plugin:telegram-notifications'=>'1.0.0','plugin:google-analytics'=>'0.1.2','plugin:google-calendar'=>'0.1.1','plugin:microsoft-365-calendar'=>'0.1.1','plugin:apple-calendar'=>'0.1.1'];
+$expected = ['addon:calendar'=>'1.0.2','theme:sensecms'=>'1.0.31','plugin:telegram-notifications'=>'1.0.1','plugin:google-analytics'=>'0.1.3','plugin:google-calendar'=>'0.1.2','plugin:microsoft-365-calendar'=>'0.1.2','plugin:apple-calendar'=>'0.1.2'];
 foreach ($expected as $identity=>$version) {
     [$type,$slug] = explode(':',$identity); $path = $root . '/.' . $type . 's/' . $slug;
     $manifest = App\Core\Packages\Manifest::validate(json_decode((string)file_get_contents($path . '/sense-package.json'),true,16,JSON_THROW_ON_ERROR));
@@ -22,10 +22,10 @@ foreach ($expected as $identity=>$version) {
     $blocked = false;
     try { App\Core\Packages\Manifest::compatible($manifest,'2.0.0',PHP_VERSION,$expected); } catch (RuntimeException) { $blocked = true; }
     $check($blocked, 'Unverified Core major is rejected: ' . $identity);
-    $check($runtime['release_channel'] === 'development', 'No premature Stable promotion: ' . $identity);
+    $check($runtime['release_channel'] === ($identity === 'theme:sensecms' ? 'development' : 'stable'), 'Runtime channel is intentional: ' . $identity);
 }
 $catalog = require $root . '/.src/package-catalog.php';
-$catalogExpected = $expected; $catalogExpected['theme:sensecms'] = '1.0.0'; // 1.0.14 is the product-site presentation, not yet a public distribution promotion.
+$catalogExpected = $expected; unset($catalogExpected['theme:sensecms']);
 foreach ($catalog as $item) if (isset($catalogExpected[$item['type'].':'.$item['slug']])) $check($item['version'] === $catalogExpected[$item['type'].':'.$item['slug']], 'Website inventory version: ' . $item['slug']);
 $workspace = (string)file_get_contents($root . '/.cms/source/config/workspace.php');
 $installer = (string)file_get_contents($root . '/.cms/source/app/Installer/Installer.php');

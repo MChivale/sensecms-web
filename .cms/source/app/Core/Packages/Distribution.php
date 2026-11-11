@@ -23,7 +23,7 @@ final class Distribution
         foreach ($this->config['products']??[] as $id=>$entry) {
             if (($entry['enabled']??false)!==true) continue;
             $entry=$this->entry($id);
-            $offers[$id]=array_intersect_key($entry,array_flip(['type','slug','version','pricing','sha256','bytes','channel']));
+            $offers[$id]=array_intersect_key($entry,array_flip(['type','slug','version','pricing','sha256','bytes','channel','license']));
         }
         return $offers;
     }

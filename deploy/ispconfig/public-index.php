@@ -19,6 +19,14 @@ if (is_dir($application . '/website') && is_string($path)) {
         require $application . '/website/core-releases.php';
         return;
     }
+    if ($path === '/api/marketplace/v1/catalog') {
+        require $application . '/website/marketplace-catalog.php';
+        return;
+    }
+    if ($path === '/api/marketplace/v1/package/') {
+        require $application . '/website/marketplace-package.php';
+        return;
+    }
     foreach ($brokers as $prefix => $endpoint) {
         if (str_starts_with($path, $prefix)) {
             require $application . '/website/' . $endpoint;

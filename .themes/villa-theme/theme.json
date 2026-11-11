@@ -3,7 +3,7 @@
   "slug": "villa-theme",
   "name": "Villa Theme",
   "version": "0.15.4",
-  "release_channel": "development",
+  "release_channel": "stable",
   "description": "An Italian editorial hospitality theme with refined serif typography, warm ivory, burgundy accents and a managed room explorer.",
   "default_social_image": "/theme-assets/og-image.jpg",
   "default_social_image_type": "image/jpeg",

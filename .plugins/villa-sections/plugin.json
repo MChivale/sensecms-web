@@ -1,7 +1,7 @@
 {
   "name": "Villa Sections",
   "slug": "villa-sections",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "QUANT Software House Limited",
   "type": "plugin",
   "description": "Adds reusable, multilingual homepage and room sections for the Villa Italiana theme.",
@@ -10,7 +10,7 @@
   "permissions": [],
   "icon": "bed-double",
   "group": "Villa Italiana",
-  "release_channel": "development",
+  "release_channel": "stable",
   "license": {"model":"commercial-subscription","billing_period":"year","price":12,"currency":"USD","product_name":"Villa Sections","product_model":"Villa Sections Plugin","product_version":"1.0"},
   "builder_components": {
     "villa-hero": {

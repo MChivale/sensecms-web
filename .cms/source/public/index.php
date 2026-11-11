@@ -65,7 +65,7 @@ try {
             if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'HEAD') require $root . '/app/Views/public-home.php';
             exit;
         }
-        $managedPage = $workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && preg_match('#^/[a-z]{2}(?:-[a-z]{2})?(?:/|$)#D', $path);
+        $managedPage = $workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && preg_match('#^/[a-z]{2}(?:-[a-z]{2})?/.+$#D', $path);
         $discovery = $workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && in_array($path, ['/robots.txt', '/sitemap.xml'], true);
         $publicCms = null;
         if ($workspaceEnabled && $themeRoot !== null && is_file($themeRoot . '/theme.json') && !str_starts_with($path, '/theme-assets/')) {
@@ -78,11 +78,25 @@ try {
             catch (LicenseException) { $reply(['message' => 'Website temporarily unavailable.'], 503); }
             $context = [];
             if ($workspaceEnabled && is_file($themeRoot . '/theme.json') && !str_starts_with($path, '/theme-assets/') && !in_array($path, ['/robots.txt', '/sitemap.xml'], true)) {
-                $locale = $publicCms->defaultLocale('en');
-                $context['navigation'] = $publicCms->publicNavigation($locale, $locale);
+                $languages = $publicCms->languages();
+                $fallbackLocale = $publicCms->defaultLocale('en');
+                $locale = $fallbackLocale;
+                $staticPath = $path;
+                if (preg_match('#^/([a-z]{2,5})$#D', $path, $matches) && in_array($matches[1], array_column($languages, 'locale'), true)) {
+                    $locale = $matches[1];
+                    $staticPath = '/';
+                }
+                $context['navigation'] = $publicCms->publicNavigation($locale, $fallbackLocale);
                 $context['theme_settings'] = $publicCms->setting('theme_settings', []);
+                $context['locale'] = $locale;
+                $context['languages'] = $languages;
+                $context['language_urls'] = array_reduce($languages, static function (array $urls, array $language) use ($fallbackLocale): array {
+                    $code = (string) ($language['locale'] ?? '');
+                    if ($code !== '') $urls[$code] = $code === $fallbackLocale ? '/' : '/'.rawurlencode($code);
+                    return $urls;
+                }, []);
             }
-            [$status, $headers, $body] = (new App\Core\PublicTheme($themeRoot, $baseUrl))->response($path, $_SERVER['REQUEST_METHOD'] ?? 'GET', $context);
+            [$status, $headers, $body] = (new App\Core\PublicTheme($themeRoot, $baseUrl))->response($staticPath ?? $path, $_SERVER['REQUEST_METHOD'] ?? 'GET', $context);
             if ($status === 200 && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET' && $publicCms !== null
                 && str_starts_with($headers['Content-Type'] ?? '', 'text/html')
                 && (((array) $publicCms->setting('extension_states', []))['live-chat'] ?? true)) {

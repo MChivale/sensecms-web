@@ -2,4 +2,4 @@
 
 declare(strict_types=1);
 
-return ['/' => ['title' => 'School Theme', 'description' => 'A thoughtful, accessible website theme for schools and educational institutions.', 'kind' => 'home']];
+return ['/' => ['title' => 'Elingo School', 'description' => 'Nowoczesna szkoła językowa online dla osób, które chcą swobodnie komunikować się w świecie.', 'kind' => 'home']];
